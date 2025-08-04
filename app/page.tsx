@@ -1,103 +1,160 @@
-import Image from "next/image";
+import Link from "next/link"
+import { ArrowRight, Gamepad2, Calendar, Trophy } from "lucide-react"
+import ConsoleCard from "@/components/console-card"
+import { getFeaturedConsoles } from "@/lib/data-prisma"
 
-export default function Home() {
+export default async function HomePage() {
+  const featuredConsoles = await getFeaturedConsoles(3)
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+              <Gamepad2 className="h-4 w-4" />
+              Retro Gaming
+            </div>
+          </div>
+          
+          <h1 className="mb-6 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
+            Super Retrogamers
+          </h1>
+          
+          <p className="mx-auto mb-10 max-w-2xl text-lg text-gray-600 dark:text-gray-300 sm:text-xl">
+            Découvrez l&apos;histoire des consoles légendaires et des jeux qui ont marqué l&apos;âge d&apos;or du jeu vidéo.
+          </p>
+          
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <Link
+              href="/consoles"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Explorer les consoles
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="#consoles"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              En savoir plus
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Features Section */}
+      <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/50">
+                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Histoire
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Explorez l&apos;évolution des consoles depuis les années 80.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/50">
+                <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Classiques
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Découvrez les jeux qui ont défini les genres.
+              </p>
+            </div>
+            
+            <div className="text-center sm:col-span-2 lg:col-span-1">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/50">
+                <Gamepad2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                Innovation
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Comprenez l&apos;impact sur le gaming moderne.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Consoles */}
+      <section id="consoles" className="px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+              Consoles emblématiques
+            </h2>
+            <p className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-300">
+              Les machines qui ont révolutionné l&apos;industrie du jeu vidéo.
+            </p>
+          </div>
+          
+          <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredConsoles.map((console) => (
+              <ConsoleCard key={console.id} console={console} />
+            ))}
+          </div>
+          
+          <div className="text-center">
+            <Link
+              href="/consoles"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Voir toutes les consoles
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="bg-gray-50 px-4 py-16 dark:bg-gray-900/50 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 text-center sm:grid-cols-3">
+            <div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">4</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">Consoles</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">6</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">Jeux</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">1985</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">Première console</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-blue-600 px-4 py-16 dark:bg-blue-700 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">
+            Prêt à explorer l&apos;histoire du gaming ?
+          </h2>
+          <p className="mx-auto mb-8 max-w-2xl text-lg text-blue-100">
+            Découvrez notre collection complète de consoles rétro et plongez dans l&apos;âge d&apos;or du jeu vidéo.
+          </p>
+          <Link
+            href="/consoles"
+            className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-base font-medium text-blue-600 transition-colors hover:bg-blue-50"
+          >
+            Commencer l&apos;exploration
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
     </div>
-  );
+  )
 }
