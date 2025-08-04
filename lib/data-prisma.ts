@@ -215,6 +215,67 @@ export async function getFeaturedConsoles(limit: number = 3): Promise<ConsoleWit
   })
 }
 
+// Fonction pour récupérer des consoles spécifiques pour la homepage
+export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
+  const featuredConsoles: Console[] = []
+  
+  // Rechercher les consoles spécifiques par critères précis
+  const consoleQueries = await Promise.all([
+    // Neo Geo - par slug et screenscrapeId
+    prisma.console.findFirst({
+      where: {
+        OR: [
+          { slug: 'neo-geo' },
+          { screenscrapeId: 142 },
+          { name: { contains: 'Neo Geo', mode: 'insensitive' } },
+          { name: { contains: 'NeoGeo', mode: 'insensitive' } }
+        ]
+      }
+    }),
+    
+    // Super Nintendo
+    prisma.console.findFirst({
+      where: {
+        OR: [
+          { name: { contains: 'Super Nintendo', mode: 'insensitive' } },
+          { name: { contains: 'SNES', mode: 'insensitive' } },
+          { slug: { contains: 'snes', mode: 'insensitive' } },
+          { slug: { contains: 'super-nintendo', mode: 'insensitive' } }
+        ]
+      }
+    }),
+    
+    // PlayStation (original, pas la 2)
+    prisma.console.findFirst({
+      where: {
+        AND: [
+          {
+            OR: [
+              { name: { contains: 'PlayStation', mode: 'insensitive' } },
+              { name: { contains: 'PSX', mode: 'insensitive' } },
+              { slug: { contains: 'playstation', mode: 'insensitive' } }
+            ]
+          },
+          {
+            NOT: {
+              name: { contains: '2', mode: 'insensitive' }
+            }
+          }
+        ]
+      }
+    })
+  ])
+  
+  // Ajouter les consoles trouvées dans l'ordre souhaité
+  consoleQueries.forEach(console => {
+    if (console) {
+      featuredConsoles.push(console)
+    }
+  })
+  
+  return featuredConsoles
+}
+
 export async function getTopRatedGames(limit: number = 6): Promise<GameWithConsole[]> {
   return await prisma.game.findMany({
     take: limit,

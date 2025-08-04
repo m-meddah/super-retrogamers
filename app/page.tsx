@@ -1,10 +1,13 @@
 import Link from "next/link"
 import { ArrowRight, Gamepad2, Calendar, Trophy } from "lucide-react"
 import ConsoleCard from "@/components/console-card"
-import { getFeaturedConsoles } from "@/lib/data-prisma"
+import { getHomepageFeaturedConsoles, getStatsForHomepage } from "@/lib/data-prisma"
 
 export default async function HomePage() {
-  const featuredConsoles = await getFeaturedConsoles(3)
+  const [featuredConsoles, stats] = await Promise.all([
+    getHomepageFeaturedConsoles(),
+    getStatsForHomepage()
+  ])
 
   return (
     <div className="min-h-screen">
@@ -122,15 +125,15 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 text-center sm:grid-cols-3">
             <div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">4</div>
-              <div className="mt-1 text-gray-600 dark:text-gray-400">Consoles</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">{stats.consoleCount}</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">Console{stats.consoleCount > 1 ? 's' : ''}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">6</div>
-              <div className="mt-1 text-gray-600 dark:text-gray-400">Jeux</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">{stats.gameCount}</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">Jeu{stats.gameCount > 1 ? 'x' : ''}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">1985</div>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">{stats.oldestConsoleYear || 'N/A'}</div>
               <div className="mt-1 text-gray-600 dark:text-gray-400">Première console</div>
             </div>
           </div>
