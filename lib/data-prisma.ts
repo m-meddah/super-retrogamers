@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game } from "@prisma/client"
+import type { Console, Game, ConsoleMedia } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -7,6 +7,10 @@ export type ConsoleWithGames = Console & {
   _count: {
     games: number
   }
+}
+
+export type ConsoleWithMedias = Console & {
+  medias: ConsoleMedia[]
 }
 
 export type GameWithConsole = Game & {
@@ -25,6 +29,26 @@ export async function getAllConsoles(): Promise<Console[]> {
 export async function getConsoleBySlug(slug: string): Promise<Console | null> {
   return await prisma.console.findUnique({
     where: { slug }
+  })
+}
+
+export async function getConsoleWithMediasBySlug(slug: string): Promise<ConsoleWithMedias | null> {
+  return await prisma.console.findUnique({
+    where: { slug },
+    include: {
+      medias: true
+    }
+  })
+}
+
+export async function getAllConsolesWithMedias(): Promise<ConsoleWithMedias[]> {
+  return await prisma.console.findMany({
+    include: {
+      medias: true
+    },
+    orderBy: {
+      releaseYear: 'asc'
+    }
   })
 }
 
@@ -274,6 +298,45 @@ export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
   })
   
   return featuredConsoles
+}
+
+// Fonctions utilitaires pour les médias
+export function getConsoleMediaByType(console: ConsoleWithMedias, mediaType: string, region?: string): ConsoleMedia | null {
+  if (!console.medias) return null
+  
+  return console.medias.find(media => {
+    const typeMatch = media.type === mediaType
+    const regionMatch = region ? media.region === region : true
+    return typeMatch && regionMatch
+  }) || null
+}
+
+export function getConsoleMainImage(console: ConsoleWithMedias): string | null {
+  // Priorité pour l'image principale : logo-svg > wheel > photo > illustration
+  const priorityOrder = ['logo-svg', 'wheel', 'photo', 'illustration']
+  
+  for (const type of priorityOrder) {
+    const media = getConsoleMediaByType(console, type)
+    if (media) {
+      return media.localPath
+    }
+  }
+  
+  // Fallback sur l'image du champ image si pas de médias
+  return console.image
+}
+
+export function getConsoleMediasByRegion(console: ConsoleWithMedias, region: string): ConsoleMedia[] {
+  if (!console.medias) return []
+  
+  return console.medias.filter(media => media.region === region)
+}
+
+export function getAvailableRegions(console: ConsoleWithMedias): string[] {
+  if (!console.medias) return []
+  
+  const regions = console.medias.map(media => media.region)
+  return Array.from(new Set(regions)).sort()
 }
 
 export async function getTopRatedGames(limit: number = 6): Promise<GameWithConsole[]> {

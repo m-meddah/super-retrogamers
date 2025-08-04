@@ -153,8 +153,29 @@ model Console {
   variants      ConsoleVariant[]
   userCollections UserConsoleCollection[]
   wishlistItems UserWishlist[]
+  medias        ConsoleMedia[]
   
   @@map("consoles")
+}
+
+model ConsoleMedia {
+  id        String   @id @default(cuid())
+  consoleId String
+  
+  // Media information
+  type      String   // logo-svg, wheel, photo, illustration, etc.
+  region    String   // wor, eu, us, jp, etc.
+  url       String   // Original Screenscraper URL
+  localPath String   // Local file path (/consoles/slug/type/region/filename)
+  format    String   // png, jpg, svg, etc.
+  fileName  String   // Actual file name
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  console   Console  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+  
+  @@map("console_medias")
 }
 
 model ConsoleVariant {

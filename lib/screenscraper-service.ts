@@ -34,6 +34,15 @@ interface ScreenscraperSystem {
   supporttype?: string
 }
 
+interface ProcessedMedia {
+  type: string
+  region: string
+  url: string
+  format: string
+  fileName: string
+  localPath: string
+}
+
 interface ScreenscraperResponse {
   response: {
     systemes: ScreenscraperSystem[]
@@ -44,6 +53,34 @@ interface ScreenscraperResponse {
 const RATE_LIMIT_MS = 1200
 
 let lastRequestTime = 0
+
+// Types de systèmes à exclure du scraping
+const EXCLUDED_SYSTEM_TYPES = [
+  'Ordinateur',
+  'Machine Virtuelle', 
+  'Accessoire',
+  'Flipper',
+  'Autres'
+]
+
+// Types de médias à exclure
+const EXCLUDED_MEDIA_TYPES = [
+  'bezels'
+]
+
+// Mots-clés à exclure dans les types de médias
+const EXCLUDED_MEDIA_KEYWORDS = [
+  'vierge',
+  'controls',
+  'background',
+  'bezel',
+  'texture'
+]
+
+// Régions à exclure
+const EXCLUDED_REGIONS = [
+  'cus'
+]
 
 async function rateLimitedFetch(url: string): Promise<Response> {
   const now = Date.now()
@@ -58,31 +95,6 @@ async function rateLimitedFetch(url: string): Promise<Response> {
   return fetch(url)
 }
 
-async function downloadImage(imageUrl: string, fileName: string, folderName: string): Promise<string | null> {
-  try {
-    // Créer le dossier s'il n'existe pas
-    const folderPath = path.join(process.cwd(), 'public', 'consoles', folderName)
-    await fs.mkdir(folderPath, { recursive: true })
-    
-    // Télécharger l'image
-    const response = await rateLimitedFetch(imageUrl)
-    if (!response.ok) {
-      console.error(`Erreur téléchargement image: ${response.status}`)
-      return null
-    }
-    
-    const buffer = await response.arrayBuffer()
-    const filePath = path.join(folderPath, fileName)
-    
-    await fs.writeFile(filePath, Buffer.from(buffer))
-    
-    // Retourner le chemin relatif pour la base de données
-    return `/consoles/${folderName}/${fileName}`
-  } catch (error) {
-    console.error('Erreur lors du téléchargement de l\'image:', error)
-    return null
-  }
-}
 
 function generateSlug(name: string): string {
   return name
@@ -125,6 +137,116 @@ function getManufacturer(company: string | undefined): string {
   
   const lowerCompany = cleanCompany.toLowerCase()
   return manufacturers[lowerCompany] || cleanCompany
+}
+
+function shouldExcludeSystem(system: ScreenscraperSystem): boolean {
+  // Exclure les systèmes par type
+  if (system.type && EXCLUDED_SYSTEM_TYPES.includes(system.type)) {
+    return true
+  }
+  
+  const mainName = getMainName(system.noms).toLowerCase()
+  
+  // Exclure les systèmes contenant "hack"
+  if (mainName.includes('hack')) {
+    return true
+  }
+  
+  return false
+}
+
+function shouldExcludeMedia(media: { type: string; region: string }): boolean {
+  // Exclure les types de médias spécifiques
+  if (EXCLUDED_MEDIA_TYPES.some(excludedType => media.type.includes(excludedType))) {
+    return true
+  }
+  
+  // Exclure les médias contenant des mots-clés spécifiques
+  if (EXCLUDED_MEDIA_KEYWORDS.some(keyword => media.type.toLowerCase().includes(keyword))) {
+    return true
+  }
+  
+  // Exclure les régions spécifiques
+  if (media.region && EXCLUDED_REGIONS.includes(media.region.toLowerCase())) {
+    return true
+  }
+  
+  return false
+}
+
+async function processSystemMedias(system: ScreenscraperSystem, slug: string): Promise<ProcessedMedia[]> {
+  if (!system.medias) return []
+  
+  const processedMedias: ProcessedMedia[] = []
+  
+  for (const media of system.medias) {
+    if (shouldExcludeMedia(media)) {
+      continue
+    }
+    
+    try {
+      const extension = media.format || 'png'
+      const fileName = `${system.id}_${media.type}_${media.region}.${extension}`
+      const localPath = await downloadMediaWithStructure(media.url, fileName, slug, media.type, media.region)
+      
+      if (localPath) {
+        const safeRegion = media.region && media.region.trim() ? media.region.trim() : 'unknown'
+        processedMedias.push({
+          type: media.type,
+          region: safeRegion,
+          url: media.url,
+          format: extension,
+          fileName,
+          localPath
+        })
+      }
+    } catch (error) {
+      console.error(`Erreur lors du téléchargement du média ${media.type}:`, error)
+    }
+  }
+  
+  return processedMedias
+}
+
+async function downloadMediaWithStructure(
+  url: string, 
+  fileName: string, 
+  slug: string, 
+  mediaType: string, 
+  region: string
+): Promise<string | null> {
+  try {
+    // Gérer les régions undefined ou vides
+    const safeRegion = region && region.trim() ? region.trim() : 'unknown'
+    
+    // Créer la structure de dossiers : public/consoles/[slug]/[mediaType]/[region]/
+    const consolesDir = path.join(process.cwd(), 'public', 'consoles')
+    const consoleDir = path.join(consolesDir, slug)
+    const mediaTypeDir = path.join(consoleDir, mediaType)
+    const regionDir = path.join(mediaTypeDir, safeRegion)
+    
+    // Créer tous les dossiers nécessaires
+    await fs.mkdir(regionDir, { recursive: true })
+    
+    const response = await rateLimitedFetch(url)
+    if (!response.ok) {
+      console.error(`Erreur lors du téléchargement de l'image ${url}: ${response.status}`)
+      return null
+    }
+    
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    
+    const filePath = path.join(regionDir, fileName)
+    await fs.writeFile(filePath, buffer)
+    
+    // Retourner le chemin relatif depuis public/
+    return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
+    
+  } catch (error) {
+    console.error(`Erreur lors du téléchargement de l'image ${url}:`, error)
+    return null
+  }
 }
 
 export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{ success: boolean, message: string, consolesAdded: number }> {
@@ -176,7 +298,15 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
       if (limit && processedCount >= limit) {
         break
       }
+      
       try {
+        // Vérifier si le système doit être exclu
+        if (shouldExcludeSystem(system)) {
+          console.log(`Système ${system.id} exclu (type: ${system.type})`)
+          processedCount++
+          continue
+        }
+        
         // Vérifier si la console existe déjà
         const existingConsole = await prisma.console.findUnique({
           where: { screenscrapeId: system.id }
@@ -189,14 +319,6 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
         }
         
         const mainName = getMainName(system.noms)
-        
-        // Filtrer les consoles contenant "hack"
-        if (mainName.toLowerCase().includes('hack')) {
-          console.log(`Console ${mainName} ignorée (contient 'hack')`)
-          processedCount++
-          continue
-        }
-        
         const slug = generateSlug(mainName)
         
         // Vérifier si le slug existe déjà
@@ -211,49 +333,70 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
         }
         
         const manufacturer = getManufacturer(system.compagnie)
-        // Si pas de date ou date invalide, mettre null plutôt qu'année actuelle
         const releaseYear = system.datedebut && parseInt(system.datedebut) > 1970 && parseInt(system.datedebut) < 2024 
           ? parseInt(system.datedebut) 
           : null
         
-        // Télécharger l'image principale (priorité logo-svg)
-        let imagePath: string | null = null
-        if (system.medias && system.medias.length > 0) {
+        // Traiter tous les médias avec la nouvelle structure
+        console.log(`Traitement des médias pour ${mainName}...`)
+        const processedMedias = await processSystemMedias(system, slug)
+        
+        // Sélectionner l'image principale parmi les médias traités
+        let mainImagePath: string | null = null
+        if (processedMedias.length > 0) {
           // Priorité : logo-svg > wheel > photo > illustration
-          const logoSvg = system.medias.find(m => m.type === 'logo-svg')
-          const wheel = system.medias.find(m => m.type === 'wheel')
-          const photo = system.medias.find(m => m.type === 'photo')
-          const illustration = system.medias.find(m => m.type === 'illustration')
+          const priorityOrder = ['logo-svg', 'wheel', 'photo', 'illustration']
+          for (const priority of priorityOrder) {
+            const media = processedMedias.find(m => m.type === priority)
+            if (media) {
+              mainImagePath = media.localPath
+              break
+            }
+          }
           
-          const imageToDownload = logoSvg || wheel || photo || illustration
-          if (imageToDownload) {
-            const extension = imageToDownload.format || 'png'
-            const fileName = `${system.id}.${extension}`
-            imagePath = await downloadImage(imageToDownload.url, fileName, slug)
+          // Si aucune priorité trouvée, prendre le premier média disponible
+          if (!mainImagePath && processedMedias.length > 0) {
+            mainImagePath = processedMedias[0].localPath
           }
         }
         
         // Créer la console en base
-        await prisma.console.create({
+        const createdConsole = await prisma.console.create({
           data: {
             slug,
             name: mainName,
             manufacturer,
             releaseYear,
             description: `Console ${mainName} développée par ${manufacturer}. Type: ${system.type || 'Console'}. Support: ${system.supporttype || 'Cartouche'}.`,
-            image: imagePath,
+            image: mainImagePath,
             screenscrapeId: system.id,
           }
         })
         
-        consolesAdded++
-        console.log(`Console ajoutée: ${mainName} (${system.id})`)
+        // Sauvegarder tous les médias en base de données
+        if (processedMedias.length > 0) {
+          const mediaData = processedMedias.map(media => ({
+            consoleId: createdConsole.id,
+            type: media.type,
+            region: media.region,
+            url: media.url,
+            localPath: media.localPath,
+            format: media.format,
+            fileName: media.fileName
+          }))
+          
+          await prisma.consoleMedia.createMany({
+            data: mediaData
+          })
+        }
         
-        // Incrémenter le compteur de consoles traitées
+        consolesAdded++
+        console.log(`Console ajoutée: ${mainName} (${system.id}) avec ${processedMedias.length} médias`)
+        
         processedCount++
         
         // Rate limiting entre chaque console
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
       } catch (error) {
         console.error(`Erreur lors du traitement de la console ${system.id}:`, error)
