@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
 import { CollectionService } from '@/lib/collection-service'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import type { ItemCondition } from '@prisma/client'
 import type { 
   AddConsoleToCollectionData, 
   AddGameToCollectionData 
@@ -242,5 +244,125 @@ export async function getUserWishlistAction(): Promise<ActionResult<UserWishlist
       success: false, 
       error: 'Erreur lors du chargement de la liste de souhaits' 
     }
+  }
+}
+
+// New simplified actions for console page
+export async function addConsoleToCollectionSimple(
+  prevState: { success: boolean; message?: string; error?: string } | null, 
+  formData: FormData
+) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Vous devez être connecté' }
+  }
+
+  const consoleId = formData.get("consoleId") as string
+  const condition = formData.get("condition") as string
+
+  if (!consoleId || !condition) {
+    return { success: false, error: 'Champs obligatoires manquants' }
+  }
+
+  try {
+    // Check if console exists
+    const console = await prisma.console.findUnique({
+      where: { id: consoleId }
+    })
+
+    if (!console) {
+      return { success: false, error: 'Console non trouvée' }
+    }
+
+    // Check if user already has this console in collection with same condition
+    const existingItem = await prisma.userConsoleCollection.findFirst({
+      where: {
+        userId: session.user.id,
+        consoleId,
+        condition: condition as ItemCondition
+      }
+    })
+
+    if (existingItem) {
+      return { success: false, error: 'Console déjà présente dans votre collection avec cet état' }
+    }
+
+    // Add to collection
+    await prisma.userConsoleCollection.create({
+      data: {
+        userId: session.user.id,
+        consoleId,
+        condition: condition as ItemCondition,
+        status: 'OWNED'
+      }
+    })
+
+    revalidatePath("/collection")
+    revalidatePath(`/consoles/${console.slug}`)
+    return { success: true, message: "Console ajoutée à votre collection !" }
+
+  } catch (error) {
+    console.error("Error adding console to collection:", error)
+    return { success: false, error: "Erreur lors de l'ajout à la collection" }
+  }
+}
+
+export async function addToWishlistSimple(
+  prevState: { success: boolean; message?: string; error?: string } | null, 
+  formData: FormData
+) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user?.id) {
+    return { success: false, error: 'Vous devez être connecté' }
+  }
+
+  const consoleId = formData.get("consoleId") as string
+
+  if (!consoleId) {
+    return { success: false, error: 'Console ID manquant' }
+  }
+
+  try {
+    // Check if console exists
+    const console = await prisma.console.findUnique({
+      where: { id: consoleId }
+    })
+    if (!console) {
+      return { success: false, error: 'Console non trouvée' }
+    }
+
+    // Check if item already in wishlist
+    const existingItem = await prisma.userWishlist.findFirst({
+      where: {
+        userId: session.user.id,
+        consoleId
+      }
+    })
+
+    if (existingItem) {
+      return { success: false, error: 'Console déjà présente dans votre wishlist' }
+    }
+
+    // Add to wishlist
+    await prisma.userWishlist.create({
+      data: {
+        userId: session.user.id,
+        consoleId
+      }
+    })
+
+    revalidatePath("/collection")
+    revalidatePath(`/consoles/${console.slug}`)
+    return { success: true, message: "Ajouté à votre wishlist !" }
+
+  } catch (error) {
+    console.error("Error adding item to wishlist:", error)
+    return { success: false, error: "Erreur lors de l'ajout à la wishlist" }
   }
 }

@@ -12,11 +12,13 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const pathname = usePathname()
   const { data: session, isPending } = useSession()
+  const isAdmin = session?.user?.role === "admin"
 
   const navigation = [
     { name: "Accueil", href: "/" },
     { name: "Consoles", href: "/consoles" },
     { name: "Collection", href: "/collection" },
+    ...(isAdmin ? [{ name: "Admin", href: "/admin" }] : []),
   ]
 
   const isActive = (href: string) => {

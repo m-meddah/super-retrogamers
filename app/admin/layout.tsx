@@ -24,7 +24,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: "Vue d&apos;ensemble",
+    title: "Vue d'ensemble",
     href: "/admin",
     icon: LayoutDashboard
   },
