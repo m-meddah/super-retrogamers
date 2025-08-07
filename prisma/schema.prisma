@@ -81,20 +81,11 @@ model VerificationToken {
 
 // Enums for collection management
 enum Region {
-  EUROPE
-  NORTH_AMERICA
-  JAPAN
-  FRANCE
-  GERMANY
-  ITALY
-  SPAIN
-  UK
-  AUSTRALIA
-  WORLD
-  PAL
-  NTSC
-  NTSC_J
-  NTSC_U
+  FR        // France
+  EU        // Europe
+  WOR       // World
+  JP        // Japan
+  US        // United States
 }
 
 enum ItemCondition {

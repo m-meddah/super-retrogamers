@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { useSession } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
+import { RegionFlag } from "@/components/ui/region-flag"
 import { addConsoleToCollectionSimple, addToWishlistSimple } from "@/lib/actions/collection-actions"
 
 interface Console {
@@ -34,6 +35,13 @@ interface ConsoleCollectionActionsProps {
   console: Console
 }
 
+const REGIONS = [
+  { value: 'FR', label: 'France' },
+  { value: 'EU', label: 'Europe' },
+  { value: 'WOR', label: 'Monde' },
+  { value: 'JP', label: 'Japon' },
+  { value: 'US', label: 'États-Unis' },
+]
 
 const CONDITIONS = [
   { value: 'SEALED', label: 'Neuf sous blister' },
@@ -69,6 +77,7 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
   const [collectionState, collectionAction] = useActionState(addConsoleToCollectionSimple, null)
   const [wishlistState, wishlistAction] = useActionState(addToWishlistSimple, null)
   
+  const [selectedRegion, setSelectedRegion] = useState<string>("")
   const [selectedCondition, setSelectedCondition] = useState<string>("")
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false)
   const [wishlistDialogOpen, setWishlistDialogOpen] = useState(false)
@@ -93,11 +102,13 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
   // Reset dialog states when actions succeed
   if (collectionState?.success && collectionDialogOpen) {
     setCollectionDialogOpen(false)
+    setSelectedRegion("")
     setSelectedCondition("")
   }
   
   if (wishlistState?.success && wishlistDialogOpen) {
     setWishlistDialogOpen(false)
+    setSelectedRegion("")
   }
 
   return (
@@ -123,7 +134,7 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
             <DialogHeader>
               <DialogTitle>Ajouter à ma collection</DialogTitle>
               <DialogDescription>
-                Choisissez l&apos;état de votre console {console.name}
+                Choisissez la région et l&apos;état de votre console {console.name}
               </DialogDescription>
             </DialogHeader>
             <form action={collectionAction} className="space-y-4">
@@ -143,6 +154,24 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
                 </div>
               )}
               
+              <div className="space-y-2">
+                <Label htmlFor="region">Région</Label>
+                <Select name="region" value={selectedRegion} onValueChange={setSelectedRegion}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez une région" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REGIONS.map((region) => (
+                      <SelectItem key={region.value} value={region.value}>
+                        <div className="flex items-center gap-2">
+                          <RegionFlag region={region.value} className="w-5 h-3" />
+                          {region.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="condition">État</Label>
@@ -169,7 +198,7 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
                 >
                   Annuler
                 </Button>
-                <SubmitButton disabled={!selectedCondition}>
+                <SubmitButton disabled={!selectedRegion || !selectedCondition}>
                   Ajouter
                 </SubmitButton>
               </div>
@@ -188,7 +217,7 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
             <DialogHeader>
               <DialogTitle>Ajouter à ma wishlist</DialogTitle>
               <DialogDescription>
-                Ajouter {console.name} à votre liste de souhaits
+                Choisissez la région recherchée pour {console.name}
               </DialogDescription>
             </DialogHeader>
             <form action={wishlistAction} className="space-y-4">
@@ -208,9 +237,24 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
                 </div>
               )}
               
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Cette console sera ajoutée à votre liste de souhaits pour un suivi ultérieur.
-              </p>
+              <div className="space-y-2">
+                <Label htmlFor="wishlist-region">Région</Label>
+                <Select name="region" value={selectedRegion} onValueChange={setSelectedRegion}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez une région" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REGIONS.map((region) => (
+                      <SelectItem key={region.value} value={region.value}>
+                        <div className="flex items-center gap-2">
+                          <RegionFlag region={region.value} className="w-5 h-3" />
+                          {region.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button 
@@ -221,7 +265,7 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
                 >
                   Annuler
                 </Button>
-                <SubmitButton>
+                <SubmitButton disabled={!selectedRegion}>
                   Ajouter à la wishlist
                 </SubmitButton>
               </div>

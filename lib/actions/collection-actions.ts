@@ -5,7 +5,8 @@ import { headers } from 'next/headers'
 import { CollectionService } from '@/lib/collection-service'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import type { ItemCondition } from '@prisma/client'
+import type { ItemCondition, Region } from '@prisma/client'
+import { createConsoleVariants } from '@/lib/console-variants-service'
 import type { 
   AddConsoleToCollectionData, 
   AddGameToCollectionData 
@@ -261,40 +262,65 @@ export async function addConsoleToCollectionSimple(
   }
 
   const consoleId = formData.get("consoleId") as string
+  const region = formData.get("region") as string
   const condition = formData.get("condition") as string
 
-  if (!consoleId || !condition) {
+  if (!consoleId || !region || !condition) {
     return { success: false, error: 'Champs obligatoires manquants' }
   }
 
   try {
     // Check if console exists
     const console = await prisma.console.findUnique({
-      where: { id: consoleId }
+      where: { id: consoleId },
+      include: { variants: true }
     })
 
     if (!console) {
       return { success: false, error: 'Console non trouvée' }
     }
 
-    // Check if user already has this console in collection with same condition
+    // Créer les variants si ils n'existent pas
+    await createConsoleVariants(console.slug)
+
+    // Trouver ou créer le variant pour la région spécifiée
+    let variant = await prisma.consoleVariant.findFirst({
+      where: {
+        consoleId: console.id,
+        region: region as Region
+      }
+    })
+
+    if (!variant) {
+      // Créer le variant manquant
+      variant = await prisma.consoleVariant.create({
+        data: {
+          consoleId: console.id,
+          name: `${console.name} (${region})`,
+          region: region as Region,
+          releaseDate: console.releaseYear ? new Date(console.releaseYear, 0, 1) : null
+        }
+      })
+    }
+
+    // Check if user already has this console variant in collection with same condition
     const existingItem = await prisma.userConsoleCollection.findFirst({
       where: {
         userId: session.user.id,
-        consoleId,
+        consoleVariantId: variant.id,
         condition: condition as ItemCondition
       }
     })
 
     if (existingItem) {
-      return { success: false, error: 'Console déjà présente dans votre collection avec cet état' }
+      return { success: false, error: 'Console déjà présente dans votre collection avec cette région et cet état' }
     }
 
-    // Add to collection
+    // Add to collection using variant
     await prisma.userConsoleCollection.create({
       data: {
         userId: session.user.id,
-        consoleId,
+        consoleVariantId: variant.id,
         condition: condition as ItemCondition,
         status: 'OWNED'
       }
@@ -323,9 +349,10 @@ export async function addToWishlistSimple(
   }
 
   const consoleId = formData.get("consoleId") as string
+  const region = formData.get("region") as string
 
-  if (!consoleId) {
-    return { success: false, error: 'Console ID manquant' }
+  if (!consoleId || !region) {
+    return { success: false, error: 'Champs obligatoires manquants' }
   }
 
   try {
@@ -337,23 +364,47 @@ export async function addToWishlistSimple(
       return { success: false, error: 'Console non trouvée' }
     }
 
-    // Check if item already in wishlist
+    // Créer les variants si ils n'existent pas
+    await createConsoleVariants(console.slug)
+
+    // Trouver ou créer le variant pour la région spécifiée
+    let variant = await prisma.consoleVariant.findFirst({
+      where: {
+        consoleId: console.id,
+        region: region as Region
+      }
+    })
+
+    if (!variant) {
+      // Créer le variant manquant
+      variant = await prisma.consoleVariant.create({
+        data: {
+          consoleId: console.id,
+          name: `${console.name} (${region})`,
+          region: region as Region,
+          releaseDate: console.releaseYear ? new Date(console.releaseYear, 0, 1) : null
+        }
+      })
+    }
+
+    // Check if item already in wishlist for this specific variant
     const existingItem = await prisma.userWishlist.findFirst({
       where: {
         userId: session.user.id,
-        consoleId
+        consoleVariantId: variant.id
       }
     })
 
     if (existingItem) {
-      return { success: false, error: 'Console déjà présente dans votre wishlist' }
+      return { success: false, error: 'Console déjà présente dans votre wishlist pour cette région' }
     }
 
-    // Add to wishlist
+    // Add to wishlist using variant
     await prisma.userWishlist.create({
       data: {
         userId: session.user.id,
-        consoleId
+        consoleId,
+        consoleVariantId: variant.id
       }
     })
 

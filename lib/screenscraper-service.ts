@@ -66,7 +66,9 @@ const EXCLUDED_SYSTEM_TYPES = [
 
 // Types de médias à exclure
 const EXCLUDED_MEDIA_TYPES = [
-  'bezels'
+  'bezels',
+  'box3D',
+  'support2D'
 ]
 
 // Mots-clés à exclure dans les types de médias
