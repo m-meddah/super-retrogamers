@@ -186,13 +186,5 @@ export const useAppStore = create<AppStore>()(
   )
 )
 
-// Selectors
-export const useTheme = () => useAppStore((state) => state.theme)
-export const useSidebar = () => useAppStore((state) => state.sidebarOpen)
+// Selector pour les notifications (utilisé dans l'app)
 export const useNotifications = () => useAppStore((state) => state.notifications)
-export const useGlobalLoading = () => useAppStore((state) => state.globalLoading)
-export const useSearch = () => useAppStore((state) => ({
-  query: state.searchQuery,
-  results: state.searchResults,
-  loading: state.searchLoading,
-}))

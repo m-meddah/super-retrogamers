@@ -182,9 +182,3 @@ export const useScrapingStore = create<ScrapingStore>()(
   )
 )
 
-// Selectors
-export const useScrapingStatus = () => useScrapingStore((state) => state.status)
-export const useScrapingProgress = () => useScrapingStore((state) => state.status.progress)
-export const useScrapingLogs = () => useScrapingStore((state) => state.status.logs)
-export const useScrapingHistory = () => useScrapingStore((state) => state.history)
-export const useIsScrapingRunning = () => useScrapingStore((state) => state.status.isRunning)

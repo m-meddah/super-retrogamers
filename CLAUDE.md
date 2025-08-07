@@ -55,10 +55,15 @@ app/
 └── globals.css           # Tailwind styles and CSS variables
 
 components/
-├── header.tsx          # Site navigation
+├── header.tsx          # Site navigation with admin detection
 ├── console-card.tsx    # Console display component
 ├── game-card.tsx       # Game display component
+├── console-collection-actions.tsx # Region-aware collection/wishlist forms
 └── ui/                 # shadcn/ui components
+    ├── region-flag.tsx # SVG flag component for 5-region system
+    ├── dialog.tsx      # Modal dialog component
+    ├── select.tsx      # Dropdown select component
+    └── ... (other shadcn components)
 
 lib/
 ├── actions/
@@ -77,6 +82,7 @@ lib/
 ├── auth-server.ts            # Server-side session helpers
 ├── screenscraper.ts          # Screenscraper API client
 ├── screenscraper-service.ts  # Data synchronization service
+├── console-variants-service.ts # Console variant management for regions
 ├── data-prisma.ts            # Database query functions
 └── utils.ts                  # Utility functions (cn helper)
 
@@ -103,7 +109,7 @@ PostgreSQL database managed through Prisma with comprehensive collection managem
 - **GameReview**: Detailed game reviews with category ratings
 
 **Enums:**
-- **Region**: EUROPE, NORTH_AMERICA, JAPAN, PAL, NTSC variants
+- **Region**: FR, EU, WOR, JP, US (simplified 5-region system)
 - **ItemCondition**: SEALED, MINT, CIB, LOOSE, etc.
 - **CollectionStatus**: OWNED, WANTED, SOLD, LOANED, FOR_SALE
 
@@ -150,6 +156,8 @@ PostgreSQL database managed through Prisma with comprehensive collection managem
 - **Game Data**: Fetches metadata, genres, media, ROM information
 - **Error Handling**: Comprehensive error handling with fallbacks
 - **Media Types**: Support for screenshots, box art, logos, and other assets
+- **Media Exclusions**: Automatically excludes box3D and support2D media types
+- **File Structure**: Media organized as `/public/consoles/[slug]/[mediaType]/[region]/`
 
 ### Environment Variables
 Required environment variables in `.env`:
@@ -187,8 +195,9 @@ SCREENSCRAPER_PASSWORD="your-password" # Optional
 ### Content Management
 1. **Console Data**: Add mappings in `lib/screenscraper-service.ts` CONSOLE_MAPPINGS
 2. **Game Content**: Use scraping endpoints or direct Prisma operations
-3. **User Collections**: Full CRUD through collection management system
-4. **AI Enhancement**: Planned integration for rich content descriptions
+3. **User Collections**: Full CRUD through collection management system with ConsoleVariant support
+4. **Console Variants**: Use `lib/console-variants-service.ts` for managing region-specific console variants
+5. **AI Enhancement**: Planned integration for rich content descriptions
 
 ### Code Architecture
 
@@ -208,10 +217,18 @@ SCREENSCRAPER_PASSWORD="your-password" # Optional
 - **Better-auth Session**: Authentication state management
 - **Server Actions**: Form handling and server-side operations in `lib/actions/`
 
+**Region Management System:**
+- **ConsoleVariant**: Enables users to collect same console in different regions
+- **Region Flags**: SVG-based flag components for FR, EU, WOR, JP, US
+- **Collection Actions**: Region-aware collection and wishlist management
+- **Console Variants Service**: Automatic variant generation for existing consoles
+
 **Component Architecture:**
 - Components use Prisma types (`Game`, `Console` from `@prisma/client`)
 - GameCard supports `GameWithConsole` type for console relationship
 - ConsoleCard uses base `Console` type from Prisma
+- **ConsoleCollectionActions**: Complex form component with region selection and condition tracking
+- **RegionFlag**: SVG flag component supporting the 5-region system
 
 ## Critical Development Patterns
 
@@ -230,7 +247,33 @@ SCREENSCRAPER_PASSWORD="your-password" # Optional
 - Use `game.console?.name` and `game.console?.slug` for relationships
 - Always handle nullable relationships with optional chaining
 
+### Region System
+- **5-Region Model**: FR (France), EU (Europe), WOR (World), JP (Japan), US (United States)
+- **ConsoleVariant Creation**: Use `createConsoleVariants()` to generate region variants automatically
+- **Collection Forms**: Always include region selection for console collection management
+- **Region Flags**: Use `<RegionFlag region="FR" />` component for visual region indicators
+
 ### API Endpoints
 - Scraping endpoints are in `/api/scraping/` directory
+- Admin endpoints like `/api/admin/console-variants` for variant management
 - Rate limiting is built into Screenscraper client (1.2s throttling)
 - Use Server Actions in `lib/actions/` for form handling
+- **IMPORTANT**: User prefers Server Actions over API routes for form handling
+
+## Important Development Notes
+
+### React 19 Compatibility
+- **Use `useActionState`** instead of `useFormState` for React 19 compatibility
+- Server Actions follow the pattern: `(prevState, formData) => Promise<ActionState>`
+- Always handle form states properly with success/error feedback
+
+### Database Schema Drift
+- If Prisma complains about schema drift, use `npx prisma db push --accept-data-loss` for development
+- For production, always use proper migrations: `npx prisma migrate dev`
+- Reset database when needed: `npx prisma migrate reset --force`
+
+### Collection Management Architecture
+- **ConsoleVariant System**: Users can collect same console in different regions/conditions
+- **Server Actions**: `addConsoleToCollectionSimple()` and `addToWishlistSimple()` handle forms
+- **Region Validation**: All collection operations require region selection
+- **Duplicate Prevention**: System prevents duplicate entries for same variant + condition

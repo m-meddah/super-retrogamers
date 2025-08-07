@@ -240,10 +240,3 @@ export const useCollectionStore = create<CollectionStore>()(
   )
 )
 
-// Selectors pour optimiser les re-renders
-export const useConsoles = () => useCollectionStore((state) => state.consoles)
-export const useGames = () => useCollectionStore((state) => state.games)
-export const useWishlist = () => useCollectionStore((state) => state.wishlist)
-export const useCollectionStats = () => useCollectionStore((state) => state.stats)
-export const useCollectionLoading = () => useCollectionStore((state) => state.loading)
-export const useCollectionErrors = () => useCollectionStore((state) => state.errors)
