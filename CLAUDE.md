@@ -34,10 +34,13 @@ Super Retrogamers is a modern Next.js 15 application showcasing retro gaming con
 ```
 app/
 ├── api/
-│   ├── auth/[...all]/    # Better-auth API routes
-│   └── scraping/         # Data scraping endpoints
-│       ├── consoles/     # Sync all consoles from Screenscraper
-│       └── consoles-limited/ # Sync limited number of consoles
+│   └── auth/[...all]/    # Better-auth API routes (only essential routes remain)
+├── admin/                # Admin interface for data management
+│   ├── analytics/        # Admin analytics dashboard with real database data
+│   ├── content/          # Content management interface
+│   ├── scraping/         # Admin console and game scraping interface
+│   ├── settings/         # Admin settings page with UI controls
+│   └── users/            # User management interface
 ├── collection/           # User collection management
 ├── consoles/
 │   ├── page.tsx          # Console listing page
@@ -50,6 +53,8 @@ app/
 │       └── page.tsx      # Individual game details
 ├── login/                # Authentication pages
 ├── register/
+├── recherche/            # Advanced search interface
+│   └── page.tsx          # Search with filters and Screenscraper integration
 ├── layout.tsx            # Root layout with Header
 ├── page.tsx              # Homepage with hero, featured consoles
 └── globals.css           # Tailwind styles and CSS variables
@@ -63,12 +68,16 @@ components/
     ├── region-flag.tsx # SVG flag component for 5-region system
     ├── dialog.tsx      # Modal dialog component
     ├── select.tsx      # Dropdown select component
+    ├── switch.tsx      # Toggle switch component (Radix UI)
     └── ... (other shadcn components)
 
 lib/
 ├── actions/
-│   ├── collection-actions.ts # Server Actions for collection management
-│   └── scraping-actions.ts   # Server Actions for data scraping
+│   ├── collection-actions.ts     # Server Actions for collection management
+│   ├── scraping-actions.ts       # Server Actions for data scraping
+│   ├── search-actions.ts         # Server Actions for advanced search
+│   ├── admin-scraping-actions.ts # Server Actions for admin scraping interface
+│   └── analytics-actions.ts      # Server Actions for admin analytics dashboard
 ├── hooks/
 │   ├── use-collection.ts     # Collection state management hook
 │   └── use-scraping.ts       # Scraping progress hook
@@ -80,8 +89,10 @@ lib/
 ├── auth.ts                   # Better-auth server configuration
 ├── auth-client.ts            # Better-auth client utilities
 ├── auth-server.ts            # Server-side session helpers
-├── screenscraper.ts          # Screenscraper API client
-├── screenscraper-service.ts  # Data synchronization service
+├── screenscraper.ts          # Screenscraper API client (legacy)
+├── screenscraper-client.ts   # Enhanced Screenscraper client
+├── screenscraper-games.ts    # Advanced game scraping with media management
+├── screenscraper-service.ts  # Console data synchronization service
 ├── console-variants-service.ts # Console variant management for regions
 ├── data-prisma.ts            # Database query functions
 └── utils.ts                  # Utility functions (cn helper)
@@ -128,17 +139,24 @@ PostgreSQL database managed through Prisma with comprehensive collection managem
 - `/jeux/[slug]` - Individual game page with screenshots and reviews
 - `/login` & `/register` - Authentication pages
 - `/collection` - User collection management
+- `/recherche` - Advanced search with hybrid local/Screenscraper results
+- `/admin/*` - Admin interface (analytics, content, scraping, settings, users)
 - `/api/auth/[...all]` - Better-auth API routes
 - `/api/scraping/*` - Screenscraper synchronization endpoints
 
 ### Key Features
+- **Enhanced Game Scraping**: Complete game data with 14+ media types, ROM flags, ratings
 - **Advanced Collection Management**: Track owned items, condition, value, completion status
+- **Hybrid Search System**: Local database + Screenscraper API integration for comprehensive results
+- **Media Management**: Automated download and organization of game screenshots, box art, logos
 - **AI-Enhanced Content**: Rich descriptions and analysis for consoles and games
 - **User Authentication**: Better-auth with email/password and OAuth providers
-- **Dynamic Content**: Real-time data from Screenscraper API with rate limiting
+- **Dynamic Content**: Real-time data from Screenscraper API with rate limiting (1.2s throttling)
 - **Comprehensive Reviews**: Multi-category game ratings (graphics, sound, gameplay, story)
 - **Wishlist System**: Priority-based wanted items with price tracking
 - **Statistics Dashboard**: Collection value, completion rates, rare items tracking
+- **Advanced Search Interface**: Complex filtering with ROM flags, ratings, player count
+- **Admin Dashboard**: Complete admin interface with analytics, content management, and settings
 - **Responsive Design**: Mobile-first approach with dark/light theme support
 - **Type Safety**: Full TypeScript coverage with Prisma schema
 
@@ -230,6 +248,13 @@ SCREENSCRAPER_PASSWORD="your-password" # Optional
 - **ConsoleCollectionActions**: Complex form component with region selection and condition tracking
 - **RegionFlag**: SVG flag component supporting the 5-region system
 
+**Admin Interface:**
+- **Analytics Dashboard**: Real database queries via `analytics-actions.ts` for live statistics
+- **Settings Interface**: Form controls with shadcn/ui Switch components for configuration
+- **Content Management**: Direct database operations for managing consoles and games
+- **User Management**: Admin interface for user roles and permissions
+- **Scraping Interface**: Progress tracking and batch operations for data synchronization
+
 ## Critical Development Patterns
 
 ### Authentication
@@ -272,8 +297,111 @@ SCREENSCRAPER_PASSWORD="your-password" # Optional
 - For production, always use proper migrations: `npx prisma migrate dev`
 - Reset database when needed: `npx prisma migrate reset --force`
 
+### Missing Dependencies
+- When build errors occur due to missing UI components, install required Radix UI packages:
+  - `@radix-ui/react-switch` for Switch components
+  - `@radix-ui/react-checkbox` for Checkbox components
+  - Check `package.json` for all installed Radix UI components before creating new ones
+
 ### Collection Management Architecture
 - **ConsoleVariant System**: Users can collect same console in different regions/conditions
 - **Server Actions**: `addConsoleToCollectionSimple()` and `addToWishlistSimple()` handle forms
 - **Region Validation**: All collection operations require region selection
 - **Duplicate Prevention**: System prevents duplicate entries for same variant + condition
+
+## Enhanced Features Implementation
+
+### Advanced Game Scraping System
+**File:** `lib/screenscraper-games.ts`
+
+- **Complete Data Extraction**: Handles complex Screenscraper API responses with robust type conversion
+- **Media Management**: Downloads and organizes 14+ media types with intelligent prioritization
+- **ROM Flags Processing**: Extracts beta, demo, translated, best version indicators
+- **Regional Data**: Stores release dates, ratings, and content for 5 regions (FR, EU, WOR, JP, US)
+- **Genre Relations**: Creates normalized genre relationships with Screenscraper taxonomy
+- **Rate Limiting**: Built-in 1.2s throttling to respect API limits
+
+**Key Functions:**
+- `createGameFromScreenscraper()`: Comprehensive game creation with all metadata
+- `processGameMedias()`: Media download and database storage
+- `scrapeGamesForConsole()`: Bulk scraping with progress tracking
+- `processRomFlags()`: ROM attribute extraction and validation
+
+### Hybrid Search System
+**File:** `lib/actions/search-actions.ts`
+
+- **Local Database Search**: Fast filtering with complex criteria
+- **Screenscraper Integration**: Expands results using `jeuRecherche.php` API
+- **Intelligent Merging**: Combines results while preventing duplicates
+- **Advanced Filters**: Supports ratings, years, player count, ROM flags
+- **Server Actions Only**: No API routes, pure Server Actions architecture
+
+**Search Flow:**
+1. `searchGamesAction()` - Local database search with complex WHERE conditions
+2. `searchGamesWithScreenscraperAction()` - Hybrid search combining local + external results
+3. `searchScreenscraperAPI()` - External API integration with rate limiting
+4. `convertScreenscraperToGameResult()` - Type conversion for unified results
+
+### Enhanced UI Components
+**File:** `components/game-card.tsx`
+
+- **Media Prioritization**: `getBestGameImage()` selects optimal image from 14+ types
+- **ROM Badges**: Visual indicators for demo, beta, translated, best versions
+- **Screenscraper Integration**: Special styling for external search results
+- **Rating Display**: Enhanced rating presentation with Screenscraper scores
+
+**Priority Order for Images:**
+1. `box-2D` - 2D box art (highest priority)
+2. `box-3D` - 3D box art
+3. `wheel` - Logo wheels
+4. `sstitle` - Title screenshots
+5. `ss` - Regular screenshots
+
+### Advanced Search Interface
+**File:** `app/recherche/page.tsx`
+
+- **Complex Filtering**: Multiple criteria with real-time results
+- **Hybrid Results**: Combines local database with Screenscraper API
+- **Visual Indicators**: Shows source of results (local vs external)
+- **Debounced Search**: 300ms debouncing for smooth UX
+- **Filter Persistence**: Maintains search state across interactions
+
+## Recent Implementation Summary
+
+The following enhancements have been successfully implemented:
+
+### ✅ Enhanced Game Scraping (Steps 1 & 2)
+- Complete game data extraction with robust type handling
+- 14+ media types with intelligent prioritization
+- Automated media download and organization
+- ROM flags processing (demo, beta, translated, best version)
+- Regional release date tracking
+- Genre relationship management
+
+### ✅ UI Adaptation (Step 3)
+- GameCard component enhanced with media prioritization
+- ROM badges for visual game type identification
+- Screenscraper result indicators
+- Enhanced rating display
+- Intelligent image fallbacks
+
+### ✅ Advanced Search (Step 4)
+- Hybrid search combining local database + Screenscraper API
+- Complex filtering system with multiple criteria
+- Real-time search with 300ms debouncing
+- Server Actions architecture (no API routes)
+- Visual distinction between local and external results
+
+### ✅ Admin Interface (Step 5)
+- Analytics dashboard with real database statistics via `getAnalyticsDataAction()`
+- Settings page with Switch components and form controls
+- User management interface for roles and permissions
+- Content management tools for consoles and games
+- All admin pages created with proper error handling and loading states
+
+### 🔧 Technical Architecture
+- **Server Actions Only**: Preferred over API routes per user requirements
+- **Type Safety**: Robust handling of Screenscraper API response variations
+- **Rate Limiting**: 1.2s throttling for all external API calls
+- **Media Organization**: Structured file system with console and game separation
+- **Error Handling**: Comprehensive fallbacks for missing data and failed requests

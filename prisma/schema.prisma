@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,46 +7,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Better-auth required models
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          String    @default("user")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  accounts Account[]
-  sessions Session[]
-  
-  // Collection relations
+  id                String                  @id @default(cuid())
+  name              String?
+  email             String?                 @unique
+  image             String?
+  role              String                  @default("user")
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  emailVerified     Boolean                 @default(false)
+  accounts          Account[]
+  gameReviews       GameReview[]
+  sessions          Session[]
+  collectionStats   UserCollectionStats?
   consoleCollection UserConsoleCollection[]
   gameCollection    UserGameCollection[]
-  collectionStats   UserCollectionStats?
   wishlist          UserWishlist[]
-  gameReviews       GameReview[]
-  
+
   @@map("users")
 }
 
 model Account {
-  id                String   @id @default(cuid())
-  accountId         String
-  providerId        String
-  userId            String
-  accessToken       String?
-  refreshToken      String?
-  idToken           String?
-  accessTokenExpiresAt DateTime?
+  id                    String    @id @default(cuid())
+  userId                String
+  scope                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  accessToken           String?
+  accessTokenExpiresAt  DateTime?
+  accountId             String
+  idToken               String?
+  password              String?
+  providerId            String
+  refreshToken          String?
   refreshTokenExpiresAt DateTime?
-  scope             String?
-  password          String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, accountId])
   @@map("accounts")
@@ -57,15 +49,14 @@ model Account {
 
 model Session {
   id        String   @id @default(cuid())
-  token     String   @unique
   userId    String
-  expiresAt DateTime
-  ipAddress String?
-  userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  ipAddress String?
+  token     String   @unique
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
@@ -79,246 +70,253 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// Enums for collection management
-enum Region {
-  FR        // France
-  EU        // Europe
-  WOR       // World
-  JP        // Japan
-  US        // United States
-}
-
-enum ItemCondition {
-  SEALED       // Neuf sous blister
-  MINT         // Parfait état
-  NEAR_MINT    // Quasi parfait
-  VERY_GOOD    // Très bon état
-  GOOD         // Bon état
-  FAIR         // État moyen
-  POOR         // Mauvais état
-  LOOSE        // Sans boîte
-  CIB          // Complete In Box
-  BOXED        // Avec boîte
-  MANUAL_ONLY  // Manuel seul
-  CART_ONLY    // Cartouche seule
-  DISC_ONLY    // Disque seul
-}
-
-enum CollectionStatus {
-  OWNED        // Possédé
-  WANTED       // Recherché
-  SOLD         // Vendu
-  LOANED       // Prêté
-  FOR_SALE     // À vendre
-}
-
-// Console and Game models
 model Console {
-  id            String   @id @default(cuid())
-  slug          String   @unique
-  name          String
-  manufacturer  String
-  releaseYear   Int?
-  description   String   @db.Text
-  image         String?
-  
-  // Specifications
-  cpu           String?
-  memory        String?
-  graphics      String?
-  
-  // Screenscraper data
-  screenscrapeId Int?    @unique
-  
-  // AI Enhanced content
-  aiEnhancedDescription String? @db.Text
-  historicalContext     String? @db.Text
-  technicalAnalysis     String? @db.Text
-  culturalImpact        String? @db.Text
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  // Relations
-  games         Game[]
-  variants      ConsoleVariant[]
-  userCollections UserConsoleCollection[]
-  wishlistItems UserWishlist[]
-  medias        ConsoleMedia[]
-  
+  id                    String                  @id @default(cuid())
+  slug                  String                  @unique
+  name                  String
+  manufacturer          String
+  releaseYear           Int?
+  description           String
+  image                 String?
+  cpu                   String?
+  memory                String?
+  graphics              String?
+  screenscrapeId        Int?                    @unique
+  aiEnhancedDescription String?
+  historicalContext     String?
+  technicalAnalysis     String?
+  culturalImpact        String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  medias                ConsoleMedia[]
+  variants              ConsoleVariant[]
+  games                 Game[]
+  userCollections       UserConsoleCollection[]
+  wishlistItems         UserWishlist[]
+
   @@map("consoles")
 }
 
 model ConsoleMedia {
   id        String   @id @default(cuid())
   consoleId String
-  
-  // Media information
-  type      String   // logo-svg, wheel, photo, illustration, etc.
-  region    String   // wor, eu, us, jp, etc.
-  url       String   // Original Screenscraper URL
-  localPath String   // Local file path (/consoles/slug/type/region/filename)
-  format    String   // png, jpg, svg, etc.
-  fileName  String   // Actual file name
-  
+  type      String
+  region    String
+  url       String
+  localPath String
+  format    String
+  fileName  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
   console   Console  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
-  
+
   @@map("console_medias")
 }
 
 model ConsoleVariant {
-  id          String    @id @default(cuid())
-  consoleId   String
-  name        String    // Ex: "PlayStation 2 Slim", "Game Boy Color - Atomic Purple"
-  region      Region
-  releaseDate DateTime?
-  image       String?
-  rarity      String?   // Common, Uncommon, Rare, Very Rare, Ultra Rare
-  
-  // Market data
+  id              String                  @id @default(cuid())
+  consoleId       String
+  name            String
+  region          Region
+  releaseDate     DateTime?
+  image           String?
+  rarity          String?
   averagePrice    Float?
   priceUpdatedAt  DateTime?
-  
-  console     Console @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+  console         Console                 @relation(fields: [consoleId], references: [id], onDelete: Cascade)
   userCollections UserConsoleCollection[]
-  
+
   @@map("console_variants")
 }
 
 model Game {
-  id            String   @id @default(cuid())
-  slug          String   @unique  // Format: console-slug-game-slug (ex: playstation-final-fantasy-vii)
-  title         String
-  consoleId     String
-  releaseYear   Int?
-  genre         String?
-  developer     String?
-  publisher     String?
-  description   String?  @db.Text
-  image         String?
-  screenshots   String[] // Array of image URLs
-  rating        Float?   @default(0)
+  id                     String               @id @default(cuid())
+  slug                   String               @unique
+  title                  String
+  consoleId              String
+  releaseYear            Int?
+  genre                  String?  // Legacy field, deprecated in favor of genres relation
+  developer              String?  // Legacy field
+  publisher              String?  // Legacy field
+  description            String?
+  image                  String?
+  screenshots            String[]
+  rating                 Float?               @default(0)
+  screenscrapeId         Int?
   
-  // Screenscraper data
-  screenscrapeId Int?    // Removed unique constraint as same game can be on multiple consoles
+  // Company relations (for future use when tables are created)
+  developerId            String?  // Future foreign key to Company
+  publisherId            String?  // Future foreign key to Company
+  
+  // Clone information
+  isClone                Boolean              @default(false)
+  cloneOfId              Int?     // ID du jeu original si c'est un clone
   
   // AI Enhanced content
-  aiEnhancedDescription String? @db.Text
-  gameplayAnalysis      String? @db.Text
-  historicalSignificance String? @db.Text
-  developmentStory      String? @db.Text
-  legacyImpact         String? @db.Text
+  aiEnhancedDescription  String?
+  gameplayAnalysis       String?
+  historicalSignificance String?
+  developmentStory       String?
+  legacyImpact           String?
   
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  isAlternative          Boolean              @default(false)
+  isBestVersion          Boolean              @default(false)
+  isBeta                 Boolean              @default(false)
+  isDemo                 Boolean              @default(false)
+  isHacked               Boolean              @default(false)
+  isTranslated           Boolean              @default(false)
+  isUnlicensed           Boolean              @default(false)
+  netplaySupport         Boolean              @default(false)
+  playerCount            String?
+  releaseDateEU          DateTime?
+  releaseDateFR          DateTime?
+  releaseDateJP          DateTime?
+  releaseDateUS          DateTime?
+  releaseDateWOR         DateTime?
+  resolution             String?
+  rotation               String?
+  topStaff               Boolean              @default(false)
   
   // Relations
-  console       Console  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
-  variants      GameVariant[]
-  userCollections UserGameCollection[]
-  reviews       GameReview[]
-  wishlistItems UserWishlist[]
-  
+  genres                 GameGenre[]
+  medias                 GameMedia[]
+  reviews                GameReview[]
+  variants               GameVariant[]
+  console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+  userCollections        UserGameCollection[]
+  wishlistItems          UserWishlist[]
+
   @@map("games")
 }
 
 model GameVariant {
-  id          String    @id @default(cuid())
-  gameId      String
-  name        String    // Ex: "Final Fantasy VII - Greatest Hits", "Zelda Ocarina of Time - Gold Cartridge"
-  region      Region
-  releaseDate DateTime?
-  image       String?
-  rarity      String?   // Common, Uncommon, Rare, Very Rare, Ultra Rare
-  
-  // Variant specific info
-  specialEdition Boolean @default(false)
-  limitedEdition Boolean @default(false)
-  playerChoice   Boolean @default(false)
-  platinumHits   Boolean @default(false)
-  
-  // Market data
+  id              String               @id @default(cuid())
+  gameId          String
+  name            String
+  region          Region
+  releaseDate     DateTime?
+  image           String?
+  rarity          String?
+  specialEdition  Boolean              @default(false)
+  limitedEdition  Boolean              @default(false)
+  playerChoice    Boolean              @default(false)
+  platinumHits    Boolean              @default(false)
   averagePrice    Float?
   priceUpdatedAt  DateTime?
-  
-  game        Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  game            Game                 @relation(fields: [gameId], references: [id], onDelete: Cascade)
   userCollections UserGameCollection[]
-  
+
   @@map("game_variants")
 }
 
-// User Collection models
+model GameGenre {
+  id            String   @id @default(cuid())
+  gameId        String
+  genreId       Int
+  genreName     String
+  genreNameEn   String?
+  isPrimary     Boolean  @default(false)
+  parentGenreId Int?
+  createdAt     DateTime @default(now())
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, genreId])
+  @@map("game_genres")
+}
+
+model GameMedia {
+  id            String   @id @default(cuid())
+  gameId        String
+  mediaType     String
+  region        String
+  format        String
+  url           String
+  localPath     String?
+  fileName      String
+  
+  // Enhanced metadata from Screenscraper API
+  parent        String?  // Parent context (usually "jeu")
+  crc           String?  // CRC checksum
+  md5           String?  // MD5 hash
+  sha1          String?  // SHA1 hash
+  size          String?  // File size as string from API
+  
+  // Parsed metadata
+  width         Int?
+  height        Int?
+  fileSize      Int?     // File size in bytes (parsed from size)
+  
+  // Media type specific attributes
+  isTexture     Boolean  @default(false)
+  is2D          Boolean  @default(true)
+  supportNumber Int?
+  pageNumber    Int?
+  
+  // Processing status
+  downloadAttempted Boolean @default(false) // Whether download was attempted
+  downloadSuccess   Boolean @default(false) // Whether download succeeded
+  downloadError     String? // Error message if download failed
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, mediaType, region, supportNumber, pageNumber])
+  @@map("game_medias")
+}
+
 model UserConsoleCollection {
   id               String           @id @default(cuid())
   userId           String
-  consoleId        String?          // Null si c'est un variant spécifique
+  consoleId        String?
   consoleVariantId String?
-  
-  // Collection details
   status           CollectionStatus @default(OWNED)
   condition        ItemCondition?
   purchaseDate     DateTime?
   purchasePrice    Float?
   currentValue     Float?
-  notes            String?          @db.Text
-  
-  // Physical details
-  isComplete       Boolean          @default(false) // CIB
+  notes            String?
+  isComplete       Boolean          @default(false)
   hasBox           Boolean          @default(false)
   hasManual        Boolean          @default(false)
   hasCables        Boolean          @default(false)
   hasControllers   Boolean          @default(false)
   controllersCount Int              @default(0)
-  
-  // Metadata
   addedAt          DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  
-  // Relations
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   console          Console?         @relation(fields: [consoleId], references: [id], onDelete: Cascade)
   variant          ConsoleVariant?  @relation(fields: [consoleVariantId], references: [id], onDelete: Cascade)
-  
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_console_collections")
 }
 
 model UserGameCollection {
   id            String           @id @default(cuid())
   userId        String
-  gameId        String?          // Null si c'est un variant spécifique
+  gameId        String?
   gameVariantId String?
-  
-  // Collection details
   status        CollectionStatus @default(OWNED)
   condition     ItemCondition?
   purchaseDate  DateTime?
   purchasePrice Float?
   currentValue  Float?
-  notes         String?          @db.Text
-  
-  // Physical details
-  isComplete    Boolean          @default(false) // CIB
+  notes         String?
+  isComplete    Boolean          @default(false)
   hasBox        Boolean          @default(false)
   hasManual     Boolean          @default(false)
-  hasMap        Boolean          @default(false) // Pour les RPG avec carte
-  
-  // Gameplay tracking
+  hasMap        Boolean          @default(false)
   isCompleted   Boolean          @default(false)
   hoursPlayed   Int?
   lastPlayed    DateTime?
-  
-  // Metadata
   addedAt       DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  
-  // Relations
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   game          Game?            @relation(fields: [gameId], references: [id], onDelete: Cascade)
   variant       GameVariant?     @relation(fields: [gameVariantId], references: [id], onDelete: Cascade)
-  
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_game_collections")
 }
 
@@ -326,72 +324,86 @@ model GameReview {
   id        String   @id @default(cuid())
   userId    String
   gameId    String
-  rating    Int      // 1-10 scale
-  comment   String?  @db.Text
-  
-  // Review details
-  graphics  Int?     // 1-10
-  sound     Int?     // 1-10
-  gameplay  Int?     // 1-10
-  story     Int?     // 1-10
-  
+  rating    Int
+  comment   String?
+  graphics  Int?
+  sound     Int?
+  gameplay  Int?
+  story     Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, gameId])
   @@map("game_reviews")
 }
 
-// Collection Statistics
 model UserCollectionStats {
-  id                    String    @id @default(cuid())
-  userId                String    @unique
-  
-  // Console stats
-  totalConsoles         Int       @default(0)
-  totalConsoleValue     Float     @default(0)
-  rareConsoles          Int       @default(0)
-  
-  // Game stats  
-  totalGames            Int       @default(0)
-  totalGameValue        Float     @default(0)
-  completedGames        Int       @default(0)
-  rareGames             Int       @default(0)
-  
-  // Overall stats
-  totalItems            Int       @default(0)
-  totalValue            Float     @default(0)
-  avgCondition          Float?    // Moyenne des conditions
-  
-  // Metadata
-  lastCalculated        DateTime  @default(now())
-  
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  totalConsoles     Int      @default(0)
+  totalConsoleValue Float    @default(0)
+  rareConsoles      Int      @default(0)
+  totalGames        Int      @default(0)
+  totalGameValue    Float    @default(0)
+  completedGames    Int      @default(0)
+  rareGames         Int      @default(0)
+  totalItems        Int      @default(0)
+  totalValue        Float    @default(0)
+  avgCondition      Float?
+  lastCalculated    DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_collection_stats")
 }
 
-// Wishlist
 model UserWishlist {
-  id               String    @id @default(cuid())
+  id               String   @id @default(cuid())
   userId           String
   gameId           String?
   consoleId        String?
   gameVariantId    String?
   consoleVariantId String?
-  
-  priority         Int       @default(1) // 1-5 scale
-  maxPrice         Float?    // Prix maximum accepté
+  priority         Int      @default(1)
+  maxPrice         Float?
   notes            String?
-  
-  createdAt        DateTime  @default(now())
-  
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game             Game?     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  console          Console?  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
-  
+  createdAt        DateTime @default(now())
+  console          Console? @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+  game             Game?    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_wishlists")
+}
+
+enum Region {
+  FR
+  EU
+  WOR
+  JP
+  US
+}
+
+enum ItemCondition {
+  SEALED
+  MINT
+  NEAR_MINT
+  VERY_GOOD
+  GOOD
+  FAIR
+  POOR
+  LOOSE
+  CIB
+  BOXED
+  MANUAL_ONLY
+  CART_ONLY
+  DISC_ONLY
+}
+
+enum CollectionStatus {
+  OWNED
+  WANTED
+  SOLD
+  LOANED
+  FOR_SALE
 }

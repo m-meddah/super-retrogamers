@@ -195,6 +195,204 @@ export async function scrapeFullAction(
   }
 }
 
+// Test specific games by their Screenscraper IDs
+async function testSpecificGamesAction(gameIds: number[], systemId: number): Promise<ScrapingResult> {
+  try {
+    // Récupérer la console
+    const gameConsole = await prisma.console.findFirst({
+      where: { screenscrapeId: systemId }
+    })
+    
+    if (!gameConsole) {
+      return {
+        success: false,
+        error: `Console avec système ID ${systemId} non trouvée`
+      }
+    }
+    
+    let createdCount = 0
+    let processedCount = 0
+    
+    for (const gameId of gameIds) {
+      try {
+        // Vérifier si le jeu existe déjà
+        const existingGame = await prisma.game.findFirst({
+          where: {
+            screenscrapeId: gameId,
+            consoleId: gameConsole.id
+          }
+        })
+        
+        if (existingGame) {
+          console.log(`Jeu ${gameId} déjà existant`)
+          createdCount++
+          processedCount++
+          continue
+        }
+        
+        // Utiliser la fonction getGameDetails existante
+        const { getGameDetails } = await import('@/lib/screenscraper-games')
+        const gameDetails = await getGameDetails(gameId, systemId)
+        
+        if (!gameDetails) {
+          console.log(`❌ Impossible de récupérer les détails du jeu ${gameId}`)
+          processedCount++
+          continue
+        }
+        
+        // Utiliser la fonction createGameFromScreenscraper existante
+        const { createGameFromScreenscraper } = await import('@/lib/screenscraper-games')
+        const createdGame = await createGameFromScreenscraper(gameDetails, gameConsole)
+        
+        if (createdGame) {
+          console.log(`✅ Jeu créé: ${createdGame.title}`)
+          createdCount++
+        } else {
+          console.log(`❌ Échec création du jeu ${gameId}`)
+        }
+        
+        processedCount++
+        
+        // Pause entre les requêtes
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
+      } catch (error) {
+        console.error(`Erreur jeu ${gameId}:`, error)
+        processedCount++
+      }
+    }
+    
+    return {
+      success: true,
+      data: {
+        total: createdCount,
+        imported: createdCount,
+        errors: processedCount - createdCount,
+        errorDetails: [
+          `Jeux traités: ${processedCount}`,
+          `Jeux créés: ${createdCount}`,
+          `Erreurs: ${processedCount - createdCount}`
+        ]
+      }
+    }
+    
+  } catch (error) {
+    console.error('Erreur test jeux spécifiques:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue'
+    }
+  }
+}
+
+// Test enhanced scraping with detailed media info
+export async function testEnhancedScrapingAction(): Promise<ScrapingResult> {
+  try {
+    // Vérifier s'il y a des consoles en base
+    const consolesCount = await prisma.console.count()
+    console.log(`🎮 Consoles en base: ${consolesCount}`)
+    
+    // Si pas de consoles, scraper d'abord les consoles
+    if (consolesCount === 0) {
+      console.log('🔄 Aucune console en base, scraping des consoles...')
+      try {
+        await scrapeConsolesFromScreenscraper()
+        console.log('✅ Scraping des consoles terminé')
+      } catch (error) {
+        console.error('❌ Erreur scraping consoles:', error)
+        return {
+          success: false,
+          error: `Impossible de scraper les consoles: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+        }
+      }
+    }
+    
+    // Compter les médias avant
+    const mediaBefore = await prisma.gameMedia.count()
+    console.log(`📊 Médias avant scraping: ${mediaBefore}`)
+    
+    // Test avec les IDs de jeux de base 1, 2, 3 pour Megadrive
+    // Ces IDs devraient être des vrais jeux selon l'utilisateur
+    console.log('🎮 Test avec des jeux de base Megadrive (IDs: 1, 2, 3)...')
+    const result = await testSpecificGamesAction([1, 2, 3], 1) // IDs de base pour Megadrive
+    
+    if (result.success) {
+      // Compter les médias après
+      const mediaAfter = await prisma.gameMedia.count()
+      const newMedias = mediaAfter - mediaBefore
+      
+      console.log(`📊 Médias après scraping: ${mediaAfter}`)
+      console.log(`📈 Nouveaux médias capturés: ${newMedias}`)
+      
+      // Vérifier les types de médias capturés récemment
+      const recentMedias = await prisma.gameMedia.findMany({
+        select: {
+          mediaType: true,
+          region: true,
+          crc: true,
+          md5: true,
+          sha1: true,
+          downloadSuccess: true,
+          fileName: true,
+          game: {
+            select: {
+              title: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 20
+      })
+      
+      const mediaTypesFound = [...new Set(recentMedias.map(m => m.mediaType))]
+      
+      // Vérifier les jeux récemment ajoutés pour confirmer qu'ils ne sont pas des "notgame"
+      const recentGames = await prisma.game.findMany({
+        select: {
+          title: true,
+          screenscrapeId: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 5
+      })
+      
+      return {
+        success: true,
+        data: {
+          total: mediaAfter,
+          imported: newMedias,
+          errors: 0,
+          errorDetails: [
+            `Médias avant: ${mediaBefore}`,
+            `Médias après: ${mediaAfter}`,
+            `Nouveaux médias: ${newMedias}`,
+            `Types trouvés: ${mediaTypesFound.join(', ')}`,
+            `✅ Jeux valides scrapés (notgame: false):`,
+            ...recentGames.map(g => `  - ${g.title} (ID: ${g.screenscrapeId})`),
+            `📸 Exemples de médias récents:`,
+            ...recentMedias.slice(0, 10).map(m => 
+              `  - ${m.game.title}: ${m.mediaType} (${m.region}) ${m.crc ? '✓CRC' : ''} ${m.downloadSuccess ? '✅' : '❌'}`
+            )
+          ]
+        }
+      }
+    } else {
+      return result
+    }
+    
+  } catch (error) {
+    console.error('Test enhanced scraping error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du test de scraping'
+    }
+  }
+}
+
 // Get scraping status
 export async function getScrapingStatusAction() {
   try {

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Gamepad2, Menu, X, User, LogOut } from "lucide-react"
+import { Gamepad2, Menu, X, User, LogOut, BarChart3 } from "lucide-react"
 import { useState } from "react"
 import { useSession, signOut } from "@/lib/auth-client"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -17,6 +17,7 @@ export default function Header() {
   const navigation = [
     { name: "Accueil", href: "/" },
     { name: "Consoles", href: "/consoles" },
+    { name: "Recherche", href: "/recherche" },
     { name: "Collection", href: "/collection" },
     ...(isAdmin ? [{ name: "Admin", href: "/admin" }] : []),
   ]
@@ -77,6 +78,14 @@ export default function Header() {
                 
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      Mon dashboard
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -146,6 +155,14 @@ export default function Header() {
                       <User className="h-4 w-4" />
                       <span>{session.user.name || session.user.email}</span>
                     </div>
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex w-full items-center gap-2 rounded-lg bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      Mon dashboard
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"

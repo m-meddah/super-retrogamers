@@ -61,6 +61,9 @@ const EXCLUDED_SYSTEM_TYPES = [
   'Accessoire',
   'Flipper',
   'Autres',
+  'Smartphone',
+  'Emulation Arcade',
+  'Arcade', // Exclure les systèmes d'arcade
   'Borne d\'arcade' // Exclure les bornes d'arcade (trop spécialisées pour un site consoles rétro)
 ]
 
@@ -68,7 +71,9 @@ const EXCLUDED_SYSTEM_TYPES = [
 const EXCLUDED_MEDIA_TYPES = [
   'bezels',
   'box3D',
-  'support2D'
+  'support2D',
+  'video',
+  'introvideo',
 ]
 
 // Mots-clés à exclure dans les types de médias
@@ -85,7 +90,7 @@ const EXCLUDED_REGIONS = [
   'cus'
 ]
 
-// Consoles modernes à excluer (8ème génération et +)
+// Consoles modernes à exclure (8ème génération et +)
 // Coupure en 2012 pour inclure la 7ème génération (PS3/Xbox360/Wii)
 const MODERN_CONSOLE_CUTOFF_YEAR = 2012
 
@@ -130,12 +135,6 @@ function generateSlug(name: string): string {
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Remove duplicate hyphens
 }
-
-// Fonction exportée dans screenscraper-games.ts pour éviter la duplication
-// function generateGameSlug(gameTitle: string, consoleSlug: string): string {
-//   const gameSlug = generateSlug(gameTitle)
-//   return `${consoleSlug}-${gameSlug}`
-// }
 
 function getMainName(noms: ScreenscraperSystem['noms']): string {
   // Priorité: nom_eu (Europe), nom_us, puis le premier disponible
@@ -478,3 +477,4 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
     }
   }
 }
+

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { Calendar, Star, Gamepad2, Building, Users } from "lucide-react"
+import { Calendar, Star, Gamepad2, Building, Users, Award } from "lucide-react"
 import { getGameBySlug } from "@/lib/data-prisma"
 
 interface GamePageProps {
@@ -64,10 +64,22 @@ export default async function GamePage({ params }: GamePageProps) {
                         {game.releaseYear}
                       </span>
                     )}
+                    {game.playerCount && (
+                      <span className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {game.playerCount} joueur{game.playerCount.includes('-') || parseInt(game.playerCount) > 1 ? 's' : ''}
+                      </span>
+                    )}
                     {game.genre && (
                       <span className="flex items-center gap-1">
                         <Gamepad2 className="h-4 w-4" />
                         {game.genre}
+                      </span>
+                    )}
+                    {game.topStaff && (
+                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                        <Award className="h-4 w-4" />
+                        TOP Staff
                       </span>
                     )}
                   </div>
@@ -90,6 +102,28 @@ export default async function GamePage({ params }: GamePageProps) {
                 {game.genre && (
                   <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                     {game.genre}
+                  </span>
+                )}
+                
+                {/* ROM flags */}
+                {game.isBestVersion && (
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                    Meilleure version
+                  </span>
+                )}
+                {game.isDemo && (
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                    Demo
+                  </span>
+                )}
+                {game.isBeta && (
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
+                    Beta
+                  </span>
+                )}
+                {game.isTranslated && (
+                  <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
+                    Traduit
                   </span>
                 )}
               </div>

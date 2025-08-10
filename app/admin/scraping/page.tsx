@@ -1,11 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useActionState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Upload, 
   Download, 
@@ -15,9 +20,14 @@ import {
   Database,
   Monitor,
   Gamepad2,
-  Clock
+  Clock,
+  Search,
+  Plus,
+  Edit3,
+  Trash2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction } from "@/lib/actions/admin-scraping-actions"
 
 interface ScrapingStats {
   consolesProcessed: number
@@ -31,7 +41,7 @@ interface ScrapingStats {
 
 export default function ScrapingManagement() {
   const { toast } = useToast()
-  const [scrapingStats, setScrapingStats] = useState<ScrapingStats>({
+  const [scrapingStats] = useState<ScrapingStats>({
     consolesProcessed: 0,
     gamesProcessed: 0,
     mediaDownloaded: 0,
@@ -39,48 +49,16 @@ export default function ScrapingManagement() {
     status: 'idle'
   })
   
-  const [isScrapingConsoles, setIsScrapingConsoles] = useState(false)
   const [isScrapingGames, setIsScrapingGames] = useState(false)
+  const [selectedConsoleSlug, setSelectedConsoleSlug] = useState('')
+  
+  // Server Actions states
+  const [consoleScrapingState, consoleScrapingAction, consoleScrapingPending] = useActionState(scrapeSingleConsoleAction, { success: false })
+  const [gameScrapingState, gameScrapingAction, gameScrapingPending] = useActionState(scrapeSingleGameAction, { success: false })
+  const [addConsoleState, addConsoleAction, addConsolePending] = useActionState(addConsoleManuallyAction, { success: false })
+  const [isScrapingAll, setIsScrapingAll] = useState(false)
+  const [isScrapingLimited, setIsScrapingLimited] = useState(false)
 
-  const startConsoleScraping = async (limited: boolean = false) => {
-    setIsScrapingConsoles(true)
-    setScrapingStats(prev => ({ ...prev, status: 'running', startTime: new Date() }))
-    
-    try {
-      const endpoint = limited ? '/api/scraping/consoles-limited' : '/api/scraping/consoles'
-      const response = await fetch(endpoint, {
-        method: 'POST',
-      })
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors du scraping')
-      }
-      
-      const result = await response.json()
-      
-      toast({
-        title: "Scraping terminé",
-        description: `${result.consolesProcessed} consoles traitées avec succès`,
-      })
-      
-      setScrapingStats(prev => ({ 
-        ...prev, 
-        status: 'completed',
-        consolesProcessed: result.consolesProcessed,
-        mediaDownloaded: result.mediaDownloaded
-      }))
-      
-    } catch {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors du scraping des consoles",
-        variant: "destructive",
-      })
-      setScrapingStats(prev => ({ ...prev, status: 'error' }))
-    } finally {
-      setIsScrapingConsoles(false)
-    }
-  }
 
   const startGameScraping = async (consoleSlug: string) => {
     setIsScrapingGames(true)
@@ -111,6 +89,113 @@ export default function ScrapingManagement() {
       setIsScrapingGames(false)
     }
   }
+
+  // Gérer les toasts pour les Server Actions
+  if (consoleScrapingState.success && consoleScrapingState.message) {
+    toast({
+      title: "Scraping terminé",
+      description: consoleScrapingState.message,
+    })
+    consoleScrapingState.success = false
+  }
+  
+  if (consoleScrapingState.error) {
+    toast({
+      title: "Erreur",
+      description: consoleScrapingState.error,
+      variant: "destructive",
+    })
+    consoleScrapingState.error = undefined
+  }
+  
+  if (gameScrapingState.success && gameScrapingState.message) {
+    toast({
+      title: "Scraping terminé",
+      description: gameScrapingState.message,
+    })
+    gameScrapingState.success = false
+  }
+  
+  if (gameScrapingState.error) {
+    toast({
+      title: "Erreur",
+      description: gameScrapingState.error,
+      variant: "destructive",
+    })
+    gameScrapingState.error = undefined
+  }
+  
+  if (addConsoleState.success && addConsoleState.message) {
+    toast({
+      title: "Console ajoutée",
+      description: addConsoleState.message,
+    })
+    addConsoleState.success = false
+  }
+  
+  if (addConsoleState.error) {
+    toast({
+      title: "Erreur",
+      description: addConsoleState.error,
+      variant: "destructive",
+    })
+    addConsoleState.error = undefined
+  }
+  
+  const handleScrapeAll = async () => {
+    setIsScrapingAll(true)
+    try {
+      const result = await scrapeAllConsolesAction()
+      if (result.success && result.message) {
+        toast({
+          title: "Scraping terminé",
+          description: result.message,
+        })
+      } else if (result.error) {
+        toast({
+          title: "Erreur",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Erreur inattendue lors du scraping",
+        variant: "destructive",
+      })
+    } finally {
+      setIsScrapingAll(false)
+    }
+  }
+
+  const handleScrapeLimited = async () => {
+    setIsScrapingLimited(true)
+    try {
+      const result = await scrapeLimitedConsolesAction()
+      if (result.success && result.message) {
+        toast({
+          title: "Scraping terminé",
+          description: result.message,
+        })
+      } else if (result.error) {
+        toast({
+          title: "Erreur",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Erreur inattendue lors du scraping",
+        variant: "destructive",
+      })
+    } finally {
+      setIsScrapingLimited(false)
+    }
+  }
+
 
   const getStatusIcon = (status: ScrapingStats['status']) => {
     switch (status) {
@@ -144,9 +229,17 @@ export default function ScrapingManagement() {
       <div>
         <h1 className="text-3xl font-bold">Gestion du scraping</h1>
         <p className="text-muted-foreground">
-          Synchronisez le contenu avec l&apos;API Screenscraper.fr
+          Synchronisez le contenu avec l&apos;API Screenscraper.fr et gérez les données
         </p>
       </div>
+
+      <Tabs defaultValue="scraping" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="scraping">Scraping automatique</TabsTrigger>
+          <TabsTrigger value="manual">Gestion manuelle</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="scraping" className="space-y-6">
 
       {/* Status Overview */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -243,11 +336,11 @@ export default function ScrapingManagement() {
 
           <div className="flex space-x-4">
             <Button 
-              onClick={() => startConsoleScraping(false)}
-              disabled={isScrapingConsoles || scrapingStats.status === 'running'}
+              onClick={handleScrapeAll}
+              disabled={isScrapingAll || scrapingStats.status === 'running'}
               className="flex items-center space-x-2"
             >
-              {isScrapingConsoles ? (
+              {isScrapingAll ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Upload className="h-4 w-4" />
@@ -256,12 +349,12 @@ export default function ScrapingManagement() {
             </Button>
 
             <Button 
+              onClick={handleScrapeLimited}
               variant="outline"
-              onClick={() => startConsoleScraping(true)}
-              disabled={isScrapingConsoles || scrapingStats.status === 'running'}
+              disabled={isScrapingLimited || scrapingStats.status === 'running'}
               className="flex items-center space-x-2"
             >
-              {isScrapingConsoles ? (
+              {isScrapingLimited ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Upload className="h-4 w-4" />
@@ -269,6 +362,110 @@ export default function ScrapingManagement() {
               <span>Scraping limité (10 consoles)</span>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Single Console Scraping */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Scraping d&apos;une console spécifique</CardTitle>
+          <CardDescription>
+            Scraper une console particulière en utilisant son ID Screenscraper
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form action={consoleScrapingAction} className="flex space-x-4">
+            <div className="flex-1">
+              <Label htmlFor="consoleId">ID Console Screenscraper</Label>
+              <Input
+                id="consoleId"
+                name="consoleId"
+                placeholder="Ex: 1 (NES), 2 (SNES), 57 (PlayStation)..."
+                type="number"
+                required
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                type="submit"
+                disabled={consoleScrapingPending}
+                className="flex items-center space-x-2"
+              >
+                {consoleScrapingPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+                <span>Scraper cette console</span>
+              </Button>
+            </div>
+          </form>
+          
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>IDs populaires</AlertTitle>
+            <AlertDescription>
+              NES: 1, SNES: 2, Game Boy: 9, PlayStation: 57, Nintendo 64: 14, Game Gear: 21
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Single Game Scraping */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Scraping d&apos;un jeu spécifique</CardTitle>
+          <CardDescription>
+            Scraper un jeu particulier en utilisant son ID Screenscraper et l&apos;ID de sa console
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form action={gameScrapingAction} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="consoleId">ID Console Screenscraper</Label>
+                <Input
+                  id="consoleId"
+                  name="consoleId"
+                  placeholder="Ex: 1 (NES), 57 (PlayStation)..."
+                  type="number"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="gameId">ID Jeu Screenscraper</Label>
+                <Input
+                  id="gameId"
+                  name="gameId"
+                  placeholder="Ex: 1 (Super Mario Bros)..."
+                  type="number"
+                  required
+                />
+              </div>
+            </div>
+            
+            <Button 
+              type="submit"
+              disabled={gameScrapingPending}
+              className="flex items-center space-x-2"
+            >
+              {gameScrapingPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Gamepad2 className="h-4 w-4" />
+              )}
+              <span>Scraper ce jeu</span>
+            </Button>
+          </form>
+          
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Comment trouver les IDs</AlertTitle>
+            <AlertDescription>
+              Rendez-vous sur screenscraper.fr, recherchez votre jeu et regardez l&apos;URL : 
+              .../gameinfos.php?gameid=<strong>123</strong>&amp;platformid=<strong>1</strong>
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
 
@@ -344,6 +541,115 @@ export default function ScrapingManagement() {
           </Alert>
         </CardContent>
       </Card>
+        </TabsContent>
+        
+        <TabsContent value="manual" className="space-y-6">
+          {/* Manual Console Addition */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ajouter une console manuellement</CardTitle>
+              <CardDescription>
+                Créez une nouvelle console sans passer par l&apos;API Screenscraper
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form action={addConsoleAction} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Nom de la console</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="Ex: Nintendo Entertainment System"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    placeholder="Description détaillée de la console..."
+                    rows={4}
+                  />
+                </div>
+                
+                <Button 
+                  type="submit"
+                  disabled={addConsolePending}
+                  className="flex items-center space-x-2"
+                >
+                  {addConsolePending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  <span>Ajouter la console</span>
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Data Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gestion des données</CardTitle>
+              <CardDescription>
+                Outils pour modifier et supprimer des données existantes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="editConsole">Console à modifier</Label>
+                  <Select value={selectedConsoleSlug} onValueChange={setSelectedConsoleSlug}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une console" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nes">Nintendo Entertainment System</SelectItem>
+                      <SelectItem value="snes">Super Nintendo</SelectItem>
+                      <SelectItem value="playstation">PlayStation</SelectItem>
+                      <SelectItem value="gameboy">Game Boy</SelectItem>
+                      <SelectItem value="neo-geo">Neo Geo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2 flex flex-col justify-end">
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline"
+                      disabled={!selectedConsoleSlug}
+                      className="flex items-center space-x-2"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                      <span>Modifier</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="destructive"
+                      disabled={!selectedConsoleSlug}
+                      className="flex items-center space-x-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Supprimer</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Attention</AlertTitle>
+                <AlertDescription>
+                  La suppression d&apos;une console supprimera également tous ses jeux associés. Cette action est irréversible.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

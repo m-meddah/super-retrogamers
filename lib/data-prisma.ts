@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, ConsoleMedia } from "@prisma/client"
+import type { Console, Game, ConsoleMedia, GameMedia, GameGenre } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -15,6 +15,8 @@ export type ConsoleWithMedias = Console & {
 
 export type GameWithConsole = Game & {
   console: Console
+  medias?: GameMedia[]
+  genres?: GameGenre[]
 }
 
 // Fonctions pour récupérer les consoles
@@ -83,7 +85,16 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
   return await prisma.game.findUnique({
     where: { slug },
     include: {
-      console: true
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      },
+      genres: {
+        orderBy: { isPrimary: 'desc' }
+      }
     }
   })
 }
@@ -727,4 +738,154 @@ export async function getUserManagementData() {
   })
 
   return users
+}
+
+// ================================
+// USER DASHBOARD FUNCTIONS
+// ================================
+
+export interface UserStats {
+  gamesOwned: number
+  consolesOwned: number
+  wishlistCount: number
+  collectionValue: number
+  totalPurchasePrice: number
+  completedGames: number
+  averageRating: number
+}
+
+export async function getUserStats(userId: string): Promise<UserStats> {
+  const [
+    gamesOwned,
+    consolesOwned,
+    wishlistCount,
+    collectionValueResult,
+    completedGames,
+    averageRatingResult
+  ] = await Promise.all([
+    prisma.userGameCollection.count({
+      where: { userId }
+    }),
+    prisma.userConsoleCollection.count({
+      where: { userId }
+    }),
+    prisma.userWishlist.count({
+      where: { userId }
+    }),
+    prisma.userConsoleCollection.aggregate({
+      where: { userId },
+      _sum: {
+        currentValue: true,
+        purchasePrice: true
+      }
+    }),
+    prisma.userGameCollection.count({
+      where: { 
+        userId,
+        isCompleted: true
+      }
+    }),
+    prisma.gameReview.aggregate({
+      where: { userId },
+      _avg: {
+        rating: true
+      }
+    })
+  ])
+
+  return {
+    gamesOwned,
+    consolesOwned,
+    wishlistCount,
+    collectionValue: collectionValueResult._sum.currentValue || 0,
+    totalPurchasePrice: collectionValueResult._sum.purchasePrice || 0,
+    completedGames,
+    averageRating: averageRatingResult._avg.rating || 0
+  }
+}
+
+export interface UserActivity {
+  action: string
+  date: string
+  itemName?: string
+}
+
+export async function getUserRecentActivity(userId: string): Promise<UserActivity[]> {
+  const [recentCollections, recentReviews, recentWishlist] = await Promise.all([
+    prisma.userConsoleCollection.findMany({
+      where: { userId },
+      take: 3,
+      orderBy: { addedAt: 'desc' },
+      include: {
+        console: {
+          select: { name: true }
+        },
+        variant: {
+          select: { region: true }
+        }
+      }
+    }),
+    prisma.gameReview.findMany({
+      where: { userId },
+      take: 3,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        game: {
+          select: { title: true }
+        }
+      }
+    }),
+    prisma.userWishlist.findMany({
+      where: { userId },
+      take: 2,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        console: {
+          select: { name: true }
+        },
+        game: {
+          select: { title: true }
+        }
+      }
+    })
+  ])
+
+  const activities: UserActivity[] = []
+
+  // Ajouter les collections récentes
+  recentCollections.forEach(collection => {
+    if (collection.console) {
+      activities.push({
+        action: `Ajout à la collection: ${collection.console.name} (${collection.variant?.region || 'N/A'})`,
+        date: collection.addedAt.toLocaleDateString('fr-FR'),
+        itemName: collection.console.name
+      })
+    }
+  })
+
+  // Ajouter les reviews récentes
+  recentReviews.forEach(review => {
+    if (review.game) {
+      activities.push({
+        action: `Évaluation de ${review.game.title} (${review.rating}/5)`,
+        date: review.createdAt.toLocaleDateString('fr-FR'),
+        itemName: review.game.title
+      })
+    }
+  })
+
+  // Ajouter les wishlist récentes
+  recentWishlist.forEach(wish => {
+    const itemName = wish.console?.name || wish.game?.title || 'Inconnu'
+    activities.push({
+      action: `Ajout à la wishlist: ${itemName}`,
+      date: wish.createdAt.toLocaleDateString('fr-FR'),
+      itemName
+    })
+  })
+
+  // Trier par date décroissante et limiter à 10
+  return activities
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10)
 }
