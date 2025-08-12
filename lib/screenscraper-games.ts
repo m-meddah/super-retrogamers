@@ -794,6 +794,27 @@ export async function createGameFromScreenscraper(
     // Process media files
     if (gameDetails.medias) {
       await processGameMedias(createdGame.id, gameDetails.medias, finalSlug, gameConsole.slug)
+      
+      // Mettre à jour l'image principale du jeu après traitement des médias
+      const bestMedia = await prisma.gameMedia.findFirst({
+        where: {
+          gameId: createdGame.id,
+          localPath: { not: null },
+          mediaType: { in: ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss'] }
+        },
+        orderBy: [
+          { mediaType: 'asc' }, // Ordre de priorité: box-2D d'abord
+          { region: 'asc' }
+        ]
+      })
+      
+      if (bestMedia?.localPath) {
+        await prisma.game.update({
+          where: { id: createdGame.id },
+          data: { image: bestMedia.localPath }
+        })
+        console.log(`📸 Image principale définie: ${bestMedia.localPath}`)
+      }
     }
     
     return createdGame

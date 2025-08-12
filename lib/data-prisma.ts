@@ -315,7 +315,13 @@ export async function getTopRatedGames(limit: number = 6): Promise<GameWithConso
       }
     },
     include: {
-      console: true
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      }
     },
     orderBy: {
       rating: 'desc'
@@ -327,7 +333,13 @@ export async function getRecentlyAddedGames(limit: number = 6): Promise<GameWith
   return await prisma.game.findMany({
     take: limit,
     include: {
-      console: true
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      }
     },
     orderBy: {
       createdAt: 'desc'
