@@ -1,11 +1,8 @@
-'use client'
-
 import Link from "next/link"
 import Image from "next/image"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
 import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
-import { useCurrentRegion } from "@/lib/hooks/use-regional-preferences"
 
 interface GameWithConsole extends Game {
   console?: {
@@ -44,6 +41,7 @@ interface SearchGameResult {
 interface GameCardProps {
   game: GameWithConsole | SearchGameResult
   showConsole?: boolean
+  preferredRegion?: string
 }
 
 // Function to get the best available image for the game card
@@ -83,10 +81,7 @@ function getBestGameImage(game: GameWithConsole | SearchGameResult, preferredReg
   return firstMedia?.localPath || game.image || "/placeholder.svg"
 }
 
-export default function GameCard({ game, showConsole = true }: GameCardProps) {
-  const region = useCurrentRegion()
-  const preferredRegion = region.toLowerCase()
-  
+export default function GameCard({ game, showConsole = true, preferredRegion = 'fr' }: GameCardProps) {
   const imageUrl = getBestGameImage(game, preferredRegion)
   const isScreenscraperResult = game.slug.startsWith('screenscraper-')
   

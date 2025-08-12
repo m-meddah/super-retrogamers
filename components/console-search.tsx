@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { Search, X } from "lucide-react"
-import ConsoleCard from "@/components/console-card"
+import ConsoleCardWrapper from "@/components/console-card-wrapper"
 import type { Console } from "@prisma/client"
 
 interface ConsoleSearchProps {
@@ -72,7 +72,7 @@ export default function ConsoleSearch({ consoles }: ConsoleSearchProps) {
       {filteredConsoles.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredConsoles.map((console) => (
-            <ConsoleCard key={console.id} console={console} />
+            <ConsoleCardWrapper key={console.id} console={console} />
           ))}
         </div>
       ) : (

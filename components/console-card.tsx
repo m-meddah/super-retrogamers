@@ -1,10 +1,7 @@
-'use client'
-
 import Link from "next/link"
 import Image from "next/image"
 import type { Console, ConsoleMedia } from "@prisma/client"
 import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
-import { useCurrentRegion } from "@/lib/hooks/use-regional-preferences"
 
 interface ConsoleWithMedias extends Console {
   medias?: ConsoleMedia[]
@@ -12,6 +9,7 @@ interface ConsoleWithMedias extends Console {
 
 interface ConsoleCardProps {
   console: ConsoleWithMedias
+  preferredRegion?: string
 }
 
 // Function to get the best available image for the console card
@@ -57,10 +55,7 @@ function getBestConsoleImage(console: ConsoleWithMedias, preferredRegion: string
   return firstMedia?.localPath || "/placeholder.svg"
 }
 
-export default function ConsoleCard({ console }: ConsoleCardProps) {
-  const region = useCurrentRegion()
-  const preferredRegion = region.toLowerCase()
-  
+export default function ConsoleCard({ console, preferredRegion = 'fr' }: ConsoleCardProps) {
   const imageUrl = getBestConsoleImage(console, preferredRegion)
   
   return (

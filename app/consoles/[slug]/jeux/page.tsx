@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Gamepad2 } from "lucide-react"
 import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo } from "@/lib/data-prisma"
-import GameCard from "@/components/game-card"
+import GameCardWrapper from "@/components/game-card-wrapper"
 
 interface ConsoleGamesPageProps {
   params: Promise<{
@@ -55,7 +55,7 @@ export default async function ConsoleGamesPage({ params }: ConsoleGamesPageProps
         {games.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {games.map((game) => (
-              <GameCard key={game.id} game={game} showConsole={false} />
+              <GameCardWrapper key={game.id} game={game} showConsole={false} />
             ))}
           </div>
         ) : (

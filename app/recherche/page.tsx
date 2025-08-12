@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, Suspense } from 'react'
 import { Search, Filter, X } from 'lucide-react'
-import GameCard from '@/components/game-card'
+import GameCardWrapper from '@/components/game-card-wrapper'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -311,7 +311,7 @@ function SearchContent() {
         {results.games.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {results.games.map((game) => (
-              <GameCard key={game.id} game={game} />
+              <GameCardWrapper key={game.id} game={game} />
             ))}
           </div>
         ) : !loading && (

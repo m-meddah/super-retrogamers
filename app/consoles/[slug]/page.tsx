@@ -3,7 +3,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
 import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo } from "@/lib/data-prisma"
-import GameCard from "@/components/game-card"
+import GameCardWrapper from "@/components/game-card-wrapper"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
 
@@ -168,7 +168,7 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
           {games.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {games.slice(0, 4).map((game) => (
-                <GameCard key={game.id} game={game} showConsole={false} />
+                <GameCardWrapper key={game.id} game={game} showConsole={false} />
               ))}
             </div>
           ) : (

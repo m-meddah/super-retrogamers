@@ -49,7 +49,22 @@ interface ScreenscraperSystem {
   noms?: Record<string, string>
   compagnie?: string
   datedebut?: string
-  medias?: Array<{ type: string; url: string }>
+  type?: string
+  medias?: Array<{
+    type: string
+    url: string
+    region: string
+    format: string
+  }>
+}
+
+interface ProcessedMedia {
+  type: string
+  region: string
+  url: string
+  format: string
+  fileName: string
+  localPath: string
 }
 
 interface ScreenscraperResponse {
@@ -102,21 +117,62 @@ export class ScreenscraperService {
       ? parseInt(system.datedebut) 
       : null
     
-    // Créer la console
-    await prisma.console.create({
+    // Traiter les médias AVANT de créer la console
+    console.log(`Traitement des médias pour ${mainName}...`)
+    const processedMedias = await this.processSystemMedias(system, slug)
+    
+    // Sélectionner l'image principale parmi les médias traités
+    let mainImagePath: string | null = null
+    if (processedMedias.length > 0) {
+      const priorityOrder = ['logo-svg', 'wheel', 'photo', 'illustration']
+      for (const priority of priorityOrder) {
+        const media = processedMedias.find(m => m.type === priority)
+        if (media) {
+          mainImagePath = media.localPath
+          break
+        }
+      }
+      
+      if (!mainImagePath && processedMedias.length > 0) {
+        mainImagePath = processedMedias[0].localPath
+      }
+    }
+    
+    // Créer la console avec l'image principale
+    const createdConsole = await prisma.console.create({
       data: {
         name: mainName,
         slug,
-        description: `Console de jeu ${mainName}`,
+        description: `Console ${mainName} développée par ${manufacturer}. Type: ${system.type || 'Console'}.`,
         manufacturer,
         releaseYear,
         screenscrapeId: system.id,
+        image: mainImagePath,
       }
     })
     
+    // Sauvegarder tous les médias en base de données
+    if (processedMedias.length > 0) {
+      const mediaData = processedMedias.map(media => ({
+        consoleId: createdConsole.id,
+        type: media.type,
+        region: media.region,
+        url: media.url,
+        localPath: media.localPath,
+        format: media.format,
+        fileName: media.fileName
+      }))
+      
+      await prisma.consoleMedia.createMany({
+        data: mediaData
+      })
+      
+      console.log(`✅ ${processedMedias.length} médias sauvegardés pour ${mainName}`)
+    }
+    
     return { 
       name: mainName, 
-      mediaCount: system.medias?.length || 0
+      mediaCount: processedMedias.length
     }
   }
 
@@ -203,6 +259,97 @@ export class ScreenscraperService {
     return { 
       name: createdGame.title, 
       mediaCount: 0  // TODO: compter les médias réels
+    }
+  }
+
+  // Méthodes pour traiter les médias
+  async processSystemMedias(system: ScreenscraperSystem, slug: string): Promise<ProcessedMedia[]> {
+    if (!system?.medias) {
+      console.log(`Aucun média trouvé pour le système ${system.id}`)
+      return []
+    }
+    
+    const processedMedias: ProcessedMedia[] = []
+    
+    console.log(`Traitement de ${system.medias.length} médias pour ${slug}`)
+    
+    for (const media of system.medias) {
+      if (this.shouldExcludeMedia(media)) {
+        console.log(`Média exclu: ${media.type} (${media.region})`)
+        continue
+      }
+      
+      try {
+        const extension = media.format || 'png'
+        const fileName = `${system.id}_${media.type}_${media.region}.${extension}`
+        const localPath = await this.downloadMediaWithStructure(media.url, fileName, slug, media.type, media.region)
+        
+        if (localPath) {
+          const safeRegion = media.region && media.region.trim() ? media.region.trim() : 'unknown'
+          processedMedias.push({
+            type: media.type,
+            region: safeRegion,
+            url: media.url,
+            format: extension,
+            fileName,
+            localPath
+          })
+          console.log(`Média téléchargé: ${media.type} (${safeRegion})`)
+        }
+      } catch (error) {
+        console.error(`Erreur lors du téléchargement du média ${media.type}:`, error)
+      }
+    }
+    
+    return processedMedias
+  }
+
+  shouldExcludeMedia(media: { type: string; url: string; region: string; format: string }): boolean {
+    const excludedTypes = ['box3D', 'support2D']
+    return excludedTypes.includes(media.type)
+  }
+
+  async downloadMediaWithStructure(
+    url: string, 
+    fileName: string, 
+    slug: string, 
+    mediaType: string, 
+    region: string
+  ): Promise<string | null> {
+    try {
+      const fs = await import('fs/promises')
+      const path = await import('path')
+      
+      // Gérer les régions undefined ou vides
+      const safeRegion = region && region.trim() ? region.trim() : 'unknown'
+      
+      // Créer la structure de dossiers : public/consoles/[slug]/[mediaType]/[region]/
+      const consolesDir = path.join(process.cwd(), 'public', 'consoles')
+      const consoleDir = path.join(consolesDir, slug)
+      const mediaTypeDir = path.join(consoleDir, mediaType)
+      const regionDir = path.join(mediaTypeDir, safeRegion)
+      
+      // Créer tous les dossiers nécessaires
+      await fs.mkdir(regionDir, { recursive: true })
+      
+      const response = await rateLimitedFetch(url)
+      if (!response.ok) {
+        console.error(`Erreur lors du téléchargement de l'image ${url}: ${response.status}`)
+        return null
+      }
+      
+      const arrayBuffer = await response.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      const filePath = path.join(regionDir, fileName)
+      await fs.writeFile(filePath, buffer)
+      
+      // Retourner le chemin relatif depuis public/
+      return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
+      
+    } catch (error) {
+      console.error(`Erreur lors du téléchargement de l'image ${url}:`, error)
+      return null
     }
   }
 }
