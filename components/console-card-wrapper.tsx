@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import Link from "next/link"
 import Image from "next/image"
 import type { Console, ConsoleMedia } from "@prisma/client"
-import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
+import { selectBestConsoleImage } from "@/lib/regional-preferences"
 
 interface ConsoleWithMedias extends Console {
   medias?: ConsoleMedia[]
@@ -12,53 +12,31 @@ interface ConsoleWithMedias extends Console {
 
 interface ConsoleCardWrapperProps {
   console: ConsoleWithMedias
+  preferredRegion?: string
 }
 
-// Function to get the best available image for the console card
-function getBestConsoleImage(console: ConsoleWithMedias, preferredRegion: string = 'fr'): string {
-  // Si une image principale existe déjà, la prioriser
-  if (console.image) return console.image
-
-  if (!console.medias || console.medias.length === 0) {
-    return "/placeholder.svg"
+export default function ConsoleCardWrapper({ console, preferredRegion = 'fr' }: ConsoleCardWrapperProps) {
+  // Transformer la console en format RegionalConsoleData pour la fonction selectBestConsoleImage
+  const regionalConsole = {
+    id: console.id,
+    name: console.name,
+    slug: console.slug,
+    manufacturer: console.manufacturer,
+    releaseYear: console.releaseYear,
+    description: console.description || '',
+    image: console.image,
+    medias: (console.medias || []).map(media => ({
+      id: media.id,
+      type: media.type,
+      region: media.region,
+      url: media.url,
+      localPath: media.localPath,
+      format: media.format,
+      fileName: media.fileName
+    }))
   }
   
-  // Types d'images par ordre de priorité pour les consoles
-  const imageTypePriority = ['logo-svg', 'wheel', 'photo', 'illustration']
-  // Use centralized regional preferences (with 'ss' last)
-  const regionPriority = getRegionPriorityLowercase(preferredRegion)
-  
-  for (const imageType of imageTypePriority) {
-    // Filtrer par type de média
-    const mediasOfType = console.medias.filter(m => m.type === imageType)
-    
-    if (mediasOfType.length === 0) continue
-    
-    // Try each priority region for this type
-    for (const region of regionPriority) {
-      const media = mediasOfType.find(m => 
-        m.region.toLowerCase() === region && 
-        m.localPath
-      )
-      if (media?.localPath) {
-        return media.localPath
-      }
-    }
-    
-    // If no priority region found, take first available for this type
-    const media = mediasOfType.find(m => m.localPath)
-    if (media?.localPath) {
-      return media.localPath
-    }
-  }
-  
-  // Fallback to first available media or placeholder
-  const firstMedia = console.medias.find(m => m.localPath)
-  return firstMedia?.localPath || "/placeholder.svg"
-}
-
-export default function ConsoleCardWrapper({ console }: ConsoleCardWrapperProps) {
-  const imageUrl = getBestConsoleImage(console, 'fr')
+  const imageUrl = selectBestConsoleImage(regionalConsole, preferredRegion) || "/placeholder.svg"
   
   return (
     <Suspense fallback={

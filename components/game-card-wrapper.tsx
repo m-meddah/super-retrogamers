@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
-import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
+import { selectBestGameImage } from "@/lib/regional-preferences"
 
 interface GameWithConsole extends Game {
   console?: {
@@ -44,47 +44,37 @@ interface SearchGameResult {
 interface GameCardWrapperProps {
   game: GameWithConsole | SearchGameResult
   showConsole?: boolean
+  preferredRegion?: string
 }
 
-// Function to get the best available image for the game card
-function getBestGameImage(game: GameWithConsole | SearchGameResult, preferredRegion: string = 'fr'): string {
-  if (!game.medias || game.medias.length === 0) {
-    return game.image || "/placeholder.svg"
-  }
-  
-  // Priority order for game card images
-  const priorityTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
-  // Use centralized regional preferences (with 'ss' last)
-  const priorityRegions = getRegionPriorityLowercase(preferredRegion)
-  
-  // Try each priority type
-  for (const type of priorityTypes) {
-    // Try each priority region for this type
-    for (const region of priorityRegions) {
-      const media = game.medias.find(m => 
-        m.mediaType === type && 
-        m.region.toLowerCase() === region && 
-        m.localPath
-      )
-      if (media?.localPath) {
-        return media.localPath
-      }
-    }
-    
-    // If no priority region found, take any region for this type
-    const media = game.medias.find(m => m.mediaType === type && m.localPath)
-    if (media?.localPath) {
-      return media.localPath
-    }
-  }
-  
-  // Fallback to first available media or placeholder
-  const firstMedia = game.medias.find(m => m.localPath)
-  return firstMedia?.localPath || game.image || "/placeholder.svg"
-}
 
-export default function GameCardWrapper({ game, showConsole = true }: GameCardWrapperProps) {
-  const imageUrl = getBestGameImage(game, 'fr')
+export default function GameCardWrapper({ game, showConsole = true, preferredRegion = 'fr' }: GameCardWrapperProps) {
+  // Transformer le jeu en format RegionalGameData pour la fonction selectBestGameImage
+  const regionalGame = {
+    id: game.id,
+    title: game.title,
+    slug: game.slug,
+    consoleId: game.console?.slug || '',
+    releaseYear: game.releaseYear,
+    description: 'description' in game ? game.description || null : null,
+    image: game.image,
+    medias: (game.medias || []).map(media => ({
+      id: `${media.mediaType}-${media.region}`,
+      mediaType: media.mediaType,
+      region: media.region,
+      url: media.localPath || '',
+      localPath: media.localPath,
+      fileName: media.localPath ? media.localPath.split('/').pop() || '' : ''
+    })),
+    // Dates régionales (à implémenter si nécessaire)
+    releaseDateEU: null,
+    releaseDateFR: null,
+    releaseDateJP: null,
+    releaseDateUS: null,
+    releaseDateWOR: null
+  }
+  
+  const imageUrl = selectBestGameImage(regionalGame, preferredRegion) || "/placeholder.svg"
   const isScreenscraperResult = game.slug.startsWith('screenscraper-')
   
   // Générer le slug composé pour les liens

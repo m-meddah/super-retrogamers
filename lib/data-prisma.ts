@@ -239,8 +239,8 @@ export async function getFeaturedConsoles(limit: number = 3): Promise<ConsoleWit
 }
 
 // Fonction pour récupérer des consoles spécifiques pour la homepage
-export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
-  const featuredConsoles: Console[] = []
+export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]> {
+  const featuredConsoles: ConsoleWithMedias[] = []
   
   // Rechercher les consoles spécifiques par critères précis
   const consoleQueries = await Promise.all([
@@ -253,6 +253,9 @@ export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
           { name: { contains: 'Neo Geo', mode: 'insensitive' } },
           { name: { contains: 'NeoGeo', mode: 'insensitive' } }
         ]
+      },
+      include: {
+        medias: true
       }
     }),
     
@@ -265,6 +268,9 @@ export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
           { slug: { contains: 'snes', mode: 'insensitive' } },
           { slug: { contains: 'super-nintendo', mode: 'insensitive' } }
         ]
+      },
+      include: {
+        medias: true
       }
     }),
     
@@ -285,6 +291,9 @@ export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
             }
           }
         ]
+      },
+      include: {
+        medias: true
       }
     })
   ])

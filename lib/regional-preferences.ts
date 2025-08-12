@@ -1,20 +1,21 @@
 import { Region } from '@prisma/client'
 
 // Ordre de préférence par défaut (ss en dernier comme région screenscraper)
-const DEFAULT_REGION_PRIORITY = ['FR', 'EU', 'WOR', 'JP', 'US', 'ss'] as const
+const DEFAULT_REGION_PRIORITY = ['FR', 'EU', 'WOR', 'JP', 'ASI', 'US', 'ss'] as const
 
 // Ordres de préférence selon la région choisie (ss toujours en dernier)
 const REGION_PRIORITIES = {
-  FR: ['FR', 'EU', 'WOR', 'JP', 'US', 'ss'],
-  EU: ['EU', 'FR', 'WOR', 'JP', 'US', 'ss'],
-  WOR: ['WOR', 'EU', 'FR', 'JP', 'US', 'ss'],
-  JP: ['JP', 'WOR', 'EU', 'FR', 'US', 'ss'],
-  US: ['US', 'WOR', 'EU', 'FR', 'JP', 'ss'],
-  ss: ['ss', 'WOR', 'EU', 'FR', 'JP', 'US'] // Si ss est sélectionné, le prioriser mais garder les autres
+  FR: ['FR', 'EU', 'WOR', 'JP', 'ASI', 'US', 'ss'],
+  EU: ['EU', 'FR', 'WOR', 'JP', 'ASI', 'US', 'ss'],
+  WOR: ['WOR', 'EU', 'FR', 'JP', 'ASI', 'US', 'ss'],
+  JP: ['JP', 'ASI', 'WOR', 'EU', 'FR', 'US', 'ss'],
+  ASI: ['ASI', 'JP', 'WOR', 'EU', 'FR', 'US', 'ss'],
+  US: ['US', 'WOR', 'EU', 'FR', 'JP', 'ASI', 'ss'],
+  ss: ['ss', 'WOR', 'EU', 'FR', 'JP', 'ASI', 'US'] // Si ss est sélectionné, le prioriser mais garder les autres
 } as const
 
-// Type pour les régions supportées (incluant ss)
-export type SupportedRegion = 'FR' | 'EU' | 'WOR' | 'JP' | 'US' | 'ss'
+// Type pour les régions supportées (incluant ss et asi)
+export type SupportedRegion = 'FR' | 'EU' | 'WOR' | 'JP' | 'ASI' | 'US' | 'ss'
 
 // Mapping des régions Prisma vers nos types
 export const REGION_MAPPING = {
@@ -22,6 +23,7 @@ export const REGION_MAPPING = {
   'eu': 'EU', 
   'wor': 'WOR',
   'jp': 'JP',
+  'asi': 'ASI',
   'us': 'US',
   'ss': 'ss'
 } as const
