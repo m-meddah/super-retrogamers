@@ -89,7 +89,8 @@ const EXCLUDED_MEDIA_KEYWORDS = [
 
 // Régions à exclure
 const EXCLUDED_REGIONS = [
-  'cus'
+  'cus',
+  'br'
 ]
 
 // Consoles modernes à exclure (8ème génération et +)

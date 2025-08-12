@@ -305,17 +305,44 @@ export class ScreenscraperService {
   }
 
   shouldExcludeMedia(media: { type: string; url: string; region: string; format: string }): boolean {
+    // Types de médias à exclure (correspondance exacte)
     const excludedTypes = [
       'box3D', 
       'support2D',
-      'controls',
-      'gabarit', 
-      'vierge', 
-      'bezel',
-      'video', 
+      'gabarit',
       'steam-grid'
     ]
-    return excludedTypes.includes(media.type)
+    
+    // Mots-clés à exclure dans les types de médias (correspondance partielle)
+    const excludedKeywords = [
+      'vierge',
+      'controls',
+      'bezel',
+      'video'
+    ]
+    
+    // Régions à exclure
+    const excludedRegions = [
+      'cus',
+      'br'
+    ]
+    
+    // Vérifier les types exacts
+    if (excludedTypes.includes(media.type)) {
+      return true
+    }
+    
+    // Vérifier les mots-clés contenus dans le type
+    if (excludedKeywords.some(keyword => media.type.toLowerCase().includes(keyword))) {
+      return true
+    }
+    
+    // Vérifier les régions exclues
+    if (media.region && excludedRegions.includes(media.region.toLowerCase())) {
+      return true
+    }
+    
+    return false
   }
 
   async downloadMediaWithStructure(
