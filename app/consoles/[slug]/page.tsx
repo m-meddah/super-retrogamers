@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
-import { getConsoleBySlug, getGamesByConsole } from "@/lib/data-prisma"
+import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo } from "@/lib/data-prisma"
 import GameCard from "@/components/game-card"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
@@ -21,7 +21,7 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
     notFound()
   }
 
-  const games = await getGamesByConsole(console.slug)
+  const games = await getGamesByConsoleWithConsoleInfo(console.slug)
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
