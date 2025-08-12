@@ -6,6 +6,7 @@ import { Gamepad2, Menu, X, User, LogOut, BarChart3 } from "lucide-react"
 import { useState } from "react"
 import { useSession, signOut } from "@/lib/auth-client"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { CompactRegionSelector } from "@/components/region-selector"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -65,6 +66,7 @@ export default function Header() {
 
           {/* Desktop Auth Section */}
           <div className="hidden md:flex items-center gap-3">
+            <CompactRegionSelector />
             <ThemeToggle />
             {isPending ? (
               <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
@@ -139,13 +141,21 @@ export default function Header() {
               
               {/* Mobile Auth Section */}
               <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
-                {/* Theme toggle for mobile */}
+                {/* Region selector for mobile */}
                 <div className="px-4 pb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Thème
-                    </span>
-                    <ThemeToggle />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Région
+                      </span>
+                      <CompactRegionSelector />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Thème
+                      </span>
+                      <ThemeToggle />
+                    </div>
                   </div>
                 </div>
                 

@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { Suspense } from "react"
 import "./globals.css"
 import Header from "@/components/header"
 import AuthProvider from "@/components/auth-provider"
@@ -29,7 +30,9 @@ export default function RootLayout({
         >
           <NuqsAdapter>
             <AuthProvider>
-              <Header />
+              <Suspense fallback={<div className="h-14 bg-white dark:bg-gray-950" />}>
+                <Header />
+              </Suspense>
               <main>{children}</main>
               <Toaster />
             </AuthProvider>

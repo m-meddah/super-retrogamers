@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowRight, Calendar, Trophy, Star, Users, BookOpen, BarChart3 } from "lucide-react"
-import ConsoleCard from "@/components/console-card"
+import ConsoleCardWrapper from "@/components/console-card-wrapper"
 import { getHomepageFeaturedConsoles, getStatsForHomepage } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
 
@@ -113,7 +113,7 @@ export default async function HomePage() {
           
           <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featuredConsoles.map((console) => (
-              <ConsoleCard key={console.id} console={console} />
+              <ConsoleCardWrapper key={console.id} console={console} />
             ))}
           </div>
           
