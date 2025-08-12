@@ -40,6 +40,7 @@ interface SearchGameResult {
 interface GameCardProps {
   game: GameWithConsole | SearchGameResult
   showConsole?: boolean
+  preferredRegion?: string
 }
 
 // Function to get the best available image for the game card
@@ -79,8 +80,8 @@ function getBestGameImage(game: GameWithConsole | SearchGameResult, preferredReg
   return firstMedia?.localPath || game.image || "/placeholder.svg"
 }
 
-export default function GameCard({ game, showConsole = true }: GameCardProps) {
-  const imageUrl = getBestGameImage(game)
+export default function GameCard({ game, showConsole = true, preferredRegion = 'fr' }: GameCardProps) {
+  const imageUrl = getBestGameImage(game, preferredRegion)
   const isScreenscraperResult = game.slug.startsWith('screenscraper-')
   
   const cardContent = (
