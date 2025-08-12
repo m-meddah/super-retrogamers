@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { scrapeConsolesFromScreenscraper } from '@/lib/screenscraper-service'
+import { scrapeConsolesFromScreenscraper, rescrapConsoleMedias } from '@/lib/screenscraper-service'
 import { scrapeGamesForConsole } from '@/lib/screenscraper-games'
 import { prisma } from '@/lib/prisma'
 
@@ -196,6 +196,52 @@ export async function scrapeFullAction(
 }
 
 
+
+// Re-scrape console medias action
+export async function rescrapConsoleMediasAction(
+  prevState: ScrapingResult,
+  formData: FormData
+): Promise<ScrapingResult> {
+  try {
+    const consoleId = formData.get('consoleId') as string
+    
+    if (!consoleId) {
+      return {
+        success: false,
+        error: 'ID console requis'
+      }
+    }
+    
+    const result = await rescrapConsoleMedias(consoleId)
+    
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.message
+      }
+    }
+    
+    // Revalidate pages
+    revalidatePath('/consoles')
+    revalidatePath(`/consoles`)
+    
+    return {
+      success: true,
+      data: {
+        total: result.mediasAdded,
+        imported: result.mediasAdded,
+        errors: 0,
+        errorDetails: [result.message]
+      }
+    }
+  } catch (error) {
+    console.error('Re-scrape console medias error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du re-scraping des médias'
+    }
+  }
+}
 
 // Get scraping status
 export async function getScrapingStatusAction() {

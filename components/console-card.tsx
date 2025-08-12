@@ -1,9 +1,13 @@
 import Link from "next/link"
 import Image from "next/image"
-import type { Console } from "@prisma/client"
+import type { Console, ConsoleMedia } from "@prisma/client"
+
+interface ConsoleWithMedias extends Console {
+  medias?: ConsoleMedia[]
+}
 
 interface ConsoleCardProps {
-  console: Console
+  console: ConsoleWithMedias
 }
 
 export default function ConsoleCard({ console }: ConsoleCardProps) {

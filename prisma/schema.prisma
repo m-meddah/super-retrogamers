@@ -86,10 +86,10 @@ model Console {
   historicalContext     String?
   technicalAnalysis     String?
   culturalImpact        String?
-  editorialContent      String?                 // Contenu éditorial enrichi en Markdown
-  editorialTitle        String?                 // Titre de l'article éditorial
-  editorialAuthor       String?                 // Auteur de l'article
-  editorialPublishedAt  DateTime?               // Date de publication de l'article
+  editorialContent      String?
+  editorialTitle        String?
+  editorialAuthor       String?
+  editorialPublishedAt  DateTime?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   medias                ConsoleMedia[]
@@ -139,31 +139,23 @@ model Game {
   title                  String
   consoleId              String
   releaseYear            Int?
-  genre                  String?  // Legacy field, deprecated in favor of genres relation
-  developer              String?  // Legacy field
-  publisher              String?  // Legacy field
+  genre                  String?
+  developer              String?
+  publisher              String?
   description            String?
   image                  String?
   screenshots            String[]
   rating                 Float?               @default(0)
   screenscrapeId         Int?
-  
-  // Company relations (for future use when tables are created)
-  developerId            String?  // Future foreign key to Company
-  publisherId            String?  // Future foreign key to Company
-  
-  // Clone information (kept for game relationship, not ROM-specific)
+  developerId            String?
+  publisherId            String?
   isClone                Boolean              @default(false)
-  cloneOfId              Int?     // ID du jeu original si c'est un clone
-  
-  // AI Enhanced content
+  cloneOfId              Int?
   aiEnhancedDescription  String?
   gameplayAnalysis       String?
   historicalSignificance String?
   developmentStory       String?
   legacyImpact           String?
-  
-  // Game-specific metadata (not ROM-specific)
   playerCount            String?
   releaseDateEU          DateTime?
   releaseDateFR          DateTime?
@@ -173,17 +165,14 @@ model Game {
   resolution             String?
   rotation               String?
   topStaff               Boolean              @default(false)
-  
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
-  
-  // Relations
   genres                 GameGenre[]
   medias                 GameMedia[]
   reviews                GameReview[]
   variants               GameVariant[]
-  roms                   Rom[]                // Nouvelle relation vers les ROMs
   console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+  roms                   Rom[]
   userCollections        UserGameCollection[]
   wishlistItems          UserWishlist[]
 
@@ -191,44 +180,32 @@ model Game {
 }
 
 model Rom {
-  id                String      @id @default(cuid())
-  gameId            String
-  region            Region
-  version           String?     // Version spécifique (v1.0, v1.1, etc.)
-  
-  // ROM characteristics
-  language          String?     // Langue de la ROM
-  isBestVersion     Boolean     @default(false)
-  isBeta            Boolean     @default(false)
-  isDemo            Boolean     @default(false)
-  isHacked          Boolean     @default(false)
-  isTranslated      Boolean     @default(false)
-  isUnlicensed      Boolean     @default(false)
-  isAlternative     Boolean     @default(false)
-  
-  // Download links
-  archiveOrgUrl     String?     // Lien vers Internet Archive
-  myrientUrl        String?     // Lien vers Myrient
-  
-  // ROM metadata
-  fileName          String?
-  fileSize          Int?        // Taille en bytes
-  crc32             String?     // Checksum CRC32
-  md5               String?     // Hash MD5
-  sha1              String?     // Hash SHA1
-  
-  // Quality and ranking
-  quality           String?     // HIGH, MEDIUM, LOW
-  priority          Int         @default(0) // Pour classer les ROMs par préférence
-  
-  // Timestamps
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  verifiedAt        DateTime?   // Dernière vérification du lien
-  
-  // Relations
-  game              Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  
+  id            String    @id @default(cuid())
+  gameId        String
+  region        Region
+  version       String?
+  language      String?
+  isBestVersion Boolean   @default(false)
+  isBeta        Boolean   @default(false)
+  isDemo        Boolean   @default(false)
+  isHacked      Boolean   @default(false)
+  isTranslated  Boolean   @default(false)
+  isUnlicensed  Boolean   @default(false)
+  isAlternative Boolean   @default(false)
+  archiveOrgUrl String?
+  myrientUrl    String?
+  fileName      String?
+  fileSize      Int?
+  crc32         String?
+  md5           String?
+  sha1          String?
+  quality       String?
+  priority      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  verifiedAt    DateTime?
+  game          Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
   @@unique([gameId, region, version])
   @@map("roms")
 }
@@ -269,41 +246,32 @@ model GameGenre {
 }
 
 model GameMedia {
-  id            String   @id @default(cuid())
-  gameId        String
-  mediaType     String
-  region        String
-  format        String
-  url           String
-  localPath     String?
-  fileName      String
-  
-  // Enhanced metadata from Screenscraper API
-  parent        String?  // Parent context (usually "jeu")
-  crc           String?  // CRC checksum
-  md5           String?  // MD5 hash
-  sha1          String?  // SHA1 hash
-  size          String?  // File size as string from API
-  
-  // Parsed metadata
-  width         Int?
-  height        Int?
-  fileSize      Int?     // File size in bytes (parsed from size)
-  
-  // Media type specific attributes
-  isTexture     Boolean  @default(false)
-  is2D          Boolean  @default(true)
-  supportNumber Int?
-  pageNumber    Int?
-  
-  // Processing status
-  downloadAttempted Boolean @default(false) // Whether download was attempted
-  downloadSuccess   Boolean @default(false) // Whether download succeeded
-  downloadError     String? // Error message if download failed
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  gameId            String
+  mediaType         String
+  region            String
+  format            String
+  url               String
+  localPath         String?
+  fileName          String
+  parent            String?
+  crc               String?
+  md5               String?
+  sha1              String?
+  size              String?
+  width             Int?
+  height            Int?
+  fileSize          Int?
+  isTexture         Boolean  @default(false)
+  is2D              Boolean  @default(true)
+  supportNumber     Int?
+  pageNumber        Int?
+  downloadAttempted Boolean  @default(false)
+  downloadSuccess   Boolean  @default(false)
+  downloadError     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  game              Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, mediaType, region, supportNumber, pageNumber])
   @@map("game_medias")

@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction } from "@/lib/actions/admin-scraping-actions"
+import { rescrapConsoleMediasAction } from "@/lib/actions/scraping-actions"
 
 interface ScrapingStats {
   consolesProcessed: number
@@ -56,6 +57,7 @@ export default function ScrapingManagement() {
   const [consoleScrapingState, consoleScrapingAction, consoleScrapingPending] = useActionState(scrapeSingleConsoleAction, { success: false })
   const [gameScrapingState, gameScrapingAction, gameScrapingPending] = useActionState(scrapeSingleGameAction, { success: false })
   const [addConsoleState, addConsoleAction, addConsolePending] = useActionState(addConsoleManuallyAction, { success: false })
+  const [mediaRescrapState, mediaRescrapAction, mediaRescrapPending] = useActionState(rescrapConsoleMediasAction, { success: false })
   const [isScrapingAll, setIsScrapingAll] = useState(false)
   const [isScrapingLimited, setIsScrapingLimited] = useState(false)
 
@@ -140,6 +142,23 @@ export default function ScrapingManagement() {
       variant: "destructive",
     })
     addConsoleState.error = undefined
+  }
+  
+  if (mediaRescrapState.success && mediaRescrapState.data?.errorDetails?.[0]) {
+    toast({
+      title: "Re-scraping des médias terminé",
+      description: mediaRescrapState.data.errorDetails[0],
+    })
+    mediaRescrapState.success = false
+  }
+  
+  if (mediaRescrapState.error) {
+    toast({
+      title: "Erreur",
+      description: mediaRescrapState.error,
+      variant: "destructive",
+    })
+    mediaRescrapState.error = undefined
   }
   
   const handleScrapeAll = async () => {
@@ -406,6 +425,51 @@ export default function ScrapingManagement() {
             <AlertTitle>IDs populaires</AlertTitle>
             <AlertDescription>
               Consoles populaires - Megadrive: 1, Master System: 2, NES: 4, SNES: 3, Game Boy: 9, PlayStation: 57, Nintendo 64: 14, Dreamcast: 23, Neo Geo: 142
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Re-scraping Console Medias */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Re-scraping des médias de console</CardTitle>
+          <CardDescription>
+            Re-télécharger les médias pour une console existante (utile si certains médias n&apos;ont pas été téléchargés)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form action={mediaRescrapAction} className="flex space-x-4">
+            <div className="flex-1">
+              <Label htmlFor="consoleIdForMedias">ID Console (Base de données)</Label>
+              <Input
+                id="consoleIdForMedias"
+                name="consoleId"
+                placeholder="Ex: cme8t72pp0000sj4o6n395y5p (Neo Geo)"
+                required
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                type="submit"
+                disabled={mediaRescrapPending}
+                className="flex items-center space-x-2"
+              >
+                {mediaRescrapPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span>Re-scraper les médias</span>
+              </Button>
+            </div>
+          </form>
+          
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Test Neo Geo</AlertTitle>
+            <AlertDescription>
+              ID Neo Geo pour test : <strong>cme8t72pp0000sj4o6n395y5p</strong>
             </AlertDescription>
           </Alert>
         </CardContent>

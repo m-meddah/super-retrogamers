@@ -20,8 +20,11 @@ export type GameWithConsole = Game & {
 }
 
 // Fonctions pour récupérer les consoles
-export async function getAllConsoles(): Promise<Console[]> {
+export async function getAllConsoles(): Promise<ConsoleWithMedias[]> {
   return await prisma.console.findMany({
+    include: {
+      medias: true
+    },
     orderBy: {
       releaseYear: 'asc'
     }
@@ -120,7 +123,13 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
       }
     },
     include: {
-      console: true
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      }
     },
     orderBy: {
       title: 'asc'

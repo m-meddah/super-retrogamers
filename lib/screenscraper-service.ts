@@ -227,13 +227,65 @@ function shouldExcludeMedia(media: { type: string; region: string }): boolean {
   return false
 }
 
+// Récupérer les détails d'un système spécifique avec ses médias
+async function getSystemDetailsWithMedias(systemId: number): Promise<ScreenscraperSystem | null> {
+  try {
+    const devId = process.env.SCREENSCRAPER_DEV_ID
+    const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
+    
+    if (!devId || !devPassword) {
+      console.error('Identifiants Screenscraper manquants')
+      return null
+    }
+    
+    // L'API systemesListe récupère TOUS les systèmes, pas un système spécifique
+    const url = `https://api.screenscraper.fr/api2/systemesListe.php?devid=${devId}&devpassword=${devPassword}&output=json`
+    
+    console.log(`Récupération de tous les systèmes pour trouver l'ID ${systemId}...`)
+    const response = await rateLimitedFetch(url)
+    
+    if (!response.ok) {
+      console.error(`Erreur API Screenscraper: ${response.status}`)
+      return null
+    }
+    
+    const data: ScreenscraperResponse = await response.json()
+    
+    if (!data.response?.systemes || data.response.systemes.length === 0) {
+      console.error('Aucun système trouvé dans la réponse Screenscraper')
+      return null
+    }
+    
+    // Chercher le système avec l'ID correspondant
+    const system = data.response.systemes.find(s => s.id === systemId)
+    
+    if (!system) {
+      console.error(`Système avec ID ${systemId} non trouvé dans les ${data.response.systemes.length} systèmes disponibles`)
+      return null
+    }
+    
+    console.log(`Système ${systemId} trouvé: ${getMainName(system.noms)} avec ${system.medias?.length || 0} médias`)
+    return system
+    
+  } catch (error) {
+    console.error(`Erreur lors de la récupération des détails du système ${systemId}:`, error)
+    return null
+  }
+}
+
 async function processSystemMedias(system: ScreenscraperSystem, slug: string): Promise<ProcessedMedia[]> {
-  if (!system.medias) return []
+  if (!system?.medias) {
+    console.log(`Aucun média trouvé pour le système ${system.id}`)
+    return []
+  }
   
   const processedMedias: ProcessedMedia[] = []
   
+  console.log(`Traitement de ${system.medias.length} médias pour ${slug}`)
+  
   for (const media of system.medias) {
     if (shouldExcludeMedia(media)) {
+      console.log(`Média exclu: ${media.type} (${media.region})`)
       continue
     }
     
@@ -252,6 +304,7 @@ async function processSystemMedias(system: ScreenscraperSystem, slug: string): P
           fileName,
           localPath
         })
+        console.log(`Média téléchargé: ${media.type} (${safeRegion})`)
       }
     } catch (error) {
       console.error(`Erreur lors du téléchargement du média ${media.type}:`, error)
@@ -299,6 +352,113 @@ async function downloadMediaWithStructure(
   } catch (error) {
     console.error(`Erreur lors du téléchargement de l'image ${url}:`, error)
     return null
+  }
+}
+
+// Fonction pour re-scraper les médias d'une console existante
+export async function rescrapConsoleMedias(consoleId: string): Promise<{ success: boolean, message: string, mediasAdded: number }> {
+  try {
+    const gameConsole = await prisma.console.findUnique({
+      where: { id: consoleId }
+    })
+    
+    if (!gameConsole) {
+      return {
+        success: false,
+        message: 'Console non trouvée',
+        mediasAdded: 0
+      }
+    }
+    
+    if (!gameConsole.screenscrapeId) {
+      return {
+        success: false,
+        message: 'Console sans ID Screenscraper',
+        mediasAdded: 0
+      }
+    }
+    
+    console.log(`Re-scraping médias pour ${gameConsole.name} (ID: ${gameConsole.screenscrapeId})`)
+    
+    // Récupérer les détails du système avec ses médias
+    const systemDetails = await getSystemDetailsWithMedias(gameConsole.screenscrapeId)
+    
+    if (!systemDetails?.medias) {
+      return {
+        success: false,
+        message: 'Aucun média trouvé sur Screenscraper',
+        mediasAdded: 0
+      }
+    }
+    
+    // Traiter les médias
+    const processedMedias = await processSystemMedias(systemDetails, gameConsole.slug)
+    
+    if (processedMedias.length === 0) {
+      return {
+        success: false,
+        message: 'Aucun média n\'a pu être téléchargé',
+        mediasAdded: 0
+      }
+    }
+    
+    // Supprimer les anciens médias
+    await prisma.consoleMedia.deleteMany({
+      where: { consoleId: gameConsole.id }
+    })
+    
+    // Sauvegarder les nouveaux médias
+    const mediaData = processedMedias.map(media => ({
+      consoleId: gameConsole.id,
+      type: media.type,
+      region: media.region,
+      url: media.url,
+      localPath: media.localPath,
+      format: media.format,
+      fileName: media.fileName
+    }))
+    
+    await prisma.consoleMedia.createMany({
+      data: mediaData
+    })
+    
+    // Mettre à jour l'image principale de la console
+    let mainImagePath: string | null = null
+    if (processedMedias.length > 0) {
+      const priorityOrder = ['logo-svg', 'wheel', 'photo', 'illustration']
+      for (const priority of priorityOrder) {
+        const media = processedMedias.find(m => m.type === priority)
+        if (media) {
+          mainImagePath = media.localPath
+          break
+        }
+      }
+      
+      if (!mainImagePath && processedMedias.length > 0) {
+        mainImagePath = processedMedias[0].localPath
+      }
+    }
+    
+    if (mainImagePath) {
+      await prisma.console.update({
+        where: { id: gameConsole.id },
+        data: { image: mainImagePath }
+      })
+    }
+    
+    return {
+      success: true,
+      message: `${processedMedias.length} médias récupérés`,
+      mediasAdded: processedMedias.length
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors du re-scraping des médias:', error)
+    return {
+      success: false,
+      message: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      mediasAdded: 0
+    }
   }
 }
 
