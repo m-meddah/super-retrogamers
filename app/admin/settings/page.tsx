@@ -33,7 +33,7 @@ export default function AdminSettingsPage() {
     screenscrapeApiLimit: 100,
     cacheExpiration: 24,
     defaultLanguage: 'fr',
-    adminEmail: 'admin@superretrogamers.fr',
+    adminEmail: 'admin@super-retrogamers.com',
     backupFrequency: 'daily'
   })
 
@@ -64,7 +64,7 @@ export default function AdminSettingsPage() {
       screenscrapeApiLimit: 100,
       cacheExpiration: 24,
       defaultLanguage: 'fr',
-      adminEmail: 'admin@superretrogamers.fr',
+      adminEmail: 'admin@super-retrogamers.com',
       backupFrequency: 'daily'
     })
   }

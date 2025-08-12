@@ -5,6 +5,7 @@ import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Fac
 import { getConsoleBySlug, getGamesByConsole } from "@/lib/data-prisma"
 import GameCard from "@/components/game-card"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
+import { EditorialArticle } from "@/components/editorial-article"
 
 interface ConsolePageProps {
   params: Promise<{
@@ -134,6 +135,13 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
         <div className="mb-12">
           <ConsoleCollectionActions console={console} />
         </div>
+
+        {/* Editorial Article */}
+        {console.editorialContent && (
+          <div className="mb-12">
+            <EditorialArticle console={console} />
+          </div>
+        )}
 
         {/* Games Section */}
         <div className="mb-12">

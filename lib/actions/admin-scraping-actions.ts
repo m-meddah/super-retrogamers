@@ -53,15 +53,16 @@ export async function scrapeSingleGameAction(
     const gameId = formData.get('gameId') as string
     const consoleId = formData.get('consoleId') as string
 
-    if (!gameId?.trim() || !consoleId?.trim()) {
+    if (!gameId?.trim()) {
       return {
         success: false,
-        error: 'ID jeu et ID console requis'
+        error: 'ID jeu requis'
       }
     }
 
     const screenscraper = getScreenscraperService()
-    const result = await screenscraper.syncSingleGame(parseInt(gameId), parseInt(consoleId))
+    const consoleIdNumber = consoleId?.trim() ? parseInt(consoleId) : undefined
+    const result = await screenscraper.syncSingleGame(parseInt(gameId), consoleIdNumber)
 
     return {
       success: true,

@@ -380,7 +380,7 @@ export default function ScrapingManagement() {
               <Input
                 id="consoleId"
                 name="consoleId"
-                placeholder="Ex: 1 (NES), 2 (SNES), 57 (PlayStation)..."
+                placeholder="Ex: 1 (Megadrive), 2 (Master System), 57 (PlayStation)"
                 type="number"
                 required
               />
@@ -405,7 +405,7 @@ export default function ScrapingManagement() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>IDs populaires</AlertTitle>
             <AlertDescription>
-              NES: 1, SNES: 2, Game Boy: 9, PlayStation: 57, Nintendo 64: 14, Game Gear: 21
+              Consoles populaires - Megadrive: 1, Master System: 2, NES: 4, SNES: 3, Game Boy: 9, PlayStation: 57, Nintendo 64: 14, Dreamcast: 23, Neo Geo: 142
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -423,13 +423,12 @@ export default function ScrapingManagement() {
           <form action={gameScrapingAction} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="consoleId">ID Console Screenscraper</Label>
+                <Label htmlFor="gameConsoleId">ID Console Screenscraper (optionnel)</Label>
                 <Input
-                  id="consoleId"
+                  id="gameConsoleId"
                   name="consoleId"
-                  placeholder="Ex: 1 (NES), 57 (PlayStation)..."
+                  placeholder="Ex: 1 (Megadrive), 2 (Master System), 57 (PlayStation)"
                   type="number"
-                  required
                 />
               </div>
               <div>
@@ -437,7 +436,7 @@ export default function ScrapingManagement() {
                 <Input
                   id="gameId"
                   name="gameId"
-                  placeholder="Ex: 1 (Super Mario Bros)..."
+                  placeholder="Ex: 5 (Sonic the Hedgehog), 7 (Streets of Rage)"
                   type="number"
                   required
                 />

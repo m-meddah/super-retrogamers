@@ -105,27 +105,6 @@ export default async function GamePage({ params }: GamePageProps) {
                   </span>
                 )}
                 
-                {/* ROM flags */}
-                {game.isBestVersion && (
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                    Meilleure version
-                  </span>
-                )}
-                {game.isDemo && (
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                    Demo
-                  </span>
-                )}
-                {game.isBeta && (
-                  <span className="rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
-                    Beta
-                  </span>
-                )}
-                {game.isTranslated && (
-                  <span className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
-                    Traduit
-                  </span>
-                )}
               </div>
 
               {/* Description */}

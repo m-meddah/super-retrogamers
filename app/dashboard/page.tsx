@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "@/lib/auth-server"
 import { getUserStats, getUserRecentActivity } from "@/lib/data-prisma"
-import { Settings, BarChart3, Star, Trophy, Calendar, Gamepad2, Heart } from "lucide-react"
+import { Settings, Star, Trophy, Calendar, Gamepad2, Heart } from "lucide-react"
 import Link from "next/link"
 
 export default async function DashboardPage() {

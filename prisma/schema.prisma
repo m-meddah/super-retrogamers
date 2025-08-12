@@ -86,6 +86,10 @@ model Console {
   historicalContext     String?
   technicalAnalysis     String?
   culturalImpact        String?
+  editorialContent      String?                 // Contenu éditorial enrichi en Markdown
+  editorialTitle        String?                 // Titre de l'article éditorial
+  editorialAuthor       String?                 // Auteur de l'article
+  editorialPublishedAt  DateTime?               // Date de publication de l'article
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   medias                ConsoleMedia[]
@@ -148,7 +152,7 @@ model Game {
   developerId            String?  // Future foreign key to Company
   publisherId            String?  // Future foreign key to Company
   
-  // Clone information
+  // Clone information (kept for game relationship, not ROM-specific)
   isClone                Boolean              @default(false)
   cloneOfId              Int?     // ID du jeu original si c'est un clone
   
@@ -159,16 +163,7 @@ model Game {
   developmentStory       String?
   legacyImpact           String?
   
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
-  isAlternative          Boolean              @default(false)
-  isBestVersion          Boolean              @default(false)
-  isBeta                 Boolean              @default(false)
-  isDemo                 Boolean              @default(false)
-  isHacked               Boolean              @default(false)
-  isTranslated           Boolean              @default(false)
-  isUnlicensed           Boolean              @default(false)
-  netplaySupport         Boolean              @default(false)
+  // Game-specific metadata (not ROM-specific)
   playerCount            String?
   releaseDateEU          DateTime?
   releaseDateFR          DateTime?
@@ -179,16 +174,63 @@ model Game {
   rotation               String?
   topStaff               Boolean              @default(false)
   
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  
   // Relations
   genres                 GameGenre[]
   medias                 GameMedia[]
   reviews                GameReview[]
   variants               GameVariant[]
+  roms                   Rom[]                // Nouvelle relation vers les ROMs
   console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
   userCollections        UserGameCollection[]
   wishlistItems          UserWishlist[]
 
   @@map("games")
+}
+
+model Rom {
+  id                String      @id @default(cuid())
+  gameId            String
+  region            Region
+  version           String?     // Version spécifique (v1.0, v1.1, etc.)
+  
+  // ROM characteristics
+  language          String?     // Langue de la ROM
+  isBestVersion     Boolean     @default(false)
+  isBeta            Boolean     @default(false)
+  isDemo            Boolean     @default(false)
+  isHacked          Boolean     @default(false)
+  isTranslated      Boolean     @default(false)
+  isUnlicensed      Boolean     @default(false)
+  isAlternative     Boolean     @default(false)
+  
+  // Download links
+  archiveOrgUrl     String?     // Lien vers Internet Archive
+  myrientUrl        String?     // Lien vers Myrient
+  
+  // ROM metadata
+  fileName          String?
+  fileSize          Int?        // Taille en bytes
+  crc32             String?     // Checksum CRC32
+  md5               String?     // Hash MD5
+  sha1              String?     // Hash SHA1
+  
+  // Quality and ranking
+  quality           String?     // HIGH, MEDIUM, LOW
+  priority          Int         @default(0) // Pour classer les ROMs par préférence
+  
+  // Timestamps
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  verifiedAt        DateTime?   // Dernière vérification du lien
+  
+  // Relations
+  game              Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@unique([gameId, region, version])
+  @@map("roms")
 }
 
 model GameVariant {

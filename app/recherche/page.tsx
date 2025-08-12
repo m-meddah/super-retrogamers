@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback, Suspense } from 'react'
 import { Search, Filter, X } from 'lucide-react'
 import GameCard from '@/components/game-card'
 import { Button } from '@/components/ui/button'
@@ -9,67 +9,44 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { searchGamesAction, searchGamesWithScreenscraperAction, getSearchMetadataAction, type SearchFilters, type SearchResult } from '@/lib/actions/search-actions'
+import { useQueryState, parseAsInteger, parseAsBoolean } from 'nuqs'
+import { useState } from 'react'
 
-interface ClientSearchFilters {
-  query: string
-  console: string
-  genre: string
-  minRating: number
-  maxRating: number
-  yearFrom: string
-  yearTo: string
-  playerCount: string
-  isBestVersion: boolean
-  isDemo: boolean
-  isBeta: boolean
-  isTranslated: boolean
-  topStaff: boolean
-}
 
-const INITIAL_FILTERS: ClientSearchFilters = {
-  query: '',
-  console: '',
-  genre: '',
-  minRating: 0,
-  maxRating: 20,
-  yearFrom: '',
-  yearTo: '',
-  playerCount: '',
-  isBestVersion: false,
-  isDemo: false,
-  isBeta: false,
-  isTranslated: false,
-  topStaff: false
-}
-
-export default function RecherchePage() {
-  const [filters, setFilters] = useState<ClientSearchFilters>(INITIAL_FILTERS)
+function SearchContent() {
+  // URL query state management with nuqs
+  const [query, setQuery] = useQueryState('q', { defaultValue: '', shallow: false })
+  const [consoleFilter, setConsoleFilter] = useQueryState('console', { defaultValue: 'all', shallow: false })
+  const [genreFilter, setGenreFilter] = useQueryState('genre', { defaultValue: 'all', shallow: false })
+  const [minRating, setMinRating] = useQueryState('minRating', parseAsInteger.withDefault(0))
+  const [maxRating, setMaxRating] = useQueryState('maxRating', parseAsInteger.withDefault(20))
+  const [yearFrom, setYearFrom] = useQueryState('yearFrom', { defaultValue: '', shallow: false })
+  const [yearTo, setYearTo] = useQueryState('yearTo', { defaultValue: '', shallow: false })
+  const [playerCount, setPlayerCount] = useQueryState('playerCount', { defaultValue: 'all', shallow: false })
+  const [topStaff, setTopStaff] = useQueryState('topStaff', parseAsBoolean.withDefault(false))
+  const [showFilters, setShowFilters] = useQueryState('filters', parseAsBoolean.withDefault(false))
+  
   const [results, setResults] = useState<SearchResult>({ games: [], totalCount: 0, consoles: [], genres: [] })
   const [loading, setLoading] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
 
   const performSearch = useCallback(async () => {
     setLoading(true)
     try {
       // Conversion des filtres client vers le format server action
       const searchFilters: SearchFilters = {
-        query: filters.query || undefined,
-        console: filters.console || undefined,
-        genre: filters.genre || undefined,
-        minRating: filters.minRating > 0 ? filters.minRating : undefined,
-        maxRating: filters.maxRating < 20 ? filters.maxRating : undefined,
-        yearFrom: filters.yearFrom ? parseInt(filters.yearFrom) : undefined,
-        yearTo: filters.yearTo ? parseInt(filters.yearTo) : undefined,
-        playerCount: filters.playerCount || undefined,
-        isBestVersion: filters.isBestVersion || undefined,
-        isDemo: filters.isDemo || undefined,
-        isBeta: filters.isBeta || undefined,
-        isTranslated: filters.isTranslated || undefined,
-        topStaff: filters.topStaff || undefined
+        query: query || undefined,
+        console: (consoleFilter && consoleFilter !== 'all') ? consoleFilter : undefined,
+        genre: (genreFilter && genreFilter !== 'all') ? genreFilter : undefined,
+        minRating: minRating > 0 ? minRating : undefined,
+        maxRating: maxRating < 20 ? maxRating : undefined,
+        yearFrom: yearFrom ? parseInt(yearFrom) : undefined,
+        yearTo: yearTo ? parseInt(yearTo) : undefined,
+        playerCount: (playerCount && playerCount !== 'all') ? playerCount : undefined,
+        topStaff: topStaff || undefined
       }
 
       // Utiliser la recherche combinée (locale + Screenscraper) si on a une query
-      const searchResults = filters.query && filters.query.length >= 3
+      const searchResults = query && query.length >= 3
         ? await searchGamesWithScreenscraperAction(searchFilters)
         : await searchGamesAction(searchFilters)
       setResults(prev => ({ 
@@ -82,7 +59,7 @@ export default function RecherchePage() {
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, [query, consoleFilter, genreFilter, minRating, maxRating, yearFrom, yearTo, playerCount, topStaff])
 
   const loadMetadata = async () => {
     try {
@@ -111,18 +88,27 @@ export default function RecherchePage() {
     return () => clearTimeout(timer)
   }, [performSearch])
 
-  const updateFilter = (key: keyof ClientSearchFilters, value: string | number | boolean) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
+  const resetFilters = async () => {
+    await Promise.all([
+      setConsoleFilter('all'),
+      setGenreFilter('all'),
+      setMinRating(0),
+      setMaxRating(20),
+      setYearFrom(''),
+      setYearTo(''),
+      setPlayerCount('all'),
+      setTopStaff(false)
+    ])
   }
 
-  const resetFilters = () => {
-    setFilters(INITIAL_FILTERS)
-  }
-
-  const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
-    if (key === 'query') return false
-    return value !== INITIAL_FILTERS[key as keyof ClientSearchFilters]
-  })
+  const hasActiveFilters = consoleFilter !== 'all' || 
+                         genreFilter !== 'all' || 
+                         minRating > 0 || 
+                         maxRating < 20 || 
+                         yearFrom !== '' || 
+                         yearTo !== '' || 
+                         playerCount !== 'all' || 
+                         topStaff
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -142,8 +128,8 @@ export default function RecherchePage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="Rechercher par titre, développeur, éditeur..."
-              value={filters.query}
-              onChange={(e) => updateFilter('query', e.target.value)}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -188,12 +174,12 @@ export default function RecherchePage() {
               {/* Console */}
               <div className="space-y-2">
                 <Label>Console</Label>
-                <Select value={filters.console} onValueChange={(value) => updateFilter('console', value)}>
+                <Select value={consoleFilter} onValueChange={setConsoleFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Toutes les consoles" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Toutes les consoles</SelectItem>
+                    <SelectItem value="all">Toutes les consoles</SelectItem>
                     {results.consoles.map((console) => (
                       <SelectItem key={console.slug} value={console.slug}>
                         {console.name}
@@ -206,12 +192,12 @@ export default function RecherchePage() {
               {/* Genre */}
               <div className="space-y-2">
                 <Label>Genre</Label>
-                <Select value={filters.genre} onValueChange={(value) => updateFilter('genre', value)}>
+                <Select value={genreFilter} onValueChange={setGenreFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Tous les genres" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous les genres</SelectItem>
+                    <SelectItem value="all">Tous les genres</SelectItem>
                     {results.genres.map((genre) => (
                       <SelectItem key={genre} value={genre}>
                         {genre}
@@ -230,8 +216,8 @@ export default function RecherchePage() {
                     min="0"
                     max="20"
                     placeholder="Min"
-                    value={filters.minRating || ''}
-                    onChange={(e) => updateFilter('minRating', parseInt(e.target.value) || 0)}
+                    value={minRating || ''}
+                    onChange={(e) => setMinRating(parseInt(e.target.value) || 0)}
                     className="w-20"
                   />
                   <span className="text-gray-500">-</span>
@@ -240,8 +226,8 @@ export default function RecherchePage() {
                     min="0"
                     max="20"
                     placeholder="Max"
-                    value={filters.maxRating === 20 ? '' : filters.maxRating}
-                    onChange={(e) => updateFilter('maxRating', parseInt(e.target.value) || 20)}
+                    value={maxRating === 20 ? '' : maxRating}
+                    onChange={(e) => setMaxRating(parseInt(e.target.value) || 20)}
                     className="w-20"
                   />
                 </div>
@@ -256,8 +242,8 @@ export default function RecherchePage() {
                     min="1970"
                     max="2030"
                     placeholder="De"
-                    value={filters.yearFrom}
-                    onChange={(e) => updateFilter('yearFrom', e.target.value)}
+                    value={yearFrom}
+                    onChange={(e) => setYearFrom(e.target.value)}
                     className="w-24"
                   />
                   <span className="text-gray-500">-</span>
@@ -266,8 +252,8 @@ export default function RecherchePage() {
                     min="1970"
                     max="2030"
                     placeholder="À"
-                    value={filters.yearTo}
-                    onChange={(e) => updateFilter('yearTo', e.target.value)}
+                    value={yearTo}
+                    onChange={(e) => setYearTo(e.target.value)}
                     className="w-24"
                   />
                 </div>
@@ -276,12 +262,12 @@ export default function RecherchePage() {
               {/* Nombre de joueurs */}
               <div className="space-y-2">
                 <Label>Nombre de joueurs</Label>
-                <Select value={filters.playerCount} onValueChange={(value) => updateFilter('playerCount', value)}>
+                <Select value={playerCount} onValueChange={setPlayerCount}>
                   <SelectTrigger>
                     <SelectValue placeholder="Tous" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tous</SelectItem>
+                    <SelectItem value="all">Tous</SelectItem>
                     <SelectItem value="1">1 joueur</SelectItem>
                     <SelectItem value="2">2 joueurs</SelectItem>
                     <SelectItem value="multijoueur">Multijoueur (3+)</SelectItem>
@@ -297,42 +283,10 @@ export default function RecherchePage() {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="topStaff"
-                    checked={filters.topStaff}
-                    onCheckedChange={(checked) => updateFilter('topStaff', checked)}
+                    checked={topStaff}
+                    onCheckedChange={(checked) => setTopStaff(checked === true)}
                   />
                   <Label htmlFor="topStaff" className="text-sm">TOP Staff Screenscraper</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="bestVersion"
-                    checked={filters.isBestVersion}
-                    onCheckedChange={(checked) => updateFilter('isBestVersion', checked)}
-                  />
-                  <Label htmlFor="bestVersion" className="text-sm">Meilleure version</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isDemo"
-                    checked={filters.isDemo}
-                    onCheckedChange={(checked) => updateFilter('isDemo', checked)}
-                  />
-                  <Label htmlFor="isDemo" className="text-sm">Démos</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isBeta"
-                    checked={filters.isBeta}
-                    onCheckedChange={(checked) => updateFilter('isBeta', checked)}
-                  />
-                  <Label htmlFor="isBeta" className="text-sm">Versions Beta</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isTranslated"
-                    checked={filters.isTranslated}
-                    onCheckedChange={(checked) => updateFilter('isTranslated', checked)}
-                  />
-                  <Label htmlFor="isTranslated" className="text-sm">Traduits</Label>
                 </div>
               </div>
             </div>
@@ -345,7 +299,7 @@ export default function RecherchePage() {
             <p className="text-gray-600 dark:text-gray-400">
               {loading ? 'Recherche en cours...' : `${results.totalCount} jeu${results.totalCount > 1 ? 'x' : ''} trouvé${results.totalCount > 1 ? 's' : ''}`}
             </p>
-            {filters.query && filters.query.length >= 3 && !loading && (
+            {query && query.length >= 3 && !loading && (
               <p className="text-xs text-gray-500 dark:text-gray-500">
                 Recherche dans la base locale et sur Screenscraper
               </p>
@@ -369,5 +323,20 @@ export default function RecherchePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function RecherchePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   )
 }

@@ -24,10 +24,6 @@ interface SearchGameResult {
   genre: string | null
   playerCount: string | null
   topStaff: boolean
-  isBestVersion: boolean
-  isDemo: boolean
-  isBeta: boolean
-  isTranslated: boolean
   image: string | null
   console: {
     name: string
@@ -144,27 +140,7 @@ export default function GameCard({ game, showConsole = true }: GameCardProps) {
             </span>
           )}
           
-          {/* ROM badges */}
-          {game.isBestVersion && (
-            <span className="inline-block rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
-              Best
-            </span>
-          )}
-          {game.isDemo && (
-            <span className="inline-block rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-              Demo
-            </span>
-          )}
-          {game.isBeta && (
-            <span className="inline-block rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
-              Beta
-            </span>
-          )}
-          {game.isTranslated && (
-            <span className="inline-block rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
-              Trad
-            </span>
-          )}
+          {/* Game badges */}
         </div>
         
         {'description' in game && game.description && (

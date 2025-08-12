@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "@/lib/auth-server"
-import { User, Lock, Bell, Shield, ArrowLeft } from "lucide-react"
+import { updateProfileAction, updatePasswordAction } from "@/lib/actions/settings-actions"
+import { User, Bell, Shield, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { SettingsForm } from "@/components/settings-form"
 
 export default async function SettingsPage() {
   const session = await getServerSession()
@@ -40,42 +42,11 @@ export default async function SettingsPage() {
               </h2>
             </div>
             <div className="p-6">
-              <form className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Nom d&apos;utilisateur
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      defaultValue={session.user.name || ""}
-                      className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Adresse email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      defaultValue={session.user.email || ""}
-                      className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  >
-                    Sauvegarder
-                  </button>
-                </div>
-              </form>
+              <SettingsForm 
+                action={updateProfileAction}
+                user={session.user}
+                type="profile"
+              />
             </div>
           </div>
 
@@ -96,52 +67,11 @@ export default async function SettingsPage() {
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     Mettez à jour votre mot de passe pour sécuriser votre compte
                   </p>
-                  <form className="mt-4 space-y-3">
-                    <div>
-                      <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Mot de passe actuel
-                      </label>
-                      <input
-                        type="password"
-                        id="current-password"
-                        name="current-password"
-                        className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                      />
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Nouveau mot de passe
-                        </label>
-                        <input
-                          type="password"
-                          id="new-password"
-                          name="new-password"
-                          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Confirmer le mot de passe
-                        </label>
-                        <input
-                          type="password"
-                          id="confirm-password"
-                          name="confirm-password"
-                          className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                      >
-                        <Lock className="h-4 w-4" />
-                        Changer le mot de passe
-                      </button>
-                    </div>
-                  </form>
+                  <SettingsForm 
+                    action={updatePasswordAction}
+                    user={session.user}
+                    type="password"
+                  />
                 </div>
               </div>
             </div>

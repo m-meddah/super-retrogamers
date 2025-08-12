@@ -6,6 +6,7 @@ import Header from "@/components/header"
 import AuthProvider from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -26,11 +27,13 @@ export default function RootLayout({
           defaultTheme="system"
           storageKey="super-retrogamers-theme"
         >
-          <AuthProvider>
-            <Header />
-            <main>{children}</main>
-            <Toaster />
-          </AuthProvider>
+          <NuqsAdapter>
+            <AuthProvider>
+              <Header />
+              <main>{children}</main>
+              <Toaster />
+            </AuthProvider>
+          </NuqsAdapter>
         </ThemeProvider>
       </body>
     </html>

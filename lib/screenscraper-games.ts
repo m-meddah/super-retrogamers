@@ -8,7 +8,7 @@ import path from 'path'
 interface ScreenscraperGame {
   id: number
   romid?: number
-  notgame?: boolean
+  notgame?: boolean | string | number
   nom?: string
   
   // Names in different regions
@@ -31,7 +31,7 @@ interface ScreenscraperGame {
     regionshortname?: string
   }
   
-  cloneof?: number
+  cloneof?: number | string
   
   // System information
   systeme?: {
@@ -407,11 +407,42 @@ function parseScreenscraperDate(dateStr: string): Date | null {
 function extractReleaseYear(dates?: ScreenscraperGame['dates']): number | null {
   if (!dates) return null
   
-  const dateStr = dates.date_eu || dates.date_fr || dates.date_us || dates.date_wor || dates.date_jp
+  let dateStr: string | null = null
+  
+  if (Array.isArray(dates)) {
+    // New format: array of { region: 'us', text: '2000-02-25' }
+    const preferredRegions = ['fr', 'eu', 'wor', 'us', 'jp']
+    for (const region of preferredRegions) {
+      const dateEntry = dates.find(d => d.region === region)
+      if (dateEntry?.text) {
+        dateStr = dateEntry.text
+        break
+      }
+    }
+    // If no preferred region found, take the first available
+    if (!dateStr && dates.length > 0 && dates[0]?.text) {
+      dateStr = dates[0].text
+    }
+  } else {
+    // Old format: object with date_eu, date_fr, etc.
+    dateStr = dates.date_eu || dates.date_fr || dates.date_us || dates.date_wor || dates.date_jp || null
+  }
+  
   if (!dateStr) return null
   
   try {
-    const year = parseInt(dateStr.split('-')[0])
+    // Handle different date formats: "2000-02-25", "2000", etc.
+    const cleanDateStr = dateStr.trim()
+    let year: number
+    
+    if (cleanDateStr.includes('-')) {
+      // Full date format: "2000-02-25"
+      year = parseInt(cleanDateStr.split('-')[0])
+    } else {
+      // Year only: "2000"
+      year = parseInt(cleanDateStr)
+    }
+    
     return (year > 1970 && year < 2030) ? year : null
   } catch {
     return null
@@ -419,23 +450,58 @@ function extractReleaseYear(dates?: ScreenscraperGame['dates']): number | null {
 }
 
 /**
- * Process ROM flags from Screenscraper data
+ * Extract release date for a specific region
  */
-function processRomFlags(gameDetails: ScreenscraperGame) {
-  const rom = gameDetails.rom || (gameDetails.roms && gameDetails.roms[0])
-  if (!rom) return {}
+function extractRegionReleaseDate(dates: ScreenscraperGame['dates'] | undefined, region: string): Date | null {
+  if (!dates) return null
   
-  return {
-    isDemo: Boolean(rom.demo),
-    isBeta: Boolean(rom.beta),
-    isTranslated: Boolean(rom.trad),
-    isHacked: Boolean(rom.hack),
-    isUnlicensed: Boolean(rom.unl),
-    isAlternative: Boolean(rom.alt),
-    isBestVersion: Boolean(rom.best),
-    netplaySupport: Boolean(rom.netplay)
+  let dateStr: string | null = null
+  
+  if (Array.isArray(dates)) {
+    // New format: array of { region: 'us', text: '2000-02-25' }
+    const dateEntry = dates.find(d => d.region === region)
+    dateStr = dateEntry?.text || null
+  } else {
+    // Old format: object with date_eu, date_fr, etc.
+    const fieldName = `date_${region}` as keyof typeof dates
+    dateStr = dates[fieldName] || null
   }
+  
+  return dateStr ? parseScreenscraperDate(dateStr) : null
 }
+
+/**
+ * Extract the main genre from genre information
+ */
+function extractMainGenre(genres?: ScreenscraperGame['genres']): string | null {
+  if (!genres) return null
+  
+  if (Array.isArray(genres)) {
+    // New format: array of genre objects with noms array
+    // Find the main genre (principale: "1")
+    const mainGenre = genres.find(g => g.principale === "1")
+    if (mainGenre?.noms) {
+      // Get genre name in preferred language
+      const preferredLanguages = ['fr', 'en', 'de', 'es', 'it', 'pt']
+      for (const lang of preferredLanguages) {
+        const nameEntry = mainGenre.noms.find((n: { langue?: string; text?: string }) => n.langue === lang)
+        if (nameEntry?.text) {
+          return nameEntry.text
+        }
+      }
+      // If no preferred language found, take the first available
+      if (mainGenre.noms.length > 0 && mainGenre.noms[0]?.text) {
+        return mainGenre.noms[0].text
+      }
+    }
+  } else {
+    // Old format: object with genres_fr, genres_eu, etc.
+    return genres.genres_fr?.[0] || genres.genres_eu?.[0] || null
+  }
+  
+  return null
+}
+
 
 
 
@@ -449,20 +515,60 @@ export async function createGameFromScreenscraper(
   gameConsole: { id: string; slug: string; name: string }
 ) {
   try {
-    // Check if game should be skipped
-    if (gameDetails.notgame) {
+    // Check if game should be skipped - handle both boolean and string formats
+    const isNotGame = gameDetails.notgame === true || 
+                      gameDetails.notgame === 'true' || 
+                      gameDetails.notgame === '1' ||
+                      gameDetails.notgame === 1
+    
+    if (isNotGame) {
       console.log(`🚫 Jeu ${gameDetails.id} ignoré (notgame = true)`)
       return null
     }
     
-    if (gameDetails.cloneof && gameDetails.cloneof !== 0) {
+    // Check for clones - only skip if cloneof exists and is not 0
+    const isClone = gameDetails.cloneof !== undefined && 
+                    gameDetails.cloneof !== null && 
+                    gameDetails.cloneof !== 0 &&
+                    gameDetails.cloneof !== '0'
+    
+    if (isClone) {
       console.log(`🚫 Jeu ${gameDetails.id} ignoré (clone de ${gameDetails.cloneof})`)
       return null
     }
-    // Extract basic information
-    const gameTitle = gameDetails.noms?.nom_fr || gameDetails.noms?.nom_eu || 
-                     gameDetails.noms?.nom_us || gameDetails.noms?.noms_commun || 
-                     gameDetails.nom || `Jeu ${gameDetails.id}`
+    // Extract basic information - handle both old and new API formats
+    let gameTitle = `Jeu ${gameDetails.id}`
+    
+    if (gameDetails.noms) {
+      if (Array.isArray(gameDetails.noms)) {
+        // New format: array of { region: 'ss', text: 'Game Name' }
+        const preferredRegions = ['ss', 'fr', 'eu', 'wor', 'us', 'jp']
+        let selectedName = null
+        
+        // Look for names in order of preference
+        for (const region of preferredRegions) {
+          selectedName = gameDetails.noms.find(n => n.region === region)
+          if (selectedName?.text) {
+            gameTitle = selectedName.text
+            break
+          }
+        }
+        
+        // If no preferred region found, take the first available name
+        if (!selectedName && gameDetails.noms.length > 0 && gameDetails.noms[0]?.text) {
+          gameTitle = gameDetails.noms[0].text
+        }
+      } else {
+        // Old format: object with nom_fr, nom_eu, etc.
+        gameTitle = gameDetails.noms.nom_fr || gameDetails.noms.nom_eu || 
+                   gameDetails.noms.nom_us || gameDetails.noms.noms_commun || 
+                   gameDetails.nom || `Jeu ${gameDetails.id}`
+      }
+    } else if (gameDetails.nom) {
+      gameTitle = gameDetails.nom
+    }
+    
+    console.log(`🎮 Titre extrait: "${gameTitle}" pour jeu ${gameDetails.id}`)
     
     const slug = generateGameSlug(gameTitle)
     
@@ -475,9 +581,29 @@ export async function createGameFromScreenscraper(
       counter++
     }
     
-    // Extract all the rich data
-    const description = gameDetails.synopsis?.synopsis_fr || gameDetails.synopsis?.synopsis_eu || 
-                       gameDetails.synopsis?.synopsis_us || null
+    // Extract description - handle both old and new API formats
+    let description: string | null = null
+    if (gameDetails.synopsis) {
+      if (Array.isArray(gameDetails.synopsis)) {
+        // New format: array of { langue: 'fr', text: '...' }
+        const preferredLanguages = ['fr', 'en', 'de', 'es', 'it', 'pt']
+        for (const lang of preferredLanguages) {
+          const synopsisEntry = gameDetails.synopsis.find(s => s.langue === lang)
+          if (synopsisEntry?.text) {
+            description = synopsisEntry.text
+            break
+          }
+        }
+        // If no preferred language found, take the first available
+        if (!description && gameDetails.synopsis.length > 0 && gameDetails.synopsis[0]?.text) {
+          description = gameDetails.synopsis[0].text
+        }
+      } else {
+        // Old format: object with synopsis_fr, synopsis_eu, etc.
+        description = gameDetails.synopsis.synopsis_fr || gameDetails.synopsis.synopsis_eu || 
+                     gameDetails.synopsis.synopsis_us || null
+      }
+    }
     
     // Handle different note formats from Screenscraper
     let rating: number | null = null
@@ -549,7 +675,6 @@ export async function createGameFromScreenscraper(
       }
     }
     
-    const romFlags = processRomFlags(gameDetails)
     const releaseYear = extractReleaseYear(gameDetails.dates)
     
     // Create the main game record
@@ -578,22 +703,20 @@ export async function createGameFromScreenscraper(
       rotation: gameDetails.rotation || null,
       resolution: gameDetails.resolution || null,
       
-      // ROM flags
-      ...romFlags,
-      
       // Clone information
-      isClone: Boolean(gameDetails.cloneof && gameDetails.cloneof !== 0),
-      cloneOfId: (gameDetails.cloneof && gameDetails.cloneof !== 0) ? gameDetails.cloneof : null,
+      isClone: Boolean(gameDetails.cloneof && gameDetails.cloneof !== 0 && gameDetails.cloneof !== '0'),
+      cloneOfId: (gameDetails.cloneof && gameDetails.cloneof !== 0 && gameDetails.cloneof !== '0') ? 
+        (typeof gameDetails.cloneof === 'string' ? parseInt(gameDetails.cloneof) : gameDetails.cloneof) : null,
       
-      // Release dates by region
-      releaseDateFR: gameDetails.dates?.date_fr ? parseScreenscraperDate(gameDetails.dates.date_fr) : null,
-      releaseDateEU: gameDetails.dates?.date_eu ? parseScreenscraperDate(gameDetails.dates.date_eu) : null,
-      releaseDateUS: gameDetails.dates?.date_us ? parseScreenscraperDate(gameDetails.dates.date_us) : null,
-      releaseDateJP: gameDetails.dates?.date_jp ? parseScreenscraperDate(gameDetails.dates.date_jp) : null,
-      releaseDateWOR: gameDetails.dates?.date_wor ? parseScreenscraperDate(gameDetails.dates.date_wor) : null,
+      // Release dates by region - handle both old and new API formats
+      releaseDateFR: extractRegionReleaseDate(gameDetails.dates, 'fr'),
+      releaseDateEU: extractRegionReleaseDate(gameDetails.dates, 'eu'),
+      releaseDateUS: extractRegionReleaseDate(gameDetails.dates, 'us'),
+      releaseDateJP: extractRegionReleaseDate(gameDetails.dates, 'jp'),
+      releaseDateWOR: extractRegionReleaseDate(gameDetails.dates, 'wor'),
       
-      // Simple genre for now (will be enhanced with genres relation)
-      genre: gameDetails.genres?.genres_fr?.[0] || gameDetails.genres?.genres_eu?.[0] || null
+      // Simple genre for now - handle both old and new API formats
+      genre: extractMainGenre(gameDetails.genres)
     }
     
     // Create the game
@@ -753,7 +876,7 @@ async function processGameMedias(
       const mediaData = processedMedias.map(media => ({
         gameId,
         mediaType: media.mediaType,
-        region: media.region,
+        region: media.region || 'unknown',
         format: media.format,
         url: media.url,
         localPath: media.localPath,
@@ -857,6 +980,7 @@ function shouldSkipMedia(media: ScreenscraperGameMediaItem): boolean {
     // Classifications et labels
     'rating',        // Classifications d'âge
     'region',        // Indicateurs régionaux
+    'picto',         // Pictogrammes (pictoliste, pictomonochrome, pictocouleur)
   ]
 
   // Vérifier si le type de média est exclu

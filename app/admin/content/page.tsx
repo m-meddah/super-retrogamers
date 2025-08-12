@@ -17,7 +17,8 @@ import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Monitor, Gamepad2, Users, Star, Calendar, AlertTriangle } from "lucide-react"
+import { Monitor, Gamepad2, Users, Star, Calendar, AlertTriangle, Edit3 } from "lucide-react"
+import Link from "next/link"
 
 async function ContentManagementContent() {
   const { consoles, games } = await getContentManagementData()
@@ -180,9 +181,12 @@ async function ContentManagementContent() {
                       
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            Modifier
-                          </Button>
+                          <Link href={`/admin/consoles/${console.slug}/edit`}>
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <Edit3 className="h-3 w-3" />
+                              Éditer article
+                            </Button>
+                          </Link>
                           <Button variant="outline" size="sm">
                             Voir jeux
                           </Button>

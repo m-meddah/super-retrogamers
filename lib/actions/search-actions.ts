@@ -12,10 +12,6 @@ export interface SearchFilters {
   yearFrom?: number
   yearTo?: number
   playerCount?: string
-  isBestVersion?: boolean
-  isDemo?: boolean
-  isBeta?: boolean
-  isTranslated?: boolean
   topStaff?: boolean
 }
 
@@ -29,10 +25,6 @@ export interface SearchResult {
     genre: string | null
     playerCount: string | null
     topStaff: boolean
-    isBestVersion: boolean
-    isDemo: boolean
-    isBeta: boolean
-    isTranslated: boolean
     image: string | null
     console: {
       name: string
@@ -140,21 +132,9 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
       }
     }
 
-    // Filtres ROM (flags booléens)
+    // Filtres de jeu
     if (filters.topStaff) {
       whereConditions.topStaff = true
-    }
-    if (filters.isBestVersion) {
-      whereConditions.isBestVersion = true
-    }
-    if (filters.isDemo) {
-      whereConditions.isDemo = true
-    }
-    if (filters.isBeta) {
-      whereConditions.isBeta = true
-    }
-    if (filters.isTranslated) {
-      whereConditions.isTranslated = true
     }
 
     // Exécution de la requête principale
@@ -489,10 +469,6 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult): Se
     genre,
     playerCount,
     topStaff: false, // Pas d'info TOP Staff dans l'API de recherche
-    isBestVersion: false,
-    isDemo: false,
-    isBeta: false,
-    isTranslated: false,
     image: null, // Pas d'image dans l'API de recherche
     console: ssGame.systeme ? {
       name: ssGame.systeme.nom || 'Console inconnue',

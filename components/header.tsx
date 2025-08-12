@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Gamepad2, Menu, X, User, LogOut, BarChart3 } from "lucide-react"
 import { useState } from "react"
 import { useSession, signOut } from "@/lib/auth-client"
@@ -11,6 +11,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session, isPending } = useSession()
   const isAdmin = session?.user?.role === "admin"
 
@@ -29,6 +30,7 @@ export default function Header() {
   const handleSignOut = async () => {
     await signOut()
     setIsUserMenuOpen(false)
+    router.push('/')
   }
 
   return (

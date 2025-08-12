@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
+import { nextCookies } from "better-auth/next-js"
 import { prisma } from "@/lib/prisma"
 
 export const auth = betterAuth({
@@ -35,6 +36,11 @@ export const auth = betterAuth({
       },
     },
   },
+  
+  // Plugins
+  plugins: [
+    nextCookies() // Pour le support des Server Actions
+  ],
 })
 
 // Export des types pour TypeScript

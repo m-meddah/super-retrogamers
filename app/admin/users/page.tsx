@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import {
   Table,
   TableBody,
@@ -174,8 +175,10 @@ async function UsersContent() {
                   
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        Voir profil
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/dashboard/${user.id}`}>
+                          Voir profil
+                        </Link>
                       </Button>
                       {user.role !== 'admin' && (
                         <Button variant="outline" size="sm">

@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import CollectionItem from './collection-item'
 import { Search, Filter, Grid, List } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useQueryState, parseAsBoolean } from 'nuqs'
 import type { UserConsoleCollection, UserGameCollection } from '@prisma/client'
 
 type CollectionItemType = UserConsoleCollection | UserGameCollection
@@ -16,7 +18,7 @@ interface CollectionGridProps {
   onDelete?: (item: CollectionItemType) => void
 }
 
-export default function CollectionGrid({ 
+function CollectionGridContent({ 
   items, 
   type, 
   isLoading = false,
@@ -26,7 +28,10 @@ export default function CollectionGrid({
 }: CollectionGridProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useQueryState('filters', parseAsBoolean.withDefault(false))
+  const [conditionFilter, setConditionFilter] = useQueryState('condition', { defaultValue: 'all' })
+  const [statusFilter, setStatusFilter] = useQueryState('status', { defaultValue: 'all' })
+  const [priceFilter, setPriceFilter] = useQueryState('price', { defaultValue: 'all' })
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
@@ -123,38 +128,53 @@ export default function CollectionGrid({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 État
               </label>
-              <select className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                <option value="">Tous les états</option>
-                <option value="SEALED">Neuf sous blister</option>
-                <option value="MINT">Parfait état</option>
-                <option value="CIB">Complete In Box</option>
-                <option value="LOOSE">Sans boîte</option>
-              </select>
+              <Select value={conditionFilter} onValueChange={setConditionFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Tous les états" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les états</SelectItem>
+                  <SelectItem value="SEALED">Neuf sous blister</SelectItem>
+                  <SelectItem value="MINT">Parfait état</SelectItem>
+                  <SelectItem value="CIB">Complete In Box</SelectItem>
+                  <SelectItem value="LOOSE">Sans boîte</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Statut
               </label>
-              <select className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                <option value="">Tous les statuts</option>
-                <option value="OWNED">Possédé</option>
-                <option value="WANTED">Recherché</option>
-                <option value="FOR_SALE">À vendre</option>
-              </select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Tous les statuts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="OWNED">Possédé</SelectItem>
+                  <SelectItem value="WANTED">Recherché</SelectItem>
+                  <SelectItem value="FOR_SALE">À vendre</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Prix
               </label>
-              <select className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                <option value="">Toutes les gammes</option>
-                <option value="0-50">0 - 50€</option>
-                <option value="50-100">50 - 100€</option>
-                <option value="100-200">100 - 200€</option>
-                <option value="200+">200€+</option>
-              </select>
+              <Select value={priceFilter} onValueChange={setPriceFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Toutes les gammes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les gammes</SelectItem>
+                  <SelectItem value="0-50">0 - 50€</SelectItem>
+                  <SelectItem value="50-100">50 - 100€</SelectItem>
+                  <SelectItem value="100-200">100 - 200€</SelectItem>
+                  <SelectItem value="200+">200€+</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -208,5 +228,13 @@ export default function CollectionGrid({
         </div>
       )}
     </div>
+  )
+}
+
+export default function CollectionGrid(props: CollectionGridProps) {
+  return (
+    <Suspense fallback={<div className="text-center py-8">Chargement...</div>}>
+      <CollectionGridContent {...props} />
+    </Suspense>
   )
 }
