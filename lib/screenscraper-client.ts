@@ -309,7 +309,7 @@ export class ScreenscraperService {
     const excludedTypes = [
       'box3D', 
       'support2D',
-      'gabarit',
+      'background',
       'steam-grid'
     ]
     
@@ -318,7 +318,8 @@ export class ScreenscraperService {
       'vierge',
       'controls',
       'bezel',
-      'video'
+      'video',
+      'gabarit'
     ]
     
     // Régions à exclure
