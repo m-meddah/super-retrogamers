@@ -2,6 +2,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
+import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
 
 interface GameWithConsole extends Game {
   console?: {
@@ -42,14 +43,15 @@ interface GameCardProps {
 }
 
 // Function to get the best available image for the game card
-function getBestGameImage(game: GameWithConsole | SearchGameResult): string {
+function getBestGameImage(game: GameWithConsole | SearchGameResult, preferredRegion: string = 'fr'): string {
   if (!game.medias || game.medias.length === 0) {
     return game.image || "/placeholder.svg"
   }
   
   // Priority order for game card images
   const priorityTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
-  const priorityRegions = ['eu', 'fr', 'wor', 'us', 'jp']
+  // Use centralized regional preferences (with 'ss' last)
+  const priorityRegions = getRegionPriorityLowercase(preferredRegion)
   
   // Try each priority type
   for (const type of priorityTypes) {
@@ -57,7 +59,7 @@ function getBestGameImage(game: GameWithConsole | SearchGameResult): string {
     for (const region of priorityRegions) {
       const media = game.medias.find(m => 
         m.mediaType === type && 
-        m.region === region && 
+        m.region.toLowerCase() === region && 
         m.localPath
       )
       if (media?.localPath) {

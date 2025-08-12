@@ -2,17 +2,31 @@
 
 import { Region } from '@prisma/client'
 
-// Ordre de préférence par défaut
-const DEFAULT_REGION_PRIORITY: Region[] = ['FR', 'EU', 'WOR', 'JP', 'US']
+// Ordre de préférence par défaut (ss en dernier comme région screenscraper)
+const DEFAULT_REGION_PRIORITY = ['FR', 'EU', 'WOR', 'JP', 'US', 'ss'] as const
 
-// Ordres de préférence selon la région choisie
-const REGION_PRIORITIES: Record<Region, Region[]> = {
-  FR: ['FR', 'EU', 'WOR', 'JP', 'US'],
-  EU: ['EU', 'FR', 'WOR', 'JP', 'US'],
-  WOR: ['WOR', 'EU', 'FR', 'JP', 'US'],
-  JP: ['JP', 'WOR', 'EU', 'FR', 'US'],
-  US: ['US', 'WOR', 'EU', 'FR', 'JP']
-}
+// Ordres de préférence selon la région choisie (ss toujours en dernier)
+const REGION_PRIORITIES = {
+  FR: ['FR', 'EU', 'WOR', 'JP', 'US', 'ss'],
+  EU: ['EU', 'FR', 'WOR', 'JP', 'US', 'ss'],
+  WOR: ['WOR', 'EU', 'FR', 'JP', 'US', 'ss'],
+  JP: ['JP', 'WOR', 'EU', 'FR', 'US', 'ss'],
+  US: ['US', 'WOR', 'EU', 'FR', 'JP', 'ss'],
+  ss: ['ss', 'WOR', 'EU', 'FR', 'JP', 'US'] // Si ss est sélectionné, le prioriser mais garder les autres
+} as const
+
+// Type pour les régions supportées (incluant ss)
+export type SupportedRegion = 'FR' | 'EU' | 'WOR' | 'JP' | 'US' | 'ss'
+
+// Mapping des régions Prisma vers nos types
+export const REGION_MAPPING = {
+  'fr': 'FR',
+  'eu': 'EU', 
+  'wor': 'WOR',
+  'jp': 'JP',
+  'us': 'US',
+  'ss': 'ss'
+} as const
 
 export interface ConsoleMedias {
   id: string
@@ -68,10 +82,27 @@ export interface RegionalGameData {
 }
 
 /**
+ * Convertit une région Prisma en région supportée
+ */
+export function mapPrismaRegion(region: string): SupportedRegion {
+  const upperRegion = region.toUpperCase()
+  return (REGION_MAPPING[region as keyof typeof REGION_MAPPING] || upperRegion) as SupportedRegion
+}
+
+/**
  * Obtient l'ordre de priorité des régions selon la préférence de l'utilisateur
  */
-export function getRegionPriority(preferredRegion: Region = 'FR'): Region[] {
-  return REGION_PRIORITIES[preferredRegion] || DEFAULT_REGION_PRIORITY
+export function getRegionPriority(preferredRegion: SupportedRegion = 'FR'): SupportedRegion[] {
+  return [...(REGION_PRIORITIES[preferredRegion] || DEFAULT_REGION_PRIORITY)]
+}
+
+/**
+ * Version pour compatibilité avec les régions Prisma (minuscules)
+ */
+export function getRegionPriorityLowercase(preferredRegion: string = 'fr'): string[] {
+  const mappedRegion = mapPrismaRegion(preferredRegion)
+  const priority = getRegionPriority(mappedRegion)
+  return priority.map(r => r === 'ss' ? 'ss' : r.toLowerCase())
 }
 
 /**
@@ -80,7 +111,7 @@ export function getRegionPriority(preferredRegion: Region = 'FR'): Region[] {
 export function selectBestConsoleMedia(
   medias: ConsoleMedias[],
   mediaType: string,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): ConsoleMedias | null {
   if (!medias || medias.length === 0) return null
   
@@ -92,11 +123,11 @@ export function selectBestConsoleMedia(
   // Si un seul média, le retourner
   if (mediasOfType.length === 1) return mediasOfType[0]
   
-  // Sélectionner selon l'ordre de priorité régional
-  const regionPriority = getRegionPriority(preferredRegion)
+  // Sélectionner selon l'ordre de priorité régional (avec ss en dernier)
+  const regionPriority = getRegionPriorityLowercase(preferredRegion)
   
   for (const region of regionPriority) {
-    const mediaForRegion = mediasOfType.find(m => m.region === region)
+    const mediaForRegion = mediasOfType.find(m => m.region.toLowerCase() === region)
     if (mediaForRegion) return mediaForRegion
   }
   
@@ -110,7 +141,7 @@ export function selectBestConsoleMedia(
 export function selectBestGameMedia(
   medias: GameMedias[],
   mediaType: string,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): GameMedias | null {
   if (!medias || medias.length === 0) return null
   
@@ -122,11 +153,11 @@ export function selectBestGameMedia(
   // Si un seul média, le retourner
   if (mediasOfType.length === 1) return mediasOfType[0]
   
-  // Sélectionner selon l'ordre de priorité régional
-  const regionPriority = getRegionPriority(preferredRegion)
+  // Sélectionner selon l'ordre de priorité régional (avec ss en dernier)
+  const regionPriority = getRegionPriorityLowercase(preferredRegion)
   
   for (const region of regionPriority) {
-    const mediaForRegion = mediasOfType.find(m => m.region === region)
+    const mediaForRegion = mediasOfType.find(m => m.region.toLowerCase() === region)
     if (mediaForRegion) return mediaForRegion
   }
   
@@ -139,7 +170,7 @@ export function selectBestGameMedia(
  */
 export function selectBestConsoleImage(
   console: RegionalConsoleData,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): string | null {
   // Si une image principale existe déjà, la prioriser
   if (console.image) return console.image
@@ -160,7 +191,7 @@ export function selectBestConsoleImage(
  */
 export function selectBestGameImage(
   game: RegionalGameData,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): string | null {
   // Si une image principale existe déjà, la prioriser
   if (game.image) return game.image
@@ -181,26 +212,29 @@ export function selectBestGameImage(
  */
 export function getRegionalReleaseDate(
   game: RegionalGameData,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): Date | null {
-  const regionPriority = getRegionPriority(preferredRegion)
+  const regionPriority = getRegionPriorityLowercase(preferredRegion)
   
   for (const region of regionPriority) {
     switch (region) {
-      case 'FR':
+      case 'fr':
         if (game.releaseDateFR) return game.releaseDateFR
         break
-      case 'EU':
+      case 'eu':
         if (game.releaseDateEU) return game.releaseDateEU
         break
-      case 'US':
+      case 'us':
         if (game.releaseDateUS) return game.releaseDateUS
         break
-      case 'JP':
+      case 'jp':
         if (game.releaseDateJP) return game.releaseDateJP
         break
-      case 'WOR':
+      case 'wor':
         if (game.releaseDateWOR) return game.releaseDateWOR
+        break
+      case 'ss':
+        // ss n'a pas de date spécifique, ignorer
         break
     }
   }
@@ -213,12 +247,14 @@ export function getRegionalReleaseDate(
  */
 export function getRegionalTitle(
   game: RegionalGameData,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): string {
   // Pour le moment, retourner le titre par défaut
   // À l'avenir, on pourrait ajouter des titres régionaux
-  if (game.regionalTitles && game.regionalTitles[preferredRegion]) {
-    return game.regionalTitles[preferredRegion]!
+  const mappedRegion = mapPrismaRegion(preferredRegion)
+  if (game.regionalTitles && mappedRegion in game.regionalTitles) {
+    const title = game.regionalTitles[mappedRegion as keyof typeof game.regionalTitles]
+    if (title) return title
   }
   
   return game.title
@@ -229,12 +265,14 @@ export function getRegionalTitle(
  */
 export function getRegionalDescription(
   item: RegionalConsoleData | RegionalGameData,
-  preferredRegion: Region = 'FR'
+  preferredRegion: string = 'fr'
 ): string | null {
   // Pour le moment, retourner la description par défaut
   // À l'avenir, on pourrait ajouter des descriptions régionales
-  if (item.regionalDescriptions && item.regionalDescriptions[preferredRegion]) {
-    return item.regionalDescriptions[preferredRegion]!
+  const mappedRegion = mapPrismaRegion(preferredRegion)
+  if (item.regionalDescriptions && mappedRegion in item.regionalDescriptions) {
+    const description = item.regionalDescriptions[mappedRegion as keyof typeof item.regionalDescriptions]
+    if (description) return description
   }
   
   return item.description
