@@ -74,6 +74,8 @@ const EXCLUDED_MEDIA_TYPES = [
   'support2D',
   'video',
   'introvideo',
+  'gabarit',
+  'steam-grid'
 ]
 
 // Mots-clés à exclure dans les types de médias

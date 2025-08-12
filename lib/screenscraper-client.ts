@@ -305,7 +305,16 @@ export class ScreenscraperService {
   }
 
   shouldExcludeMedia(media: { type: string; url: string; region: string; format: string }): boolean {
-    const excludedTypes = ['box3D', 'support2D']
+    const excludedTypes = [
+      'box3D', 
+      'support2D',
+      'controls',
+      'gabarit', 
+      'vierge', 
+      'bezel',
+      'video', 
+      'steam-grid'
+    ]
     return excludedTypes.includes(media.type)
   }
 
