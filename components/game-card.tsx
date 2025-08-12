@@ -7,6 +7,7 @@ import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
 interface GameWithConsole extends Game {
   console?: {
     name: string
+    slug: string
   }
   medias?: Array<{
     mediaType: string
@@ -83,6 +84,11 @@ function getBestGameImage(game: GameWithConsole | SearchGameResult, preferredReg
 export default function GameCard({ game, showConsole = true, preferredRegion = 'fr' }: GameCardProps) {
   const imageUrl = getBestGameImage(game, preferredRegion)
   const isScreenscraperResult = game.slug.startsWith('screenscraper-')
+  
+  // Générer le slug composé pour les liens
+  const gameSlug = game.console?.slug ? 
+    `${game.slug}-console-${game.console.slug}` : 
+    game.slug
   
   const cardContent = (
     <article className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700">
@@ -165,7 +171,7 @@ export default function GameCard({ game, showConsole = true, preferredRegion = '
   }
   
   return (
-    <Link href={`/jeux/${game.slug}`} className="group block">
+    <Link href={`/jeux/${gameSlug}`} className="group block">
       {cardContent}
     </Link>
   )

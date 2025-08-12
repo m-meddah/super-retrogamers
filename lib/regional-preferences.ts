@@ -1,5 +1,3 @@
-'use client'
-
 import { Region } from '@prisma/client'
 
 // Ordre de préférence par défaut (ss en dernier comme région screenscraper)

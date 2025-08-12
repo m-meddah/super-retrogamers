@@ -28,7 +28,7 @@ export function EditorialArticle({ console }: EditorialArticleProps) {
   }
 
   return (
-    <article className="mx-auto max-w-4xl">
+    <article className="mx-auto max-w-8xl">
       {/* Header de l'article */}
       <div className="mb-8 rounded-xl border border-gray-200 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 p-8 dark:border-gray-800 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20">
         <div className="mb-6 flex items-center gap-2">

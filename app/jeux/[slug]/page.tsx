@@ -3,11 +3,54 @@ import Link from "next/link"
 import Image from "next/image"
 import { Calendar, Star, Gamepad2, Building, Users, Award } from "lucide-react"
 import { getGameBySlug } from "@/lib/data-prisma"
+import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
 
 interface GamePageProps {
   params: Promise<{
     slug: string
   }>
+}
+
+interface GameMedia {
+  mediaType: string
+  region: string
+  localPath: string | null
+}
+
+interface GameWithMedias {
+  image: string | null
+  medias?: GameMedia[]
+}
+
+// Function to get the best available image for the game page
+function getBestGameImage(game: GameWithMedias, preferredRegion: string = 'fr'): string {
+  if (!game.medias || game.medias.length === 0) {
+    return game.image || "/placeholder.svg"
+  }
+  
+  // Priority order for game page images (box art first for sidebar)
+  const priorityTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
+  // Use centralized regional preferences (with 'ss' last)
+  const priorityRegions = getRegionPriorityLowercase(preferredRegion)
+  
+  // Try each priority type
+  for (const type of priorityTypes) {
+    // Try each priority region for this type
+    for (const region of priorityRegions) {
+      const media = game.medias.find((m: GameMedia) => 
+        m.mediaType === type && 
+        m.region.toLowerCase() === region && 
+        m.localPath
+      )
+      if (media?.localPath) {
+        return media.localPath
+      }
+    }
+  }
+  
+  // Fallback to first available media or placeholder
+  const firstMedia = game.medias.find((m: GameMedia) => m.localPath)
+  return firstMedia?.localPath || game.image || "/placeholder.svg"
 }
 
 export default async function GamePage({ params }: GamePageProps) {
@@ -17,6 +60,9 @@ export default async function GamePage({ params }: GamePageProps) {
   if (!game) {
     notFound()
   }
+
+  // Get the best image for this game
+  const gameImageUrl = getBestGameImage(game, 'fr')
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -171,7 +217,7 @@ export default async function GamePage({ params }: GamePageProps) {
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
               <div className="aspect-[3/4] overflow-hidden">
                 <Image 
-                  src={game.image || "/placeholder.svg"} 
+                  src={gameImageUrl} 
                   alt={game.title}
                   width={300}
                   height={400}

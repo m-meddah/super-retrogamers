@@ -85,7 +85,39 @@ export async function getAllGames(): Promise<Game[]> {
 }
 
 export async function getGameBySlug(slug: string): Promise<GameWithConsole | null> {
-  return await prisma.game.findUnique({
+  // Support des anciens slugs simples et nouveaux slugs composés
+  if (slug.includes('-console-')) {
+    // Nouveau format: [game-slug]-console-[console-slug]
+    const parts = slug.split('-console-')
+    if (parts.length === 2) {
+      const gameSlug = parts[0]
+      const consoleSlug = parts[1]
+      
+      return await prisma.game.findFirst({
+        where: {
+          slug: gameSlug,
+          console: {
+            slug: consoleSlug
+          }
+        },
+        include: {
+          console: true,
+          medias: {
+            orderBy: [
+              { mediaType: 'asc' },
+              { region: 'asc' }
+            ]
+          },
+          genres: {
+            orderBy: { isPrimary: 'desc' }
+          }
+        }
+      })
+    }
+  }
+  
+  // Format ancien ou simple slug
+  return await prisma.game.findFirst({
     where: { slug },
     include: {
       console: true,
@@ -297,6 +329,37 @@ export function getConsoleMediasByRegion(console: ConsoleWithMedias, region: str
   if (!console.medias) return []
   
   return console.medias.filter(media => media.region === region)
+}
+
+// Fonction utilitaire pour générer le slug composé d'un jeu
+export function generateGameCompositeSlug(game: Game & { console?: Console }): string {
+  if (game.console?.slug) {
+    return `${game.slug}-console-${game.console.slug}`
+  }
+  return game.slug
+}
+
+// Fonction pour obtenir tous les jeux avec leur slug composé
+export async function getAllGamesWithCompositeSlug(): Promise<(GameWithConsole & { compositeSlug: string })[]> {
+  const games = await prisma.game.findMany({
+    include: {
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      }
+    },
+    orderBy: {
+      title: 'asc'
+    }
+  })
+  
+  return games.map(game => ({
+    ...game,
+    compositeSlug: generateGameCompositeSlug(game)
+  }))
 }
 
 export function getAvailableRegions(console: ConsoleWithMedias): string[] {

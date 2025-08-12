@@ -135,7 +135,7 @@ model ConsoleVariant {
 
 model Game {
   id                     String               @id @default(cuid())
-  slug                   String               @unique
+  slug                   String               
   title                  String
   consoleId              String
   releaseYear            Int?
@@ -176,6 +176,7 @@ model Game {
   userCollections        UserGameCollection[]
   wishlistItems          UserWishlist[]
 
+  @@unique([slug, consoleId])
   @@map("games")
 }
 

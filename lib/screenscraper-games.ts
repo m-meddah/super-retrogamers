@@ -621,11 +621,16 @@ export async function createGameFromScreenscraper(
     
     const slug = generateGameSlug(gameTitle)
     
-    // Ensure slug uniqueness
+    // Ensure slug uniqueness per console
     let finalSlug = slug
     let counter = 2
     
-    while (await prisma.game.findUnique({ where: { slug: finalSlug } })) {
+    while (await prisma.game.findFirst({ 
+      where: { 
+        slug: finalSlug,
+        consoleId: gameConsole.id 
+      } 
+    })) {
       finalSlug = `${slug}-${counter}`
       counter++
     }

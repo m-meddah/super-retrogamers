@@ -187,9 +187,11 @@ async function ContentManagementContent() {
                               Éditer article
                             </Button>
                           </Link>
-                          <Button variant="outline" size="sm">
-                            Voir jeux
-                          </Button>
+                          <Link href={`/consoles/${console.slug}/jeux`}>
+                            <Button variant="outline" size="sm">
+                              Voir jeux
+                            </Button>
+                          </Link>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -286,9 +288,11 @@ async function ContentManagementContent() {
                           <Button variant="outline" size="sm">
                             Modifier
                           </Button>
-                          <Button variant="outline" size="sm">
-                            Voir détails
-                          </Button>
+                          <Link href={`/jeux/${game.slug}`}>
+                            <Button variant="outline" size="sm">
+                              Voir détails
+                            </Button>
+                          </Link>
                         </div>
                       </TableCell>
                     </TableRow>
