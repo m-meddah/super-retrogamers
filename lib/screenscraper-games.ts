@@ -235,6 +235,55 @@ async function rateLimitedFetch(url: string): Promise<Response> {
 }
 
 /**
+ * Récupère les détails d'un jeu spécifique avec ses médias depuis Screenscraper
+ * @param gameId L'ID du jeu sur Screenscraper
+ * @param systemId L'ID du système (optionnel, pour optimisation)
+ * @returns Détails du jeu avec médias ou null si non trouvé
+ */
+export async function getGameDetailsWithMedias(gameId: number, systemId?: number): Promise<ScreenscraperGame | null> {
+  try {
+    const devId = process.env.SCREENSCRAPER_DEV_ID
+    const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
+    
+    if (!devId || !devPassword) {
+      console.error('Identifiants Screenscraper manquants')
+      return null
+    }
+    
+    // API pour récupérer les détails d'un jeu spécifique
+    let url = `https://api.screenscraper.fr/api2/jeuInfos.php?devid=${devId}&devpassword=${devPassword}&output=json&gameid=${gameId}`
+    
+    // Ajouter systemid si fourni pour plus de précision
+    if (systemId) {
+      url += `&systemeid=${systemId}`
+    }
+    
+    console.log(`Récupération des détails du jeu ${gameId}...`)
+    const response = await rateLimitedFetch(url)
+    
+    if (!response.ok) {
+      console.error(`Erreur API Screenscraper pour le jeu ${gameId}: ${response.status}`)
+      return null
+    }
+    
+    const data = await response.json()
+    
+    if (!data.response?.jeu) {
+      console.error(`Aucun jeu trouvé pour l'ID ${gameId}`)
+      return null
+    }
+    
+    const game = data.response.jeu
+    console.log(`Jeu ${gameId} trouvé: ${game.nom || 'Nom inconnu'} avec ${game.medias?.length || 0} médias`)
+    return game
+    
+  } catch (error) {
+    console.error(`Erreur lors de la récupération des détails du jeu ${gameId}:`, error)
+    return null
+  }
+}
+
+/**
  * Récupère la liste des jeux pour une console donnée depuis Screenscraper
  * @param systemId L'ID du système sur Screenscraper (ex: 13 pour GameCube)
  * @returns Liste des IDs de jeux Screenscraper
@@ -1125,6 +1174,103 @@ export async function getGameDetails(gameId: number, systemId?: number): Promise
   } catch (error) {
     console.error(`Erreur lors de la récupération du jeu ${gameId}:`, error)
     return null
+  }
+}
+
+/**
+ * Re-scraper les médias d'un jeu existant
+ */
+export async function rescrapGameMedias(gameId: string): Promise<{ success: boolean, message: string, mediasAdded: number }> {
+  try {
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        console: true
+      }
+    })
+    
+    if (!game) {
+      return {
+        success: false,
+        message: 'Jeu non trouvé',
+        mediasAdded: 0
+      }
+    }
+    
+    if (!game.screenscrapeId) {
+      return {
+        success: false,
+        message: 'Jeu sans ID Screenscraper',
+        mediasAdded: 0
+      }
+    }
+    
+    console.log(`Re-scraping médias pour ${game.title} (ID: ${game.screenscrapeId})`)
+    
+    // Récupérer les détails du jeu avec ses médias
+    const systemId = game.console?.screenscrapeId || undefined
+    const gameDetails = await getGameDetailsWithMedias(game.screenscrapeId, systemId)
+    
+    if (!gameDetails?.medias || !Array.isArray(gameDetails.medias) || gameDetails.medias.length === 0) {
+      return {
+        success: false,
+        message: 'Aucun média trouvé sur Screenscraper',
+        mediasAdded: 0
+      }
+    }
+    
+    console.log(`${gameDetails.medias.length} médias trouvés sur Screenscraper`)
+    
+    // Supprimer les anciens médias
+    await prisma.gameMedia.deleteMany({
+      where: { gameId: game.id }
+    })
+    console.log('Anciens médias supprimés')
+    
+    // Traiter les nouveaux médias
+    await processGameMedias(game.id, gameDetails.medias, game.slug, game.console?.slug || 'unknown')
+    
+    // Compter les médias créés
+    const mediaCount = await prisma.gameMedia.count({
+      where: { gameId: game.id }
+    })
+    
+    // Mettre à jour l'image principale du jeu si nécessaire
+    if (mediaCount > 0 && !game.image) {
+      const bestMedia = await prisma.gameMedia.findFirst({
+        where: {
+          gameId: game.id,
+          localPath: { not: null },
+          mediaType: { in: ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss'] }
+        },
+        orderBy: [
+          { mediaType: 'asc' }, // Ordre de priorité
+          { region: 'asc' }
+        ]
+      })
+      
+      if (bestMedia?.localPath) {
+        await prisma.game.update({
+          where: { id: game.id },
+          data: { image: bestMedia.localPath }
+        })
+        console.log(`Image principale mise à jour: ${bestMedia.localPath}`)
+      }
+    }
+    
+    return {
+      success: true,
+      message: `${mediaCount} médias récupérés`,
+      mediasAdded: mediaCount
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors du re-scraping des médias de jeu:', error)
+    return {
+      success: false,
+      message: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      mediasAdded: 0
+    }
   }
 }
 

@@ -28,7 +28,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction } from "@/lib/actions/admin-scraping-actions"
-import { rescrapConsoleMediasAction } from "@/lib/actions/scraping-actions"
+import { rescrapConsoleMediasAction, rescrapGameMediasAction } from "@/lib/actions/scraping-actions"
 
 interface ScrapingStats {
   consolesProcessed: number
@@ -58,6 +58,7 @@ export default function ScrapingManagement() {
   const [gameScrapingState, gameScrapingAction, gameScrapingPending] = useActionState(scrapeSingleGameAction, { success: false })
   const [addConsoleState, addConsoleAction, addConsolePending] = useActionState(addConsoleManuallyAction, { success: false })
   const [mediaRescrapState, mediaRescrapAction, mediaRescrapPending] = useActionState(rescrapConsoleMediasAction, { success: false })
+  const [gameMediaRescrapState, gameMediaRescrapAction, gameMediaRescrapPending] = useActionState(rescrapGameMediasAction, { success: false })
   const [isScrapingAll, setIsScrapingAll] = useState(false)
   const [isScrapingLimited, setIsScrapingLimited] = useState(false)
 
@@ -159,6 +160,23 @@ export default function ScrapingManagement() {
       variant: "destructive",
     })
     mediaRescrapState.error = undefined
+  }
+  
+  if (gameMediaRescrapState.success && gameMediaRescrapState.data?.errorDetails?.[0]) {
+    toast({
+      title: "Re-scraping des médias de jeu terminé",
+      description: gameMediaRescrapState.data.errorDetails[0],
+    })
+    gameMediaRescrapState.success = false
+  }
+  
+  if (gameMediaRescrapState.error) {
+    toast({
+      title: "Erreur",
+      description: gameMediaRescrapState.error,
+      variant: "destructive",
+    })
+    gameMediaRescrapState.error = undefined
   }
   
   const handleScrapeAll = async () => {
@@ -470,6 +488,51 @@ export default function ScrapingManagement() {
             <AlertTitle>Test Neo Geo</AlertTitle>
             <AlertDescription>
               ID Neo Geo pour test : <strong>cme8t72pp0000sj4o6n395y5p</strong>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Re-scraping Game Medias */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Re-scraping des médias de jeu</CardTitle>
+          <CardDescription>
+            Re-télécharger les médias pour un jeu existant (utile si certains médias n&apos;ont pas été téléchargés)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form action={gameMediaRescrapAction} className="flex space-x-4">
+            <div className="flex-1">
+              <Label htmlFor="gameIdForMedias">ID Jeu (Base de données)</Label>
+              <Input
+                id="gameIdForMedias"
+                name="gameId"
+                placeholder="Ex: cmge8t72pp0000sj4o6n395y5p"
+                required
+              />
+            </div>
+            <div className="flex items-end">
+              <Button 
+                type="submit"
+                disabled={gameMediaRescrapPending}
+                className="flex items-center space-x-2"
+              >
+                {gameMediaRescrapPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span>Re-scraper les médias</span>
+              </Button>
+            </div>
+          </form>
+          
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Comment trouver l&apos;ID</AlertTitle>
+            <AlertDescription>
+              Rendez-vous dans l&apos;onglet &quot;Consoles&quot; ou &quot;Jeux&quot; de l&apos;admin, trouvez votre jeu et copiez son ID unique.
             </AlertDescription>
           </Alert>
         </CardContent>

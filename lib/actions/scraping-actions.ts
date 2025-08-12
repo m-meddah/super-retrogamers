@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { scrapeConsolesFromScreenscraper, rescrapConsoleMedias } from '@/lib/screenscraper-service'
-import { scrapeGamesForConsole } from '@/lib/screenscraper-games'
+import { scrapeGamesForConsole, rescrapGameMedias } from '@/lib/screenscraper-games'
 import { prisma } from '@/lib/prisma'
 
 export interface ScrapingResult {
@@ -239,6 +239,52 @@ export async function rescrapConsoleMediasAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur lors du re-scraping des médias'
+    }
+  }
+}
+
+// Re-scrape game medias action
+export async function rescrapGameMediasAction(
+  prevState: ScrapingResult,
+  formData: FormData
+): Promise<ScrapingResult> {
+  try {
+    const gameId = formData.get('gameId') as string
+    
+    if (!gameId) {
+      return {
+        success: false,
+        error: 'ID jeu requis'
+      }
+    }
+    
+    const result = await rescrapGameMedias(gameId)
+    
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.message
+      }
+    }
+    
+    // Revalidate pages
+    revalidatePath('/jeux')
+    revalidatePath(`/jeux`)
+    
+    return {
+      success: true,
+      data: {
+        total: result.mediasAdded,
+        imported: result.mediasAdded,
+        errors: 0,
+        errorDetails: [result.message]
+      }
+    }
+  } catch (error) {
+    console.error('Re-scrape game medias error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du re-scraping des médias de jeu'
     }
   }
 }
