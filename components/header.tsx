@@ -18,11 +18,11 @@ export default function Header() {
   const isAdmin = session?.user?.role === "admin"
 
   const navigation = [
-    { name: "Accueil", href: "/" },
-    { name: "Consoles", href: "/consoles" },
-    { name: "Recherche", href: "/recherche" },
-    { name: "Collection", href: "/collection" },
-    ...(isAdmin ? [{ name: "Admin", href: "/admin" }] : []),
+    { name: "Accueil", href: "/", useRegional: true },
+    { name: "Consoles", href: "/consoles", useRegional: true },
+    { name: "Recherche", href: "/recherche", useRegional: true },
+    { name: "Collection", href: "/collection", useRegional: false },
+    ...(isAdmin ? [{ name: "Admin", href: "/admin", useRegional: false }] : []),
   ]
 
   const isActive = (href: string) => {
@@ -50,19 +50,31 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            {navigation.map((item) => (
-              <RegionalLink
-                key={item.name}
-                href={item.href}
-                className={`text-sm font-medium transition-colors ${
-                  isActive(item.href)
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-                }`}
-              >
-                {item.name}
-              </RegionalLink>
-            ))}
+            {navigation.map((item) => {
+              const linkClassName = `text-sm font-medium transition-colors ${
+                isActive(item.href)
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+              }`
+              
+              return item.useRegional ? (
+                <RegionalLink
+                  key={item.name}
+                  href={item.href}
+                  className={linkClassName}
+                >
+                  {item.name}
+                </RegionalLink>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={linkClassName}
+                >
+                  {item.name}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* Desktop Auth Section */}
@@ -83,14 +95,14 @@ export default function Header() {
                 
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
-                    <RegionalLink
+                    <Link
                       href="/dashboard"
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
                       <BarChart3 className="h-4 w-4" />
                       Mon dashboard
-                    </RegionalLink>
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -125,20 +137,33 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 dark:border-gray-800">
             <nav className="py-4 space-y-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-2 text-base font-medium transition-colors ${
-                    isActive(item.href)
-                      ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/20"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const mobileLinkClassName = `block px-4 py-2 text-base font-medium transition-colors ${
+                  isActive(item.href)
+                    ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/20"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                }`
+                
+                return item.useRegional ? (
+                  <RegionalLink
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={mobileLinkClassName}
+                  >
+                    {item.name}
+                  </RegionalLink>
+                ) : (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={mobileLinkClassName}
+                  >
+                    {item.name}
+                  </Link>
+                )
+              })}
               
               {/* Mobile Auth Section */}
               <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
