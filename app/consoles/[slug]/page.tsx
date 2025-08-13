@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
-import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo } from "@/lib/data-prisma"
-import GameCardWrapper from "@/components/game-card-wrapper"
+import { getConsoleWithMediasBySlug, getGamesByConsoleWithConsoleInfo } from "@/lib/data-prisma"
+import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
+import ConsoleImageRegional from "@/components/console-image-regional"
 
 interface ConsolePageProps {
   params: Promise<{
@@ -15,7 +15,7 @@ interface ConsolePageProps {
 
 export default async function ConsolePage({ params }: ConsolePageProps) {
   const { slug } = await params
-  const console = await getConsoleBySlug(slug)
+  const console = await getConsoleWithMediasBySlug(slug)
 
   if (!console) {
     notFound()
@@ -121,12 +121,7 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
           {/* Right Column - Image */}
           <div className="flex flex-col space-y-6">
             <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 shadow-lg dark:from-gray-800 dark:to-gray-900">
-              <Image
-                src={console.image || "/placeholder.svg"}
-                alt={console.name}
-                fill
-                className="object-contain p-8 transition-transform duration-300 hover:scale-105"
-              />
+              <ConsoleImageRegional console={console} />
             </div>
           </div>
         </div>
@@ -168,7 +163,7 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
           {games.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {games.slice(0, 4).map((game) => (
-                <GameCardWrapper key={game.id} game={game} showConsole={false} />
+                <GameCardRegionalWrapper key={game.id} game={game} showConsole={false} />
               ))}
             </div>
           ) : (

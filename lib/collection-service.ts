@@ -81,10 +81,18 @@ export class CollectionService {
       prisma.userConsoleCollection.findMany({
         where: { userId },
         include: {
-          console: true,
+          console: {
+            include: {
+              medias: true
+            }
+          },
           variant: {
             include: {
-              console: true
+              console: {
+                include: {
+                  medias: true
+                }
+              }
             }
           }
         },
@@ -174,14 +182,16 @@ export class CollectionService {
         include: {
           game: {
             include: {
-              console: true
+              console: true,
+              medias: true
             }
           },
           variant: {
             include: {
               game: {
                 include: {
-                  console: true
+                  console: true,
+                  medias: true
                 }
               }
             }

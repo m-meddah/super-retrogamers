@@ -7,6 +7,7 @@ import { useState } from "react"
 import { useSession, signOut } from "@/lib/auth-client"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CompactRegionSelector } from "@/components/region-selector"
+import RegionalLink from "@/components/regional-link"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -39,18 +40,18 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <RegionalLink href="/" className="flex items-center gap-2">
             <Gamepad2 className="h-5 w-5 text-blue-600" />
             <span className="text-lg font-semibold text-gray-900 dark:text-white">
               <span className="hidden sm:inline">Super Retrogamers</span>
               <span className="sm:hidden">SR</span>
             </span>
-          </Link>
+          </RegionalLink>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navigation.map((item) => (
-              <Link
+              <RegionalLink
                 key={item.name}
                 href={item.href}
                 className={`text-sm font-medium transition-colors ${
@@ -60,7 +61,7 @@ export default function Header() {
                 }`}
               >
                 {item.name}
-              </Link>
+              </RegionalLink>
             ))}
           </nav>
 
@@ -82,14 +83,14 @@ export default function Header() {
                 
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
-                    <Link
+                    <RegionalLink
                       href="/dashboard"
                       onClick={() => setIsUserMenuOpen(false)}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     >
                       <BarChart3 className="h-4 w-4" />
                       Mon dashboard
-                    </Link>
+                    </RegionalLink>
                     <button
                       onClick={handleSignOut}
                       className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"

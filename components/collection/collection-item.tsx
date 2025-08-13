@@ -1,6 +1,7 @@
 "use client"
 
-import Image from 'next/image'
+import ConsoleImageByRegion from './console-image-by-region'
+import GameImageByRegion from './game-image-by-region'
 import { 
   UserConsoleCollection, 
   UserGameCollection, 
@@ -98,15 +99,6 @@ export default function CollectionItem({ item, type, onEdit, onDelete }: Collect
     }
   }
 
-  const getImageUrl = () => {
-    if (type === 'console') {
-      const consoleItem = item as ConsoleCollectionItem
-      return consoleItem.variant?.image || consoleItem.console?.image || '/placeholder-console.jpg'
-    } else {
-      const gameItem = item as GameCollectionItem
-      return gameItem.variant?.image || gameItem.game?.image || '/placeholder-game.jpg'
-    }
-  }
 
   const getConsoleName = () => {
     if (type === 'console') {
@@ -121,12 +113,21 @@ export default function CollectionItem({ item, type, onEdit, onDelete }: Collect
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-transform hover:scale-[1.02]">
       <div className="aspect-[4/3] relative bg-gray-100 dark:bg-gray-700">
-        <Image
-          src={getImageUrl()}
-          alt={getDisplayName()}
-          fill
-          className="object-cover"
-        />
+        {type === 'console' ? (
+          <ConsoleImageByRegion
+            console={(item as ConsoleCollectionItem).console}
+            variant={(item as ConsoleCollectionItem).variant}
+            alt={getDisplayName()}
+            className="object-cover"
+          />
+        ) : (
+          <GameImageByRegion
+            game={(item as GameCollectionItem).game}
+            variant={(item as GameCollectionItem).variant}
+            alt={getDisplayName()}
+            className="object-cover"
+          />
+        )}
         <div className="absolute top-2 left-2">
           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
             item.condition ? conditionColors[item.condition] : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
