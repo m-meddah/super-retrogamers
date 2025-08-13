@@ -17,6 +17,7 @@ const REGION_LABELS: Record<Region, string> = {
   EU: 'Europe',
   WOR: 'Monde',
   JP: 'Japon',
+  ASI: 'Asie',
   US: 'États-Unis'
 }
 
@@ -25,6 +26,7 @@ const REGION_DESCRIPTIONS: Record<Region, string> = {
   EU: 'Privilégie les versions européennes',
   WOR: 'Privilégie les versions mondiales',
   JP: 'Privilégie les versions japonaises',
+  ASI: 'Privilégie les versions asiatiques',
   US: 'Privilégie les versions américaines'
 }
 

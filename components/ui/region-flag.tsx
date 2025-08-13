@@ -66,6 +66,14 @@ export function RegionFlag({ region, className = "w-6 h-4" }: RegionFlagProps) {
             <path d="M8,10 Q12,8 16,10" fill="#5cb85c"/>
           </svg>
         )
+      case 'ASI':
+        return (
+          <svg className={className} viewBox="0 0 24 16" fill="currentColor">
+            <rect width="24" height="16" fill="#ff6b00"/>
+            <circle cx="12" cy="8" r="3" fill="#fff"/>
+            <path d="M12,5 L13,7 L15,7 L13.5,8.5 L14,11 L12,9.5 L10,11 L10.5,8.5 L9,7 L11,7 Z" fill="#ff6b00"/>
+          </svg>
+        )
       default:
         return (
           <svg className={className} viewBox="0 0 24 16" fill="currentColor">

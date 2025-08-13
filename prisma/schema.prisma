@@ -392,6 +392,7 @@ enum Region {
   EU
   WOR
   JP
+  ASI
   US
 }
 

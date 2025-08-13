@@ -13,11 +13,13 @@ interface ConsoleCardRegionalWrapperProps {
   console: ConsoleWithMedias
 }
 
-function ConsoleCardWithRegion({ console }: ConsoleCardRegionalWrapperProps) {
+function ConsoleCardWithRegion({ console: consoleData }: ConsoleCardRegionalWrapperProps) {
   const currentRegion = useCurrentRegion()
-  const preferredRegion = currentRegion.toLowerCase()
+  const preferredRegionLowercase = currentRegion.toLowerCase()
   
-  return <ConsoleCardWrapper console={console} preferredRegion={preferredRegion} />
+  console.log(`[ConsoleCardWithRegion] Console ${consoleData.slug} - Region: ${currentRegion}`)
+  
+  return <ConsoleCardWrapper console={consoleData} preferredRegion={preferredRegionLowercase} />
 }
 
 export default function ConsoleCardRegionalWrapper({ console }: ConsoleCardRegionalWrapperProps) {

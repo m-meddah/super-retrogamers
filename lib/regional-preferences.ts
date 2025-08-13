@@ -113,25 +113,38 @@ export function selectBestConsoleMedia(
   mediaType: string,
   preferredRegion: string = 'fr'
 ): ConsoleMedias | null {
-  if (!medias || medias.length === 0) return null
+  if (!medias || medias.length === 0) {
+    console.log(`[selectBestConsoleMedia] No medias available for type ${mediaType}`)
+    return null
+  }
   
   // Filtrer par type de média
   const mediasOfType = medias.filter(m => m.type === mediaType)
   
-  if (mediasOfType.length === 0) return null
+  if (mediasOfType.length === 0) {
+    console.log(`[selectBestConsoleMedia] No medias found for type ${mediaType}. Available types:`, medias.map(m => m.type))
+    return null
+  }
+  
+  console.log(`[selectBestConsoleMedia] Found ${mediasOfType.length} medias for type ${mediaType}:`, mediasOfType.map(m => ({ region: m.region, localPath: m.localPath })))
   
   // Si un seul média, le retourner
   if (mediasOfType.length === 1) return mediasOfType[0]
   
   // Sélectionner selon l'ordre de priorité régional (avec ss en dernier)
   const regionPriority = getRegionPriorityLowercase(preferredRegion)
+  console.log(`[selectBestConsoleMedia] Region priority for ${preferredRegion}:`, regionPriority)
   
   for (const region of regionPriority) {
     const mediaForRegion = mediasOfType.find(m => m.region.toLowerCase() === region)
-    if (mediaForRegion) return mediaForRegion
+    if (mediaForRegion) {
+      console.log(`[selectBestConsoleMedia] Selected media for region ${region}:`, mediaForRegion.localPath)
+      return mediaForRegion
+    }
   }
   
   // Si aucune région prioritaire trouvée, retourner le premier
+  console.log(`[selectBestConsoleMedia] No regional match, returning first media:`, mediasOfType[0].localPath)
   return mediasOfType[0]
 }
 
@@ -169,20 +182,34 @@ export function selectBestGameMedia(
  * Sélectionne la meilleure image de console selon les préférences régionales
  */
 export function selectBestConsoleImage(
-  console: RegionalConsoleData,
+  consoleData: RegionalConsoleData,
   preferredRegion: string = 'fr'
 ): string | null {
-  // Si une image principale existe déjà, la prioriser
-  if (console.image) return console.image
-  
   // Types d'images par ordre de priorité
   const imageTypePriority = ['logo-svg', 'wheel', 'photo', 'illustration']
   
+  // Toujours utiliser la sélection régionale basée sur les médias téléchargés
   for (const imageType of imageTypePriority) {
-    const bestMedia = selectBestConsoleMedia(console.medias, imageType, preferredRegion)
-    if (bestMedia) return bestMedia.localPath
+    const bestMedia = selectBestConsoleMedia(consoleData.medias, imageType, preferredRegion)
+    if (bestMedia && bestMedia.localPath) {
+      if (typeof window !== 'undefined') {
+        console.log(`[Console ${consoleData.slug}] Selected ${imageType} for region ${preferredRegion}:`, bestMedia.localPath)
+      }
+      return bestMedia.localPath
+    }
   }
   
+  // Fallback vers l'image principale seulement si aucun média régional trouvé
+  if (consoleData.image) {
+    if (typeof window !== 'undefined') {
+      console.log(`[Console ${consoleData.slug}] Using fallback image:`, consoleData.image)
+    }
+    return consoleData.image
+  }
+  
+  if (typeof window !== 'undefined') {
+    console.log(`[Console ${consoleData.slug}] No image found for region ${preferredRegion}`)
+  }
   return null
 }
 
@@ -190,20 +217,34 @@ export function selectBestConsoleImage(
  * Sélectionne la meilleure image de jeu selon les préférences régionales
  */
 export function selectBestGameImage(
-  game: RegionalGameData,
+  gameData: RegionalGameData,
   preferredRegion: string = 'fr'
 ): string | null {
-  // Si une image principale existe déjà, la prioriser
-  if (game.image) return game.image
-  
   // Types d'images par ordre de priorité pour les jeux
   const imageTypePriority = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
   
+  // Toujours utiliser la sélection régionale basée sur les médias téléchargés
   for (const imageType of imageTypePriority) {
-    const bestMedia = selectBestGameMedia(game.medias, imageType, preferredRegion)
-    if (bestMedia?.localPath) return bestMedia.localPath
+    const bestMedia = selectBestGameMedia(gameData.medias, imageType, preferredRegion)
+    if (bestMedia?.localPath) {
+      if (typeof window !== 'undefined') {
+        console.log(`[Game ${gameData.slug}] Selected ${imageType} for region ${preferredRegion}:`, bestMedia.localPath)
+      }
+      return bestMedia.localPath
+    }
   }
   
+  // Fallback vers l'image principale seulement si aucun média régional trouvé
+  if (gameData.image) {
+    if (typeof window !== 'undefined') {
+      console.log(`[Game ${gameData.slug}] Using fallback image:`, gameData.image)
+    }
+    return gameData.image
+  }
+  
+  if (typeof window !== 'undefined') {
+    console.log(`[Game ${gameData.slug}] No image found for region ${preferredRegion}`)
+  }
   return null
 }
 
@@ -211,7 +252,7 @@ export function selectBestGameImage(
  * Obtient la date de sortie selon la région préférée
  */
 export function getRegionalReleaseDate(
-  game: RegionalGameData,
+  gameData: RegionalGameData,
   preferredRegion: string = 'fr'
 ): Date | null {
   const regionPriority = getRegionPriorityLowercase(preferredRegion)
@@ -219,19 +260,19 @@ export function getRegionalReleaseDate(
   for (const region of regionPriority) {
     switch (region) {
       case 'fr':
-        if (game.releaseDateFR) return game.releaseDateFR
+        if (gameData.releaseDateFR) return gameData.releaseDateFR
         break
       case 'eu':
-        if (game.releaseDateEU) return game.releaseDateEU
+        if (gameData.releaseDateEU) return gameData.releaseDateEU
         break
       case 'us':
-        if (game.releaseDateUS) return game.releaseDateUS
+        if (gameData.releaseDateUS) return gameData.releaseDateUS
         break
       case 'jp':
-        if (game.releaseDateJP) return game.releaseDateJP
+        if (gameData.releaseDateJP) return gameData.releaseDateJP
         break
       case 'wor':
-        if (game.releaseDateWOR) return game.releaseDateWOR
+        if (gameData.releaseDateWOR) return gameData.releaseDateWOR
         break
       case 'ss':
         // ss n'a pas de date spécifique, ignorer
@@ -246,34 +287,34 @@ export function getRegionalReleaseDate(
  * Obtient le titre selon la région préférée (extension future)
  */
 export function getRegionalTitle(
-  game: RegionalGameData,
+  gameData: RegionalGameData,
   preferredRegion: string = 'fr'
 ): string {
   // Pour le moment, retourner le titre par défaut
   // À l'avenir, on pourrait ajouter des titres régionaux
   const mappedRegion = mapPrismaRegion(preferredRegion)
-  if (game.regionalTitles && mappedRegion in game.regionalTitles) {
-    const title = game.regionalTitles[mappedRegion as keyof typeof game.regionalTitles]
+  if (gameData.regionalTitles && mappedRegion in gameData.regionalTitles) {
+    const title = gameData.regionalTitles[mappedRegion as keyof typeof gameData.regionalTitles]
     if (title) return title
   }
   
-  return game.title
+  return gameData.title
 }
 
 /**
  * Obtient la description selon la région préférée (extension future)
  */
 export function getRegionalDescription(
-  item: RegionalConsoleData | RegionalGameData,
+  itemData: RegionalConsoleData | RegionalGameData,
   preferredRegion: string = 'fr'
 ): string | null {
   // Pour le moment, retourner la description par défaut
   // À l'avenir, on pourrait ajouter des descriptions régionales
   const mappedRegion = mapPrismaRegion(preferredRegion)
-  if (item.regionalDescriptions && mappedRegion in item.regionalDescriptions) {
-    const description = item.regionalDescriptions[mappedRegion as keyof typeof item.regionalDescriptions]
+  if (itemData.regionalDescriptions && mappedRegion in itemData.regionalDescriptions) {
+    const description = itemData.regionalDescriptions[mappedRegion as keyof typeof itemData.regionalDescriptions]
     if (description) return description
   }
   
-  return item.description
+  return itemData.description
 }

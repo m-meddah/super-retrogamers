@@ -43,11 +43,13 @@ interface GameCardRegionalWrapperProps {
   showConsole?: boolean
 }
 
-function GameCardWithRegion({ game, showConsole = true }: GameCardRegionalWrapperProps) {
+function GameCardWithRegion({ game: gameData, showConsole = true }: GameCardRegionalWrapperProps) {
   const currentRegion = useCurrentRegion()
-  const preferredRegion = currentRegion.toLowerCase()
+  const preferredRegionLowercase = currentRegion.toLowerCase()
   
-  return <GameCardWrapper game={game} showConsole={showConsole} preferredRegion={preferredRegion} />
+  console.log(`[GameCardWithRegion] Game ${gameData.slug} - Region: ${currentRegion}`)
+  
+  return <GameCardWrapper game={gameData} showConsole={showConsole} preferredRegion={preferredRegionLowercase} />
 }
 
 export default function GameCardRegionalWrapper({ game, showConsole = true }: GameCardRegionalWrapperProps) {
