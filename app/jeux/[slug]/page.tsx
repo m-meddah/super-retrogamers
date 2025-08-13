@@ -1,56 +1,15 @@
 import { notFound } from "next/navigation"
-import Link from "next/link"
+import { Suspense } from "react"
+import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
+import GameImageRegional from "@/components/game-image-regional"
 import { Calendar, Star, Gamepad2, Building, Users, Award } from "lucide-react"
 import { getGameBySlug } from "@/lib/data-prisma"
-import { getRegionPriorityLowercase } from "@/lib/regional-preferences"
 
 interface GamePageProps {
   params: Promise<{
     slug: string
   }>
-}
-
-interface GameMedia {
-  mediaType: string
-  region: string
-  localPath: string | null
-}
-
-interface GameWithMedias {
-  image: string | null
-  medias?: GameMedia[]
-}
-
-// Function to get the best available image for the game page
-function getBestGameImage(game: GameWithMedias, preferredRegion: string = 'fr'): string {
-  if (!game.medias || game.medias.length === 0) {
-    return game.image || "/placeholder.svg"
-  }
-  
-  // Priority order for game page images (box art first for sidebar)
-  const priorityTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
-  // Use centralized regional preferences (with 'ss' last)
-  const priorityRegions = getRegionPriorityLowercase(preferredRegion)
-  
-  // Try each priority type
-  for (const type of priorityTypes) {
-    // Try each priority region for this type
-    for (const region of priorityRegions) {
-      const media = game.medias.find((m: GameMedia) => 
-        m.mediaType === type && 
-        m.region.toLowerCase() === region && 
-        m.localPath
-      )
-      if (media?.localPath) {
-        return media.localPath
-      }
-    }
-  }
-  
-  // Fallback to first available media or placeholder
-  const firstMedia = game.medias.find((m: GameMedia) => m.localPath)
-  return firstMedia?.localPath || game.image || "/placeholder.svg"
 }
 
 export default async function GamePage({ params }: GamePageProps) {
@@ -61,34 +20,31 @@ export default async function GamePage({ params }: GamePageProps) {
     notFound()
   }
 
-  // Get the best image for this game
-  const gameImageUrl = getBestGameImage(game, 'fr')
-
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Breadcrumb */}
         <div className="mb-8 flex items-center gap-2 text-sm">
-          <Link
+          <RegionalLink
             href="/consoles"
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             Consoles
-          </Link>
+          </RegionalLink>
           <span className="text-gray-400">/</span>
-          <Link
+          <RegionalLink
             href={`/consoles/${game.console?.slug}`}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             {game.console?.name}
-          </Link>
+          </RegionalLink>
           <span className="text-gray-400">/</span>
-          <Link
+          <RegionalLink
             href={`/consoles/${game.console?.slug}/jeux`}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             Jeux
-          </Link>
+          </RegionalLink>
           <span className="text-gray-400">/</span>
           <span className="text-gray-900 dark:text-white font-medium">{game.title}</span>
         </div>
@@ -216,13 +172,16 @@ export default async function GamePage({ params }: GamePageProps) {
             {/* Game Cover */}
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
               <div className="aspect-[3/4] overflow-hidden">
-                <Image 
-                  src={gameImageUrl} 
-                  alt={game.title}
-                  width={300}
-                  height={400}
-                  className="h-full w-full object-cover" 
-                />
+                <Suspense fallback={
+                  <div className="h-full w-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                }>
+                  <GameImageRegional 
+                    game={game}
+                    width={300}
+                    height={400}
+                    className="h-full w-full object-cover"
+                  />
+                </Suspense>
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white">{game.title}</h3>
@@ -235,23 +194,23 @@ export default async function GamePage({ params }: GamePageProps) {
             {/* Console Link */}
             <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
               <h3 className="mb-3 font-semibold text-gray-900 dark:text-white">Console</h3>
-              <Link
+              <RegionalLink
                 href={`/consoles/${game.console?.slug}`}
                 className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Voir {game.console?.name}
-              </Link>
+              </RegionalLink>
             </div>
 
             {/* More Games Link */}
             <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
               <h3 className="mb-3 font-semibold text-gray-900 dark:text-white">Plus de jeux</h3>
-              <Link
+              <RegionalLink
                 href={`/consoles/${game.console?.slug}/jeux`}
                 className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Autres jeux {game.console?.name}
-              </Link>
+              </RegionalLink>
             </div>
           </div>
         </div>

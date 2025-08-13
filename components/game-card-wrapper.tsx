@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import Link from "next/link"
+import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
@@ -169,9 +169,9 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
           {cardContent}
         </div>
       ) : (
-        <Link href={`/jeux/${gameSlug}`} className="group block">
+        <RegionalLink href={`/jeux/${gameSlug}`} className="group block">
           {cardContent}
-        </Link>
+        </RegionalLink>
       )}
     </Suspense>
   )

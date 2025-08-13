@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import Link from "next/link"
+import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
 import type { Console, ConsoleMedia } from "@prisma/client"
 import { selectBestConsoleImage } from "@/lib/regional-preferences"
@@ -50,7 +50,7 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
         </div>
       </div>
     }>
-      <Link href={`/consoles/${consoleData.slug}`} className="group block">
+      <RegionalLink href={`/consoles/${consoleData.slug}`} className="group block">
         <article className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700">
           {/* Image */}
           <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -85,7 +85,7 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
             </p>
           </div>
         </article>
-      </Link>
+      </RegionalLink>
     </Suspense>
   )
 }
