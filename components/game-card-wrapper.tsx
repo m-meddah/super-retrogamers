@@ -29,7 +29,6 @@ interface SearchGameResult {
   genre: string | null
   playerCount: string | null
   topStaff: boolean
-  image: string | null
   console: {
     name: string
     slug: string
@@ -57,7 +56,7 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
     consoleId: game.console?.slug || '',
     releaseYear: game.releaseYear,
     description: 'description' in game ? game.description || null : null,
-    image: game.image,
+    image: null, // Image column removed, using regional media only
     medias: (game.medias || []).map(media => ({
       id: `${media.mediaType}-${media.region}`,
       mediaType: media.mediaType,

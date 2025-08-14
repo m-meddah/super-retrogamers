@@ -49,7 +49,7 @@ export default function GameImageByRegion({
     consoleId: targetGame.console?.slug || '',
     releaseYear: targetGame.releaseYear,
     description: targetGame.description,
-    image: targetGame.image,
+    image: null, // Image column removed, using regional media only
     medias: (targetGame.medias || []).map(media => ({
       id: `${media.mediaType}-${media.region}`,
       mediaType: media.mediaType,

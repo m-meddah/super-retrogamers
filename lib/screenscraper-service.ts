@@ -442,11 +442,9 @@ export async function rescrapConsoleMedias(consoleId: string): Promise<{ success
       }
     }
     
+    // Image column removed - images now handled through regional media selection
     if (mainImagePath) {
-      await prisma.console.update({
-        where: { id: gameConsole.id },
-        data: { image: mainImagePath }
-      })
+      console.log(`📸 Main image available: ${mainImagePath} (image column removed)`)
     }
     
     return {
@@ -589,7 +587,6 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
             manufacturer,
             releaseYear,
             description: `Console ${mainName} développée par ${manufacturer}. Type: ${system.type || 'Console'}. Support: ${system.supporttype || 'Cartouche'}.`,
-            image: mainImagePath,
             screenscrapeId: system.id,
           }
         })

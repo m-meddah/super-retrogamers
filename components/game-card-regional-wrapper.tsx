@@ -26,7 +26,6 @@ interface SearchGameResult {
   genre: string | null
   playerCount: string | null
   topStaff: boolean
-  image: string | null
   console: {
     name: string
     slug: string

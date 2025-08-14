@@ -147,7 +147,6 @@ export class ScreenscraperService {
         manufacturer,
         releaseYear,
         screenscrapeId: system.id,
-        image: mainImagePath,
       }
     })
     

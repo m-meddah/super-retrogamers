@@ -54,7 +54,7 @@ export interface RegionalConsoleData {
   manufacturer: string
   releaseYear: number | null
   description: string
-  image: string | null
+  image: string | null  // Keep for backward compatibility but always null
   medias: ConsoleMedias[]
   // Données régionales potentielles (pour extension future)
   regionalNames?: Partial<Record<Region, string>>
@@ -68,7 +68,7 @@ export interface RegionalGameData {
   consoleId: string
   releaseYear: number | null
   description: string | null
-  image: string | null
+  image: string | null  // Keep for backward compatibility but always null
   medias: GameMedias[]
   // Données régionales
   releaseDateEU: Date | null
@@ -199,12 +199,9 @@ export function selectBestConsoleImage(
     }
   }
   
-  // Fallback vers l'image principale seulement si aucun média régional trouvé
-  if (consoleData.image) {
-    if (typeof window !== 'undefined') {
-      console.log(`[Console ${consoleData.slug}] Using fallback image:`, consoleData.image)
-    }
-    return consoleData.image
+  // No fallback to image column since it's been removed
+  if (typeof window !== 'undefined') {
+    console.log(`[Console ${consoleData.slug}] No fallback image available - image column removed`)
   }
   
   if (typeof window !== 'undefined') {
@@ -234,12 +231,9 @@ export function selectBestGameImage(
     }
   }
   
-  // Fallback vers l'image principale seulement si aucun média régional trouvé
-  if (gameData.image) {
-    if (typeof window !== 'undefined') {
-      console.log(`[Game ${gameData.slug}] Using fallback image:`, gameData.image)
-    }
-    return gameData.image
+  // No fallback to image column since it's been removed
+  if (typeof window !== 'undefined') {
+    console.log(`[Game ${gameData.slug}] No fallback image available - image column removed`)
   }
   
   if (typeof window !== 'undefined') {

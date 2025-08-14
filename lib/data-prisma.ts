@@ -330,8 +330,8 @@ export function getConsoleMainImage(console: ConsoleWithMedias): string | null {
     }
   }
   
-  // Fallback sur l'image du champ image si pas de médias
-  return console.image
+  // No fallback to image column since it's been removed
+  return null
 }
 
 export function getConsoleMediasByRegion(console: ConsoleWithMedias, region: string): ConsoleMedia[] {

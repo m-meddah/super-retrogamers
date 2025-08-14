@@ -27,7 +27,7 @@ export default function ConsoleImageRegional({ console: consoleData, className, 
     manufacturer: consoleData.manufacturer,
     releaseYear: consoleData.releaseYear,
     description: consoleData.description || '',
-    image: consoleData.image,
+    image: null, // Image column removed, using regional media only
     medias: (consoleData.medias || []).map(media => ({
       id: media.id,
       type: media.type,

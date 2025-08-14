@@ -25,7 +25,6 @@ export interface SearchResult {
     genre: string | null
     playerCount: string | null
     topStaff: boolean
-    image: string | null
     console: {
       name: string
       slug: string
@@ -469,7 +468,6 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult): Se
     genre,
     playerCount,
     topStaff: false, // Pas d'info TOP Staff dans l'API de recherche
-    image: null, // Pas d'image dans l'API de recherche
     console: ssGame.systeme ? {
       name: ssGame.systeme.nom || 'Console inconnue',
       slug: `system-${ssGame.systeme.id}`

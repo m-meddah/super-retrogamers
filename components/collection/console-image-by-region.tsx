@@ -48,7 +48,7 @@ export default function ConsoleImageByRegion({
     manufacturer: targetConsole.manufacturer,
     releaseYear: targetConsole.releaseYear,
     description: targetConsole.description || '',
-    image: targetConsole.image,
+    image: null, // Image column removed, using regional media only
     medias: (targetConsole.medias || []).map(media => ({
       id: media.id,
       type: media.type,

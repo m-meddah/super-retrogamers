@@ -813,12 +813,9 @@ export async function createGameFromScreenscraper(
         ]
       })
       
+      // Image column removed - images now handled through regional media selection
       if (bestMedia?.localPath) {
-        await prisma.game.update({
-          where: { id: createdGame.id },
-          data: { image: bestMedia.localPath }
-        })
-        console.log(`📸 Image principale définie: ${bestMedia.localPath}`)
+        console.log(`📸 Best media available: ${bestMedia.localPath} (image column removed)`)
       }
     }
     
@@ -1261,28 +1258,7 @@ export async function rescrapGameMedias(gameId: string): Promise<{ success: bool
       where: { gameId: game.id }
     })
     
-    // Mettre à jour l'image principale du jeu si nécessaire
-    if (mediaCount > 0 && !game.image) {
-      const bestMedia = await prisma.gameMedia.findFirst({
-        where: {
-          gameId: game.id,
-          localPath: { not: null },
-          mediaType: { in: ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss'] }
-        },
-        orderBy: [
-          { mediaType: 'asc' }, // Ordre de priorité
-          { region: 'asc' }
-        ]
-      })
-      
-      if (bestMedia?.localPath) {
-        await prisma.game.update({
-          where: { id: game.id },
-          data: { image: bestMedia.localPath }
-        })
-        console.log(`Image principale mise à jour: ${bestMedia.localPath}`)
-      }
-    }
+    // Image column removed - images now handled through regional media selection
     
     return {
       success: true,

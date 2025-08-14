@@ -77,7 +77,6 @@ model Console {
   manufacturer          String
   releaseYear           Int?
   description           String
-  image                 String?
   cpu                   String?
   memory                String?
   graphics              String?
@@ -143,7 +142,6 @@ model Game {
   developer              String?
   publisher              String?
   description            String?
-  image                  String?
   screenshots            String[]
   rating                 Float?               @default(0)
   screenscrapeId         Int?
