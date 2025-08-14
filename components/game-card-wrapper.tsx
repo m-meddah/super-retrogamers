@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
 import { selectBestGameImage } from "@/lib/regional-preferences"
+import { useRegionalGameTitle, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
 
 interface GameWithConsole extends Game {
   console?: {
@@ -48,6 +49,11 @@ interface GameCardWrapperProps {
 
 
 export default function GameCardWrapper({ game, showConsole = true, preferredRegion = 'fr' }: GameCardWrapperProps) {
+  // Use regional hooks for title and release date (only for non-Screenscraper results)
+  const isScreenscraperResult = game.slug.startsWith('screenscraper-')
+  const { title: regionalTitle, loading: titleLoading } = useRegionalGameTitle(isScreenscraperResult ? '' : game.id)
+  const { releaseDate: regionalReleaseDate, loading: dateLoading } = useRegionalReleaseDate(isScreenscraperResult ? '' : game.id, 'game')
+
   // Transformer le jeu en format RegionalGameData pour la fonction selectBestGameImage
   const regionalGame = {
     id: game.id,
@@ -74,7 +80,10 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
   }
   
   const imageUrl = selectBestGameImage(regionalGame, preferredRegion) || "/placeholder.svg"
-  const isScreenscraperResult = game.slug.startsWith('screenscraper-')
+  
+  // Use regional data if available, otherwise fallback to default
+  const displayTitle = isScreenscraperResult ? game.title : (regionalTitle || game.title)
+  const displayYear = isScreenscraperResult ? game.releaseYear : (regionalReleaseDate?.getFullYear() || game.releaseYear)
   
   // Générer le slug composé pour les liens
   const gameSlug = game.console?.slug ? 
@@ -87,7 +96,7 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
       <div className="aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-800">
         <Image 
           src={imageUrl} 
-          alt={game.title}
+          alt={displayTitle}
           width={300}
           height={400}
           className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
@@ -97,8 +106,8 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
       {/* Content */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-base font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
-            {game.title}
+          <h3 className={`text-base font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight transition-all duration-200 ${!isScreenscraperResult && titleLoading ? 'opacity-70' : 'opacity-100'}`}>
+            {displayTitle}
             {game.topStaff && (
               <Award className="inline-block h-3 w-3 ml-1 text-amber-500" />
             )}
@@ -115,9 +124,11 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
         
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mb-2">
           {game.genre && <span>{game.genre}</span>}
-          {game.genre && game.releaseYear && <span>•</span>}
-          {game.releaseYear && <span>{game.releaseYear}</span>}
-          {(game.genre || game.releaseYear) && game.playerCount && <span>•</span>}
+          {game.genre && displayYear && <span>•</span>}
+          {displayYear && (
+            <span>{!isScreenscraperResult && dateLoading ? '...' : displayYear}</span>
+          )}
+          {(game.genre || displayYear) && game.playerCount && <span>•</span>}
           {game.playerCount && (
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />

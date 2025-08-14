@@ -92,6 +92,8 @@ model Console {
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   medias                ConsoleMedia[]
+  regionalNames         ConsoleRegionalName[]
+  regionalDates         ConsoleRegionalDate[]
   variants              ConsoleVariant[]
   games                 Game[]
   userCollections       UserConsoleCollection[]
@@ -114,6 +116,32 @@ model ConsoleMedia {
   console   Console  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
 
   @@map("console_medias")
+}
+
+model ConsoleRegionalName {
+  id        String   @id @default(cuid())
+  consoleId String
+  region    Region
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  console   Console  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+
+  @@unique([consoleId, region])
+  @@map("console_regional_names")
+}
+
+model ConsoleRegionalDate {
+  id          String    @id @default(cuid())
+  consoleId   String
+  region      Region
+  releaseDate DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  console     Console   @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+
+  @@unique([consoleId, region])
+  @@map("console_regional_dates")
 }
 
 model ConsoleVariant {
@@ -167,6 +195,7 @@ model Game {
   updatedAt              DateTime             @updatedAt
   genres                 GameGenre[]
   medias                 GameMedia[]
+  regionalTitles         GameRegionalTitle[]
   reviews                GameReview[]
   variants               GameVariant[]
   console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
@@ -274,6 +303,19 @@ model GameMedia {
 
   @@unique([gameId, mediaType, region, supportNumber, pageNumber])
   @@map("game_medias")
+}
+
+model GameRegionalTitle {
+  id        String   @id @default(cuid())
+  gameId    String
+  region    Region
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, region])
+  @@map("game_regional_titles")
 }
 
 model UserConsoleCollection {

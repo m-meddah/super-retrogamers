@@ -4,6 +4,32 @@ import { prisma } from '@/lib/prisma'
 import fs from 'fs/promises'
 import path from 'path'
 
+// Utility functions for regional names and dates
+function extractGameRegionalTitles(noms?: ScreenscraperGame['noms']): Array<{ region: string, title: string }> {
+  if (!noms) return []
+  
+  const regionalTitles: Array<{ region: string, title: string }> = []
+  
+  // Mapping des noms Screenscraper vers nos régions
+  const regionMappings: Record<string, string> = {
+    'nom_eu': 'EU',
+    'nom_us': 'US', 
+    'nom_fr': 'FR',
+    'nom_jp': 'JP',
+    'nom_wor': 'WOR'
+  }
+  
+  // Extraire tous les titres régionaux disponibles
+  Object.entries(regionMappings).forEach(([screenscraperKey, region]) => {
+    const title = noms[screenscraperKey as keyof typeof noms]
+    if (title && title.trim()) {
+      regionalTitles.push({ region, title: title.trim() })
+    }
+  })
+  
+  return regionalTitles
+}
+
 // Complete Screenscraper Game interface based on API documentation
 interface ScreenscraperGame {
   id: number
@@ -559,6 +585,137 @@ function extractMainGenre(genres?: ScreenscraperGame['genres']): string | null {
 /**
  * Create a comprehensive game record from Screenscraper data
  */
+// Fonction pour scraper les titres régionaux des jeux existants
+export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success: boolean, message: string, gamesUpdated: number }> {
+  try {
+    console.log('Début du scraping des titres régionaux pour les jeux existants...')
+    
+    // Récupérer tous les jeux avec un screenscrapeId
+    const existingGames = await prisma.game.findMany({
+      where: {
+        screenscrapeId: {
+          not: null
+        }
+      },
+      include: {
+        regionalTitles: true,
+        console: {
+          select: {
+            name: true,
+            slug: true,
+            screenscrapeId: true
+          }
+        }
+      }
+    })
+    
+    console.log(`${existingGames.length} jeux trouvés avec screenscrapeId`)
+    
+    let gamesUpdated = 0
+    
+    for (const game of existingGames) {
+      try {
+        if (!game.console?.screenscrapeId) {
+          console.log(`❌ Console sans screenscrapeId pour ${game.title}`)
+          continue
+        }
+        
+        console.log(`Traitement de ${game.title} (ID Screenscraper: ${game.screenscrapeId})`)
+        
+        // Récupérer les détails du jeu depuis Screenscraper
+        const gameDetails = await fetchGameDetailsFromScreenscraper(game.screenscrapeId!, game.console.screenscrapeId)
+        
+        if (!gameDetails) {
+          console.log(`❌ Impossible de récupérer les détails pour ${game.title}`)
+          continue
+        }
+        
+        // Traiter les titres régionaux
+        const regionalTitles = extractGameRegionalTitles(gameDetails.noms)
+        
+        if (regionalTitles.length > 0) {
+          // Supprimer les anciens titres régionaux
+          await prisma.gameRegionalTitle.deleteMany({
+            where: { gameId: game.id }
+          })
+          
+          // Ajouter les nouveaux titres régionaux
+          const titleData = regionalTitles.map(title => ({
+            gameId: game.id,
+            region: title.region as any, // Prisma enum
+            title: title.title
+          }))
+          
+          await prisma.gameRegionalTitle.createMany({
+            data: titleData
+          })
+          
+          console.log(`📝 Titres régionaux ajoutés: ${regionalTitles.map(t => `${t.region}: ${t.title}`).join(', ')}`)
+          gamesUpdated++
+        }
+        
+        // Rate limiting entre chaque jeu
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+      } catch (error) {
+        console.error(`Erreur lors du traitement de ${game.title}:`, error)
+        continue
+      }
+    }
+    
+    return {
+      success: true,
+      message: `Scraping terminé: ${gamesUpdated} jeux mis à jour`,
+      gamesUpdated
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors du scraping des titres régionaux:', error)
+    return {
+      success: false,
+      message: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      gamesUpdated: 0
+    }
+  }
+}
+
+// Helper function to fetch game details from Screenscraper
+async function fetchGameDetailsFromScreenscraper(gameId: number, systemId: number): Promise<ScreenscraperGame | null> {
+  try {
+    const devId = process.env.SCREENSCRAPER_DEV_ID
+    const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
+    
+    if (!devId || !devPassword) {
+      console.error('Identifiants Screenscraper manquants')
+      return null
+    }
+    
+    const url = `https://api.screenscraper.fr/api2/jeuInfos.php?devid=${devId}&devpassword=${devPassword}&output=json&gameid=${gameId}&systemeid=${systemId}`
+    
+    console.log(`Récupération des détails du jeu ${gameId}...`)
+    const response = await rateLimitedFetch(url)
+    
+    if (!response.ok) {
+      console.error(`Erreur API Screenscraper: ${response.status}`)
+      return null
+    }
+    
+    const data = await response.json()
+    
+    if (!data.response?.jeu) {
+      console.error('Jeu non trouvé dans la réponse Screenscraper')
+      return null
+    }
+    
+    return data.response.jeu as ScreenscraperGame
+    
+  } catch (error) {
+    console.error(`Erreur lors de la récupération des détails du jeu ${gameId}:`, error)
+    return null
+  }
+}
+
+
 export async function createGameFromScreenscraper(
   gameDetails: ScreenscraperGame, 
   gameConsole: { id: string; slug: string; name: string }
@@ -777,6 +934,21 @@ export async function createGameFromScreenscraper(
     const createdGame = await prisma.game.create({
       data: gameData
     })
+    
+    // Sauvegarder les titres régionaux
+    const regionalTitles = extractGameRegionalTitles(gameDetails.noms)
+    if (regionalTitles.length > 0) {
+      const titleData = regionalTitles.map(title => ({
+        gameId: createdGame.id,
+        region: title.region as any, // Prisma enum
+        title: title.title
+      }))
+      
+      await prisma.gameRegionalTitle.createMany({
+        data: titleData
+      })
+      console.log(`📝 Titres régionaux ajoutés: ${regionalTitles.map(t => `${t.region}: ${t.title}`).join(', ')}`)
+    }
     
     // Process genres if available (commented until Genre table exists)
     if (gameDetails.genres?.genres_id) {

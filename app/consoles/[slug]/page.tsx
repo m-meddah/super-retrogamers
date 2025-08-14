@@ -6,6 +6,7 @@ import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
 import ConsoleImageRegional from "@/components/console-image-regional"
+import ConsoleNameRegional from "@/components/console-name-regional"
 
 interface ConsolePageProps {
   params: Promise<{
@@ -46,7 +47,10 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-                    {console.name}
+                    <ConsoleNameRegional 
+                      consoleId={console.id}
+                      fallbackName={console.name}
+                    />
                   </h1>
                   <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-2">

@@ -27,7 +27,7 @@ import {
   Trash2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction } from "@/lib/actions/admin-scraping-actions"
+import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction, scrapeConsoleRegionalNamesAction, scrapeGameRegionalTitlesAction } from "@/lib/actions/admin-scraping-actions"
 import { rescrapConsoleMediasAction, rescrapGameMediasAction } from "@/lib/actions/scraping-actions"
 
 interface ScrapingStats {
@@ -59,6 +59,8 @@ export default function ScrapingManagement() {
   const [addConsoleState, addConsoleAction, addConsolePending] = useActionState(addConsoleManuallyAction, { success: false })
   const [mediaRescrapState, mediaRescrapAction, mediaRescrapPending] = useActionState(rescrapConsoleMediasAction, { success: false })
   const [gameMediaRescrapState, gameMediaRescrapAction, gameMediaRescrapPending] = useActionState(rescrapGameMediasAction, { success: false })
+  const [regionalNamesState, regionalNamesAction, regionalNamesPending] = useActionState(scrapeConsoleRegionalNamesAction, { success: false })
+  const [regionalTitlesState, regionalTitlesAction, regionalTitlesPending] = useActionState(scrapeGameRegionalTitlesAction, { success: false })
   const [isScrapingAll, setIsScrapingAll] = useState(false)
   const [isScrapingLimited, setIsScrapingLimited] = useState(false)
 
@@ -630,6 +632,105 @@ export default function ScrapingManagement() {
               </Button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Regional Names Scraping */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Scraping des noms régionaux</CardTitle>
+          <CardDescription>
+            Synchronise les noms et titres régionaux pour les consoles et jeux existants
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Information</AlertTitle>
+            <AlertDescription>
+              Ces actions mettent à jour les noms régionaux (Megadrive → Genesis) et les titres de jeux 
+              (Resident Evil → Biohazard) pour les données existantes en base.
+            </AlertDescription>
+          </Alert>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Console Regional Names */}
+            <form action={regionalNamesAction} className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <h4 className="font-medium">Noms régionaux des consoles</h4>
+                <p className="text-sm text-muted-foreground">
+                  Met à jour les noms régionaux de toutes les consoles existantes
+                </p>
+                <Button 
+                  type="submit"
+                  disabled={regionalNamesPending}
+                  className="flex items-center space-x-2"
+                >
+                  {regionalNamesPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Monitor className="h-4 w-4" />
+                  )}
+                  <span>Scraper noms consoles</span>
+                </Button>
+              </div>
+            </form>
+
+            {/* Game Regional Titles */}
+            <form action={regionalTitlesAction} className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <h4 className="font-medium">Titres régionaux des jeux</h4>
+                <p className="text-sm text-muted-foreground">
+                  Met à jour les titres régionaux de tous les jeux existants
+                </p>
+                <Button 
+                  type="submit"
+                  disabled={regionalTitlesPending}
+                  className="flex items-center space-x-2"
+                >
+                  {regionalTitlesPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Gamepad2 className="h-4 w-4" />
+                  )}
+                  <span>Scraper titres jeux</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* Status Messages */}
+          {regionalNamesState.success && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Succès</AlertTitle>
+              <AlertDescription>{regionalNamesState.message}</AlertDescription>
+            </Alert>
+          )}
+          
+          {regionalNamesState.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>{regionalNamesState.error}</AlertDescription>
+            </Alert>
+          )}
+
+          {regionalTitlesState.success && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Succès</AlertTitle>
+              <AlertDescription>{regionalTitlesState.message}</AlertDescription>
+            </Alert>
+          )}
+          
+          {regionalTitlesState.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erreur</AlertTitle>
+              <AlertDescription>{regionalTitlesState.error}</AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 

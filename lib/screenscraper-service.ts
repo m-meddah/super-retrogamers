@@ -173,6 +173,48 @@ function getManufacturer(company: string | undefined): string {
   return manufacturers[lowerCompany] || cleanCompany
 }
 
+function extractRegionalNames(noms: ScreenscraperSystem['noms']): Array<{ region: string, name: string }> {
+  const regionalNames: Array<{ region: string, name: string }> = []
+  
+  // Mapping des noms Screenscraper vers nos régions
+  const regionMappings: Record<string, string> = {
+    'nom_eu': 'EU',
+    'nom_us': 'US', 
+    'nom_fr': 'FR',
+    'nom_jp': 'JP',
+    'nom_wor': 'WOR'
+  }
+  
+  // Extraire tous les noms régionaux disponibles
+  Object.entries(regionMappings).forEach(([screenscraperKey, region]) => {
+    const name = noms[screenscraperKey as keyof typeof noms]
+    if (name && name.trim()) {
+      regionalNames.push({ region, name: name.trim() })
+    }
+  })
+  
+  return regionalNames
+}
+
+function extractRegionalDates(system: ScreenscraperSystem): Array<{ region: string, releaseDate: Date | null }> {
+  const regionalDates: Array<{ region: string, releaseDate: Date | null }> = []
+  
+  // Pour les consoles, on peut essayer d'extraire des dates des descriptions ou utiliser datedebut
+  if (system.datedebut) {
+    const year = parseInt(system.datedebut)
+    if (!isNaN(year) && year > 1970 && year < 2030) {
+      // Créer une date générique pour toutes les régions
+      const releaseDate = new Date(year, 0, 1)
+      const regions = ['FR', 'EU', 'WOR', 'JP', 'US']
+      regions.forEach(region => {
+        regionalDates.push({ region, releaseDate })
+      })
+    }
+  }
+  
+  return regionalDates
+}
+
 function isRetroConsole(system: ScreenscraperSystem): boolean {
   // Exclure les IDs modernes explicites
   if (EXCLUDED_MODERN_CONSOLE_IDS.includes(system.id)) {
@@ -463,6 +505,118 @@ export async function rescrapConsoleMedias(consoleId: string): Promise<{ success
   }
 }
 
+// Fonction pour scraper les noms régionaux des consoles existantes
+export async function scrapeRegionalNamesForExistingConsoles(): Promise<{ success: boolean, message: string, consolesUpdated: number }> {
+  try {
+    console.log('Début du scraping des noms régionaux pour les consoles existantes...')
+    
+    // Récupérer toutes les consoles avec un screenscrapeId
+    const existingConsoles = await prisma.console.findMany({
+      where: {
+        screenscrapeId: {
+          not: null
+        }
+      },
+      include: {
+        regionalNames: true,
+        regionalDates: true
+      }
+    })
+    
+    console.log(`${existingConsoles.length} consoles trouvées avec screenscrapeId`)
+    
+    let consolesUpdated = 0
+    
+    for (const gameConsole of existingConsoles) {
+      try {
+        console.log(`Traitement de ${gameConsole.name} (ID Screenscraper: ${gameConsole.screenscrapeId})`)
+        
+        // Récupérer les détails du système depuis Screenscraper
+        const systemDetails = await getSystemDetailsWithMedias(gameConsole.screenscrapeId!)
+        
+        if (!systemDetails) {
+          console.log(`❌ Impossible de récupérer les détails pour ${gameConsole.name}`)
+          continue
+        }
+        
+        let hasUpdates = false
+        
+        // Traiter les noms régionaux
+        const regionalNames = extractRegionalNames(systemDetails.noms)
+        if (regionalNames.length > 0) {
+          // Supprimer les anciens noms régionaux
+          await prisma.consoleRegionalName.deleteMany({
+            where: { consoleId: gameConsole.id }
+          })
+          
+          // Ajouter les nouveaux noms régionaux
+          const nameData = regionalNames.map(name => ({
+            consoleId: gameConsole.id,
+            region: name.region as any, // Prisma enum
+            name: name.name
+          }))
+          
+          await prisma.consoleRegionalName.createMany({
+            data: nameData
+          })
+          
+          console.log(`📝 Noms régionaux ajoutés: ${regionalNames.map(n => `${n.region}: ${n.name}`).join(', ')}`)
+          hasUpdates = true
+        }
+        
+        // Traiter les dates régionales
+        const regionalDates = extractRegionalDates(systemDetails)
+        if (regionalDates.length > 0) {
+          // Supprimer les anciennes dates régionales
+          await prisma.consoleRegionalDate.deleteMany({
+            where: { consoleId: gameConsole.id }
+          })
+          
+          // Ajouter les nouvelles dates régionales
+          const dateData = regionalDates.map(date => ({
+            consoleId: gameConsole.id,
+            region: date.region as any, // Prisma enum
+            releaseDate: date.releaseDate
+          }))
+          
+          await prisma.consoleRegionalDate.createMany({
+            data: dateData
+          })
+          
+          console.log(`📅 Dates régionales ajoutées pour ${regionalDates.length} régions`)
+          hasUpdates = true
+        }
+        
+        if (hasUpdates) {
+          consolesUpdated++
+          console.log(`✅ Console ${gameConsole.name} mise à jour avec les données régionales`)
+        }
+        
+        // Rate limiting entre chaque console
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+      } catch (error) {
+        console.error(`Erreur lors du traitement de ${gameConsole.name}:`, error)
+        continue
+      }
+    }
+    
+    return {
+      success: true,
+      message: `Scraping terminé: ${consolesUpdated} consoles mises à jour`,
+      consolesUpdated
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors du scraping des noms régionaux:', error)
+    return {
+      success: false,
+      message: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
+      consolesUpdated: 0
+    }
+  }
+}
+
 export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{ success: boolean, message: string, consolesAdded: number }> {
   try {
     console.log('Début du scraping des consoles depuis Screenscraper...')
@@ -606,6 +760,36 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
           await prisma.consoleMedia.createMany({
             data: mediaData
           })
+        }
+
+        // Sauvegarder les noms régionaux
+        const regionalNames = extractRegionalNames(system.noms)
+        if (regionalNames.length > 0) {
+          const nameData = regionalNames.map(name => ({
+            consoleId: createdConsole.id,
+            region: name.region as any, // Prisma enum
+            name: name.name
+          }))
+          
+          await prisma.consoleRegionalName.createMany({
+            data: nameData
+          })
+          console.log(`Noms régionaux ajoutés: ${regionalNames.map(n => `${n.region}: ${n.name}`).join(', ')}`)
+        }
+
+        // Sauvegarder les dates régionales
+        const regionalDates = extractRegionalDates(system)
+        if (regionalDates.length > 0) {
+          const dateData = regionalDates.map(date => ({
+            consoleId: createdConsole.id,
+            region: date.region as any, // Prisma enum
+            releaseDate: date.releaseDate
+          }))
+          
+          await prisma.consoleRegionalDate.createMany({
+            data: dateData
+          })
+          console.log(`Dates régionales ajoutées pour ${regionalDates.length} régions`)
         }
         
         consolesAdded++

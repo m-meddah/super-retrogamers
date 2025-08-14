@@ -2,7 +2,8 @@
 
 import { getScreenscraperService } from '@/lib/screenscraper-client'
 import { prisma } from '@/lib/prisma'
-import { scrapeConsolesFromScreenscraper } from '@/lib/screenscraper-service'
+import { scrapeConsolesFromScreenscraper, scrapeRegionalNamesForExistingConsoles } from '@/lib/screenscraper-service'
+import { scrapeRegionalTitlesForExistingGames } from '@/lib/screenscraper-games'
 
 export interface ActionState {
   success?: boolean
@@ -198,6 +199,64 @@ export async function scrapeLimitedConsolesAction(): Promise<ActionState> {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur lors du scraping limité des consoles'
+    }
+  }
+}
+
+// Action pour scraper les noms régionaux des consoles existantes
+export async function scrapeConsoleRegionalNamesAction(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const result = await scrapeRegionalNamesForExistingConsoles()
+    
+    if (result.success) {
+      return {
+        success: true,
+        message: `${result.message} - ${result.consolesUpdated} consoles mises à jour`,
+        data: { consolesUpdated: result.consolesUpdated }
+      }
+    } else {
+      return {
+        success: false,
+        error: result.message
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors du scraping des noms régionaux des consoles:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du scraping des noms régionaux'
+    }
+  }
+}
+
+// Action pour scraper les titres régionaux des jeux existants
+export async function scrapeGameRegionalTitlesAction(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const result = await scrapeRegionalTitlesForExistingGames()
+    
+    if (result.success) {
+      return {
+        success: true,
+        message: `${result.message} - ${result.gamesUpdated} jeux mis à jour`,
+        data: { gamesUpdated: result.gamesUpdated }
+      }
+    } else {
+      return {
+        success: false,
+        error: result.message
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors du scraping des titres régionaux des jeux:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du scraping des titres régionaux'
     }
   }
 }

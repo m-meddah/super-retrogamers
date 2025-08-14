@@ -5,6 +5,7 @@ import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
 import type { Console, ConsoleMedia } from "@prisma/client"
 import { selectBestConsoleImage } from "@/lib/regional-preferences"
+import { useRegionalConsoleName, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
 
 interface ConsoleWithMedias extends Console {
   medias?: ConsoleMedia[]
@@ -16,6 +17,10 @@ interface ConsoleCardWrapperProps {
 }
 
 export default function ConsoleCardWrapper({ console: consoleData, preferredRegion = 'fr' }: ConsoleCardWrapperProps) {
+  // Use regional hooks for name and release date
+  const { name: regionalName, loading: nameLoading } = useRegionalConsoleName(consoleData.id)
+  const { releaseDate: regionalReleaseDate, loading: dateLoading } = useRegionalReleaseDate(consoleData.id, 'console')
+
   // Transformer la console en format RegionalConsoleData pour la fonction selectBestConsoleImage
   const regionalConsole = {
     id: consoleData.id,
@@ -38,7 +43,13 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
   
   const imageUrl = selectBestConsoleImage(regionalConsole, preferredRegion) || "/placeholder.svg"
   
-  console.log(`[ConsoleCardWrapper] Console ${consoleData.slug} - PreferredRegion: ${preferredRegion}, ImageURL: ${imageUrl}`)
+  // Use regional name if available, otherwise fallback to default
+  const displayName = regionalName || consoleData.name
+  
+  // Use regional release date year if available
+  const displayYear = regionalReleaseDate?.getFullYear() || consoleData.releaseYear
+  
+  console.log(`[ConsoleCardWrapper] Console ${consoleData.slug} - PreferredRegion: ${preferredRegion}, ImageURL: ${imageUrl}, Regional Name: ${displayName}`)
   
   return (
     <Suspense fallback={
@@ -56,7 +67,7 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
           <div className="aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-gray-800">
             <Image 
               src={imageUrl} 
-              alt={consoleData.name}
+              alt={displayName}
               width={400}
               height={300}
               className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
@@ -66,12 +77,12 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
           {/* Content */}
           <div className="p-4">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
-                {consoleData.name}
+              <h3 className={`text-base font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight transition-all duration-200 ${nameLoading ? 'opacity-70' : 'opacity-100'}`}>
+                {displayName}
               </h3>
-              {consoleData.releaseYear && (
+              {displayYear && (
                 <span className="shrink-0 rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-                  {consoleData.releaseYear}
+                  {dateLoading ? '...' : displayYear}
                 </span>
               )}
             </div>
