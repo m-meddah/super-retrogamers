@@ -133,6 +133,7 @@ export function useRegionalGameTitle(gameId: string): {
 
 /**
  * Hook to get regional release date based on current region preference
+ * Optimized for better UX: keeps previous date during loading
  */
 export function useRegionalReleaseDate(
   itemId: string, 
@@ -149,14 +150,19 @@ export function useRegionalReleaseDate(
     error: string | null
   }>({
     releaseDate: null,
-    loading: true,
+    loading: false, // Start with loading false for better UX
     error: null
   })
+
+  // Track if we're changing regions to show minimal loading
+  const [isChangingRegion, setIsChangingRegion] = useState(false)
 
   useEffect(() => {
     async function fetchReleaseDate() {
       try {
-        setResult(prev => ({ ...prev, loading: true, error: null }))
+        // Only show loading for very short time when changing regions
+        setIsChangingRegion(true)
+        setTimeout(() => setIsChangingRegion(false), 100) // Very short loading state
         
         // Import the server actions dynamically to avoid SSR issues
         const { getConsoleReleaseDate, getGameReleaseDate } = await import('@/lib/regional-names')
@@ -172,11 +178,11 @@ export function useRegionalReleaseDate(
         })
       } catch (error) {
         console.error('Error fetching regional release date:', error)
-        setResult({
-          releaseDate: null,
+        setResult(prev => ({
+          releaseDate: prev.releaseDate, // Keep previous date on error
           loading: false,
           error: error instanceof Error ? error.message : 'Unknown error'
-        })
+        }))
       }
     }
 
@@ -185,5 +191,8 @@ export function useRegionalReleaseDate(
     }
   }, [itemId, itemType, currentRegion])
 
-  return result
+  return {
+    ...result,
+    loading: isChangingRegion // Use the short loading state
+  }
 }
