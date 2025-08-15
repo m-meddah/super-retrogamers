@@ -2,7 +2,7 @@
 
 import { Region } from '@prisma/client'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useRegionalPreferences } from '@/lib/hooks/use-regional-preferences'
+import { usePersistentRegion } from '@/lib/hooks/use-persistent-region'
 import { RegionFlag } from '@/components/ui/region-flag'
 import { Globe } from 'lucide-react'
 
@@ -35,7 +35,8 @@ export function RegionSelector({
   showLabel = true, 
   className = '' 
 }: RegionSelectorProps) {
-  const { region, setRegion } = useRegionalPreferences()
+  // Utilise le nouveau système persistant
+  const { region, setRegion } = usePersistentRegion()
 
   const handleRegionChange = (newRegion: string) => {
     setRegion(newRegion as Region)

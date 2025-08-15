@@ -8,6 +8,7 @@ import AuthProvider from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
+import RegionInitializer from "@/components/region-initializer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         >
           <NuqsAdapter>
             <AuthProvider>
+              <RegionInitializer />
               <Suspense fallback={<div className="h-14 bg-white dark:bg-gray-950" />}>
                 <Header />
               </Suspense>

@@ -1,16 +1,25 @@
 'use client'
 
-import { useActionState, startTransition } from 'react'
-import { Lock, User, CheckCircle, AlertCircle } from 'lucide-react'
+import { useActionState, startTransition, useState, useEffect } from 'react'
+import { Lock, User, CheckCircle, AlertCircle, Globe } from 'lucide-react'
 import { ActionState } from '@/lib/actions/settings-actions'
+import { useSessionRefresh } from '@/lib/hooks/use-session-refresh'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface SettingsFormProps {
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>
   user: {
     name?: string | null
     email?: string | null
+    preferredRegion?: string | null
   }
-  type: 'profile' | 'password'
+  type: 'profile' | 'password' | 'region'
 }
 
 const initialState: ActionState = {
@@ -21,12 +30,33 @@ const initialState: ActionState = {
 
 export function SettingsForm({ action, user, type }: SettingsFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState)
+  const { refreshSessionFromDatabase } = useSessionRefresh()
 
   const handleSubmit = (formData: FormData) => {
     startTransition(() => {
       formAction(formData)
     })
   }
+
+  // Rafraîchir la session quand l'action réussit avec shouldRefresh
+  useEffect(() => {
+    if (state.success && state.shouldRefresh) {
+      console.log('Refreshing session after region update...')
+      
+      // Forcer le refresh de la session depuis la base de données
+      refreshSessionFromDatabase().then((success) => {
+        if (success) {
+          console.log('Session refreshed successfully from database')
+        } else {
+          console.log('Failed to refresh session, reloading page...')
+          // Fallback: recharger la page si le refresh échoue
+          setTimeout(() => {
+            window.location.reload()
+          }, 100) // Petit délai pour s'assurer que la session est à jour
+        }
+      })
+    }
+  }, [state.success, state.shouldRefresh, refreshSessionFromDatabase])
 
   if (type === 'profile') {
     return (
@@ -201,6 +231,96 @@ export function SettingsForm({ action, user, type }: SettingsFormProps) {
             </button>
           </div>
         </form>
+      </div>
+    )
+  }
+
+  if (type === 'region') {
+    const regions = [
+      { code: 'FR', label: 'France' },
+      { code: 'EU', label: 'Europe' },
+      { code: 'WOR', label: 'Monde' },
+      { code: 'JP', label: 'Japon' },
+      { code: 'ASI', label: 'Asie' },
+      { code: 'US', label: 'États-Unis' }
+    ]
+
+    const [selectedRegion, setSelectedRegion] = useState(user.preferredRegion || 'FR')
+
+    const handleFormSubmit = (formData: FormData) => {
+      // Ajouter la région sélectionnée au FormData
+      formData.set('preferredRegion', selectedRegion)
+      handleSubmit(formData)
+    }
+
+    return (
+      <div className="space-y-4">
+        {state.message && (
+          <div className={`flex items-center gap-2 rounded-md p-3 text-sm ${
+            state.success 
+              ? 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+              : 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+          }`}>
+            {state.success ? (
+              <CheckCircle className="h-4 w-4" />
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+            {state.message}
+          </div>
+        )}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Région préférée
+          </label>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Cette région sera utilisée par défaut pour afficher les noms de consoles et jeux.
+            Vous pourrez toujours naviguer temporairement dans d&apos;autres régions.
+          </p>
+          <div className="mt-2">
+            <Select
+              value={selectedRegion}
+              onValueChange={setSelectedRegion}
+              disabled={isPending}
+            >
+              <SelectTrigger className={`w-full ${
+                state.errors?.preferredRegion
+                  ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500 dark:border-red-600 dark:bg-red-900/20'
+                  : ''
+              } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <SelectValue placeholder="Choisir une région">
+                  {regions.find(r => r.code === selectedRegion)?.label} ({selectedRegion})
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {regions.map((region) => (
+                  <SelectItem key={region.code} value={region.code}>
+                    {region.label} ({region.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {state.errors?.preferredRegion && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {state.errors.preferredRegion}
+            </p>
+          )}
+        </div>
+
+        <div className="flex justify-end">
+          <form action={handleFormSubmit}>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Globe className="h-4 w-4" />
+              {isPending ? 'Sauvegarde...' : 'Sauvegarder'}
+            </button>
+          </form>
+        </div>
       </div>
     )
   }

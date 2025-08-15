@@ -1,15 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useCurrentRegion } from '@/lib/hooks/use-regional-preferences'
-
-interface RegionalNameData {
-  consoleName?: string
-  gameTitle?: string
-  releaseDate?: Date | null
-  loading: boolean
-  error: string | null
-}
+import { useEffectiveRegion } from '@/lib/hooks/use-regional-preferences'
 
 /**
  * Hook to get regional console name based on current region preference
@@ -20,7 +12,7 @@ export function useRegionalConsoleName(consoleId: string): {
   loading: boolean
   error: string | null
 } {
-  const currentRegion = useCurrentRegion()
+  const currentRegion = useEffectiveRegion()
   const [result, setResult] = useState<{
     name: string | null
     loading: boolean
@@ -43,7 +35,7 @@ export function useRegionalConsoleName(consoleId: string): {
         
         // Import the server action dynamically to avoid SSR issues
         const { getConsoleName } = await import('@/lib/regional-names')
-        const name = await getConsoleName(consoleId, currentRegion as any)
+        const name = await getConsoleName(consoleId, currentRegion)
         
         setResult({
           name,
@@ -80,7 +72,7 @@ export function useRegionalGameTitle(gameId: string): {
   loading: boolean
   error: string | null
 } {
-  const currentRegion = useCurrentRegion()
+  const currentRegion = useEffectiveRegion()
   const [result, setResult] = useState<{
     title: string | null
     loading: boolean
@@ -103,7 +95,7 @@ export function useRegionalGameTitle(gameId: string): {
         
         // Import the server action dynamically to avoid SSR issues
         const { getGameTitle } = await import('@/lib/regional-names')
-        const title = await getGameTitle(gameId, currentRegion as any)
+        const title = await getGameTitle(gameId, currentRegion)
         
         setResult({
           title,
@@ -143,7 +135,7 @@ export function useRegionalReleaseDate(
   loading: boolean
   error: string | null
 } {
-  const currentRegion = useCurrentRegion()
+  const currentRegion = useEffectiveRegion()
   const [result, setResult] = useState<{
     releaseDate: Date | null
     loading: boolean
@@ -168,8 +160,8 @@ export function useRegionalReleaseDate(
         const { getConsoleReleaseDate, getGameReleaseDate } = await import('@/lib/regional-names')
         
         const releaseDate = itemType === 'console' 
-          ? await getConsoleReleaseDate(itemId, currentRegion as any)
-          : await getGameReleaseDate(itemId, currentRegion as any)
+          ? await getConsoleReleaseDate(itemId, currentRegion)
+          : await getGameReleaseDate(itemId, currentRegion)
         
         setResult({
           releaseDate,

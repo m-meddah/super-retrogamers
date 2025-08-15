@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "@/lib/auth-server"
-import { updateProfileAction, updatePasswordAction } from "@/lib/actions/settings-actions"
-import { User, Bell, Shield, ArrowLeft } from "lucide-react"
+import { updateProfileAction, updatePasswordAction, updatePreferredRegionAction } from "@/lib/actions/settings-actions"
+import { User, Bell, Shield, Globe, ArrowLeft, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { SettingsForm } from "@/components/settings-form"
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ updated?: string }>
+}) {
   const session = await getServerSession()
+  const params = await searchParams
   
   if (!session) {
     redirect("/login")
@@ -32,6 +37,7 @@ export default async function SettingsPage() {
           </p>
         </div>
 
+
         <div className="space-y-6">
           {/* Profile Information */}
           <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
@@ -46,6 +52,23 @@ export default async function SettingsPage() {
                 action={updateProfileAction}
                 user={session.user}
                 type="profile"
+              />
+            </div>
+          </div>
+
+          {/* Regional Preferences */}
+          <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+            <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                <Globe className="h-5 w-5" />
+                Préférences régionales
+              </h2>
+            </div>
+            <div className="p-6">
+              <SettingsForm 
+                action={updatePreferredRegionAction}
+                user={session.user}
+                type="region"
               />
             </div>
           </div>

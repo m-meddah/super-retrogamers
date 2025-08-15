@@ -20,10 +20,8 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24, // 1 jour
   },
   
-  // Configuration avancée
-  advanced: {
-    cookiePrefix: "super-retrogamers",
-  },
+  // Configuration avancée - simplifié
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   
   // Extensions du schéma utilisateur
   user: {
@@ -32,6 +30,11 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "user",
         input: false,
+        returned: true,
+      },
+      preferredRegion: {
+        type: "string",
+        input: true,
         returned: true,
       },
     },

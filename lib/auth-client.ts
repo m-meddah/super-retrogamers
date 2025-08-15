@@ -18,3 +18,10 @@ export const {
   useSession,
   getSession,
 } = authClient
+
+// Helper function to force refresh session from database
+export const forceRefreshSession = async () => {
+  return await authClient.getSession({ 
+    query: { disableCookieCache: true }
+  })
+}

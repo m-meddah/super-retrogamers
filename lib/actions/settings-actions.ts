@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from '@/lib/auth-server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { z } from 'zod'
 
@@ -11,6 +12,7 @@ export interface ActionState {
   success?: boolean
   message?: string
   errors?: Record<string, string>
+  shouldRefresh?: boolean
 }
 
 // Schémas de validation
@@ -26,6 +28,12 @@ const updatePasswordSchema = z.object({
 }).refine(data => data.newPassword === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"]
+})
+
+const updatePreferredRegionSchema = z.object({
+  preferredRegion: z.enum(['FR', 'EU', 'WOR', 'JP', 'ASI', 'US'], {
+    errorMap: () => ({ message: 'Région invalide' })
+  })
 })
 
 export async function updateProfileAction(
@@ -164,5 +172,109 @@ export async function updatePasswordAction(
       success: false,
       message: 'Une erreur est survenue lors du changement de mot de passe'
     }
+  }
+}
+
+export async function updatePreferredRegionAction(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const session = await getServerSession()
+    
+    if (!session) {
+      return {
+        success: false,
+        message: 'Vous devez être connecté pour modifier vos préférences'
+      }
+    }
+
+    // Validation des données
+    const result = updatePreferredRegionSchema.safeParse({
+      preferredRegion: formData.get('preferredRegion')
+    })
+
+    if (!result.success) {
+      const errors: Record<string, string> = {}
+      result.error.issues.forEach(issue => {
+        if (issue.path[0]) {
+          errors[issue.path[0] as string] = issue.message
+        }
+      })
+      return {
+        success: false,
+        message: 'Erreurs de validation',
+        errors
+      }
+    }
+
+    const { preferredRegion } = result.data
+
+    // Mettre à jour la région préférée de l'utilisateur
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        preferredRegion: preferredRegion
+      }
+    })
+
+    // Utiliser Better Auth pour synchroniser la session
+    try {
+      await auth.api.updateUser({
+        body: {
+          preferredRegion: preferredRegion
+        },
+        headers: await headers()
+      })
+    } catch (authError) {
+      // Continue même si la mise à jour Better Auth échoue car la DB a été mise à jour
+      console.warn('Better Auth update failed:', authError)
+    }
+
+    revalidatePath('/dashboard/settings')
+    revalidatePath('/')
+
+    // Rediriger vers la page d'accueil avec la région préférée mise à jour
+    redirect(`/?region=${preferredRegion}`)
+
+    return {
+      success: true,
+      message: 'Région préférée mise à jour avec succès',
+      shouldRefresh: true // Indique au client de rafraîchir la session
+    }
+
+  } catch (error) {
+    // Le redirect lance une exception NEXT_REDIRECT qui est normale
+    if (error && typeof error === 'object' && 'digest' in error && 
+        typeof error.digest === 'string' && error.digest.includes('NEXT_REDIRECT')) {
+      throw error // Re-lancer l'exception redirect
+    }
+    
+    console.error('Erreur lors de la mise à jour de la région préférée:', error)
+    return {
+      success: false,
+      message: 'Une erreur est survenue lors de la mise à jour'
+    }
+  }
+}
+
+export async function getUserPreferredRegionAction(): Promise<string> {
+  try {
+    const session = await getServerSession()
+    
+    if (!session) {
+      return 'FR'
+    }
+
+    // Récupérer l'utilisateur avec sa région préférée
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { preferredRegion: true }
+    })
+
+    return user?.preferredRegion || 'FR'
+  } catch (error) {
+    console.error('Error fetching user preferred region:', error)
+    return 'FR'
   }
 }

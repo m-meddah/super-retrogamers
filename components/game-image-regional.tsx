@@ -1,7 +1,7 @@
 'use client'
 
 import Image from "next/image"
-import { useCurrentRegion } from '@/lib/hooks/use-regional-preferences'
+import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
 import { selectBestGameImage } from "@/lib/regional-preferences"
 import type { Game, GameMedia, Console } from "@prisma/client"
 
