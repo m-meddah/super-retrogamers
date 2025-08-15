@@ -46,7 +46,6 @@ function GameCardWithRegion({ game: gameData, showConsole = true }: GameCardRegi
   const currentRegion = useCurrentRegion()
   const preferredRegionLowercase = currentRegion.toLowerCase()
   
-  console.log(`[GameCardWithRegion] Game ${gameData.slug} - Region: ${currentRegion}`)
   
   return <GameCardWrapper game={gameData} showConsole={showConsole} preferredRegion={preferredRegionLowercase} />
 }

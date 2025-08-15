@@ -17,7 +17,6 @@ function ConsoleCardWithRegion({ console: consoleData }: ConsoleCardRegionalWrap
   const currentRegion = useCurrentRegion()
   const preferredRegionLowercase = currentRegion.toLowerCase()
   
-  console.log(`[ConsoleCardWithRegion] Console ${consoleData.slug} - Region: ${currentRegion}`)
   
   return <ConsoleCardWrapper console={consoleData} preferredRegion={preferredRegionLowercase} />
 }

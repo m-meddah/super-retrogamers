@@ -49,7 +49,6 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
   // Use regional release date year if available
   const displayYear = regionalReleaseDate?.getFullYear() || consoleData.releaseYear
   
-  console.log(`[ConsoleCardWrapper] Console ${consoleData.slug} - PreferredRegion: ${preferredRegion}, ImageURL: ${imageUrl}, Regional Name: ${displayName}`)
   
   return (
     <Suspense fallback={

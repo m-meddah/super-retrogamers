@@ -114,7 +114,6 @@ export function selectBestConsoleMedia(
   preferredRegion: string = 'fr'
 ): ConsoleMedias | null {
   if (!medias || medias.length === 0) {
-    console.log(`[selectBestConsoleMedia] No medias available for type ${mediaType}`)
     return null
   }
   
@@ -122,29 +121,23 @@ export function selectBestConsoleMedia(
   const mediasOfType = medias.filter(m => m.type === mediaType)
   
   if (mediasOfType.length === 0) {
-    console.log(`[selectBestConsoleMedia] No medias found for type ${mediaType}. Available types:`, medias.map(m => m.type))
     return null
   }
-  
-  console.log(`[selectBestConsoleMedia] Found ${mediasOfType.length} medias for type ${mediaType}:`, mediasOfType.map(m => ({ region: m.region, localPath: m.localPath })))
   
   // Si un seul média, le retourner
   if (mediasOfType.length === 1) return mediasOfType[0]
   
   // Sélectionner selon l'ordre de priorité régional (avec ss en dernier)
   const regionPriority = getRegionPriorityLowercase(preferredRegion)
-  console.log(`[selectBestConsoleMedia] Region priority for ${preferredRegion}:`, regionPriority)
   
   for (const region of regionPriority) {
     const mediaForRegion = mediasOfType.find(m => m.region.toLowerCase() === region)
     if (mediaForRegion) {
-      console.log(`[selectBestConsoleMedia] Selected media for region ${region}:`, mediaForRegion.localPath)
       return mediaForRegion
     }
   }
   
   // Si aucune région prioritaire trouvée, retourner le premier
-  console.log(`[selectBestConsoleMedia] No regional match, returning first media:`, mediasOfType[0].localPath)
   return mediasOfType[0]
 }
 

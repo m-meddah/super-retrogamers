@@ -41,14 +41,9 @@ export function SettingsForm({ action, user, type }: SettingsFormProps) {
   // Rafraîchir la session quand l'action réussit avec shouldRefresh
   useEffect(() => {
     if (state.success && state.shouldRefresh) {
-      console.log('Refreshing session after region update...')
-      
       // Forcer le refresh de la session depuis la base de données
       refreshSessionFromDatabase().then((success) => {
-        if (success) {
-          console.log('Session refreshed successfully from database')
-        } else {
-          console.log('Failed to refresh session, reloading page...')
+        if (!success) {
           // Fallback: recharger la page si le refresh échoue
           setTimeout(() => {
             window.location.reload()
