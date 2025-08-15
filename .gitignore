@@ -47,3 +47,7 @@ next-env.d.ts
 .vscode/
 CLAUDE.md
 SCRAPING.md
+
+# Media directories for scraped console and game images
+/public/consoles/
+/public/games/
