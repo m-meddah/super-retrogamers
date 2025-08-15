@@ -642,7 +642,7 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
           // Ajouter les nouveaux titres régionaux
           const titleData = regionalTitles.map(title => ({
             gameId: game.id,
-            region: title.region as any, // Prisma enum
+            region: title.region as import('@prisma/client').Region,
             title: title.title
           }))
           
@@ -940,7 +940,7 @@ export async function createGameFromScreenscraper(
     if (regionalTitles.length > 0) {
       const titleData = regionalTitles.map(title => ({
         gameId: createdGame.id,
-        region: title.region as any, // Prisma enum
+        region: title.region as import('@prisma/client').Region,
         title: title.title
       }))
       

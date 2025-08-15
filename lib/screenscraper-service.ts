@@ -552,7 +552,7 @@ export async function scrapeRegionalNamesForExistingConsoles(): Promise<{ succes
           // Ajouter les nouveaux noms régionaux
           const nameData = regionalNames.map(name => ({
             consoleId: gameConsole.id,
-            region: name.region as any, // Prisma enum
+            region: name.region as import('@prisma/client').Region,
             name: name.name
           }))
           
@@ -575,7 +575,7 @@ export async function scrapeRegionalNamesForExistingConsoles(): Promise<{ succes
           // Ajouter les nouvelles dates régionales
           const dateData = regionalDates.map(date => ({
             consoleId: gameConsole.id,
-            region: date.region as any, // Prisma enum
+            region: date.region as import('@prisma/client').Region,
             releaseDate: date.releaseDate
           }))
           
@@ -767,7 +767,7 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
         if (regionalNames.length > 0) {
           const nameData = regionalNames.map(name => ({
             consoleId: createdConsole.id,
-            region: name.region as any, // Prisma enum
+            region: name.region as import('@prisma/client').Region,
             name: name.name
           }))
           
@@ -782,7 +782,7 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
         if (regionalDates.length > 0) {
           const dateData = regionalDates.map(date => ({
             consoleId: createdConsole.id,
-            region: date.region as any, // Prisma enum
+            region: date.region as import('@prisma/client').Region,
             releaseDate: date.releaseDate
           }))
           

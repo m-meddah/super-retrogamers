@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
-import { getConsoleWithMediasBySlug, getGamesByConsoleWithConsoleInfo } from "@/lib/data-prisma"
+import { getConsoleWithMediasBySlug, getGamesByConsoleWithConsoleInfo, getPopularGamesByConsoleSlug } from "@/lib/data-prisma"
 import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
@@ -23,6 +23,7 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
   }
 
   const games = await getGamesByConsoleWithConsoleInfo(console.slug)
+  const popularGames = await getPopularGamesByConsoleSlug(console.slug)
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -164,9 +165,9 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
             )}
           </div>
 
-          {games.length > 0 ? (
+          {popularGames.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {games.slice(0, 4).map((game) => (
+              {popularGames.map((game) => (
                 <GameCardRegionalWrapper key={game.id} game={game} showConsole={false} />
               ))}
             </div>

@@ -205,8 +205,10 @@ export async function scrapeLimitedConsolesAction(): Promise<ActionState> {
 
 // Action pour scraper les noms régionaux des consoles existantes
 export async function scrapeConsoleRegionalNamesAction(
-  prevState: ActionState,
-  formData: FormData
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: ActionState,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _formData: FormData
 ): Promise<ActionState> {
   try {
     const result = await scrapeRegionalNamesForExistingConsoles()
@@ -234,8 +236,10 @@ export async function scrapeConsoleRegionalNamesAction(
 
 // Action pour scraper les titres régionaux des jeux existants
 export async function scrapeGameRegionalTitlesAction(
-  prevState: ActionState,
-  formData: FormData
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: ActionState,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _formData: FormData
 ): Promise<ActionState> {
   try {
     const result = await scrapeRegionalTitlesForExistingGames()

@@ -1,17 +1,12 @@
 import { redirect } from "next/navigation"
 import { getServerSession } from "@/lib/auth-server"
 import { updateProfileAction, updatePasswordAction, updatePreferredRegionAction } from "@/lib/actions/settings-actions"
-import { User, Bell, Shield, Globe, ArrowLeft, CheckCircle } from "lucide-react"
+import { User, Bell, Shield, Globe, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { SettingsForm } from "@/components/settings-form"
 
-export default async function SettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ updated?: string }>
-}) {
+export default async function SettingsPage() {
   const session = await getServerSession()
-  const params = await searchParams
   
   if (!session) {
     redirect("/login")

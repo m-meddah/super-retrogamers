@@ -169,6 +169,32 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
   })
 }
 
+// Fonction pour récupérer les jeux populaires d'une console (4 max, top staff priorité, puis par note décroissante)
+export async function getPopularGamesByConsoleSlug(consoleSlug: string): Promise<GameWithConsole[]> {
+  return await prisma.game.findMany({
+    where: {
+      console: {
+        slug: consoleSlug
+      }
+    },
+    include: {
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      }
+    },
+    orderBy: [
+      { topStaff: 'desc' },  // Top staff en premier
+      { rating: 'desc' },    // Puis par note décroissante (20/20, 19/20, etc.)
+      { title: 'asc' }       // En cas d'égalité, par ordre alphabétique
+    ],
+    take: 4  // Limiter à 4 jeux
+  })
+}
+
 export async function getGamesByConsoleId(consoleId: string): Promise<Game[]> {
   return await prisma.game.findMany({
     where: {

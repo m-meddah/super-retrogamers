@@ -31,6 +31,7 @@ const initialState: ActionState = {
 export function SettingsForm({ action, user, type }: SettingsFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState)
   const { refreshSessionFromDatabase } = useSessionRefresh()
+  const [selectedRegion, setSelectedRegion] = useState(user.preferredRegion || 'FR')
 
   const handleSubmit = (formData: FormData) => {
     startTransition(() => {
@@ -240,7 +241,6 @@ export function SettingsForm({ action, user, type }: SettingsFormProps) {
       { code: 'US', label: 'États-Unis' }
     ]
 
-    const [selectedRegion, setSelectedRegion] = useState(user.preferredRegion || 'FR')
 
     const handleFormSubmit = (formData: FormData) => {
       // Ajouter la région sélectionnée au FormData
