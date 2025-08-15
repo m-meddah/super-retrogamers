@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import type { Metadata } from "next"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
 import { getConsoleWithMediasBySlug, getGamesByConsoleWithConsoleInfo, getPopularGamesByConsoleSlug } from "@/lib/data-prisma"
 import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
@@ -7,11 +8,51 @@ import { ConsoleCollectionActions } from "@/components/console-collection-action
 import { EditorialArticle } from "@/components/editorial-article"
 import ConsoleImageRegional from "@/components/console-image-regional"
 import ConsoleNameRegional from "@/components/console-name-regional"
+import { getConsoleFaviconUrl, generateFaviconMetadata, getAbsoluteFaviconUrl } from "@/lib/favicon-utils"
 
 interface ConsolePageProps {
   params: Promise<{
     slug: string
   }>
+}
+
+// Génération des métadonnées dynamiques avec favicon personnalisé
+export async function generateMetadata({ params }: ConsolePageProps): Promise<Metadata> {
+  const { slug } = await params
+  const console = await getConsoleWithMediasBySlug(slug)
+
+  if (!console) {
+    return {
+      title: 'Console non trouvée - Super Retrogamers'
+    }
+  }
+
+  // Récupérer le favicon de la console
+  const faviconUrl = getConsoleFaviconUrl(console)
+  const absoluteFaviconUrl = faviconUrl ? getAbsoluteFaviconUrl(faviconUrl) : null
+
+  // Générer les métadonnées avec favicon personnalisé
+  const metadata = generateFaviconMetadata(
+    absoluteFaviconUrl,
+    `${console.name} - Console retro - Super Retrogamers`
+  )
+
+  return {
+    ...metadata,
+    description: console.description || `Découvrez la ${console.name}, console mythique de ${console.manufacturer}. Explorez son histoire, ses spécifications techniques et sa ludothèque exceptionnelle.`,
+    openGraph: {
+      title: `${console.name} - Console retro`,
+      description: console.description || `Console ${console.name} par ${console.manufacturer}`,
+      type: 'website',
+      ...(absoluteFaviconUrl && { images: [absoluteFaviconUrl] })
+    },
+    twitter: {
+      card: 'summary',
+      title: `${console.name} - Console retro`,
+      description: console.description || `Console ${console.name} par ${console.manufacturer}`,
+      ...(absoluteFaviconUrl && { images: [absoluteFaviconUrl] })
+    }
+  }
 }
 
 export default async function ConsolePage({ params }: ConsolePageProps) {

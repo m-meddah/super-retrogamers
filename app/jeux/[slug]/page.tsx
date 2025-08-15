@@ -1,15 +1,56 @@
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
+import type { Metadata } from "next"
 import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
 import GameImageRegional from "@/components/game-image-regional"
 import { Calendar, Star, Gamepad2, Building, Users, Award } from "lucide-react"
-import { getGameBySlug } from "@/lib/data-prisma"
+import { getGameBySlug, getConsoleWithMediasBySlug } from "@/lib/data-prisma"
+import { getGameFaviconUrl, getConsoleFaviconUrl, generateFaviconMetadata, getAbsoluteFaviconUrl } from "@/lib/favicon-utils"
 
 interface GamePageProps {
   params: Promise<{
     slug: string
   }>
+}
+
+// Génération des métadonnées dynamiques avec favicon personnalisé pour les jeux
+export async function generateMetadata({ params }: GamePageProps): Promise<Metadata> {
+  const { slug } = await params
+  const game = await getGameBySlug(slug)
+
+  if (!game) {
+    return {
+      title: 'Jeu non trouvé - Super Retrogamers'
+    }
+  }
+
+  // Récupérer le favicon du jeu ou de sa console
+  const faviconUrl = getGameFaviconUrl(game)
+  const absoluteFaviconUrl = faviconUrl ? getAbsoluteFaviconUrl(faviconUrl) : null
+
+  // Générer les métadonnées avec favicon personnalisé
+  const metadata = generateFaviconMetadata(
+    absoluteFaviconUrl,
+    `${game.title} - ${game.console?.name || 'Jeu rétro'} - Super Retrogamers`
+  )
+
+  return {
+    ...metadata,
+    description: game.description || `Découvrez ${game.title}, jeu ${game.console?.name ? `sur ${game.console.name}` : 'rétro'}. ${game.developer ? `Développé par ${game.developer}` : ''} ${game.releaseYear ? `en ${game.releaseYear}` : ''}.`,
+    openGraph: {
+      title: `${game.title} - ${game.console?.name || 'Jeu rétro'}`,
+      description: game.description || `Jeu ${game.title}${game.console?.name ? ` sur ${game.console.name}` : ''}`,
+      type: 'website',
+      ...(absoluteFaviconUrl && { images: [absoluteFaviconUrl] })
+    },
+    twitter: {
+      card: 'summary',
+      title: `${game.title} - ${game.console?.name || 'Jeu rétro'}`,
+      description: game.description || `Jeu ${game.title}${game.console?.name ? ` sur ${game.console.name}` : ''}`,
+      ...(absoluteFaviconUrl && { images: [absoluteFaviconUrl] })
+    }
+  }
 }
 
 export default async function GamePage({ params }: GamePageProps) {
