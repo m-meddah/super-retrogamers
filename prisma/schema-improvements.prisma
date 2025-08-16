@@ -1,0 +1,202 @@
+// PROPOSITION D'AMÉLIORATIONS DU SCHÉMA
+// À ajouter au schéma existant SANS supprimer les tables actuelles
+
+// ================================
+// NOUVEAUX MODÈLES À AJOUTER
+// ================================
+
+// Table Corporation pour gérer developers/publishers
+model Corporation {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  foundedDate    DateTime?
+  defunctDate    DateTime?
+  headquarters   String?
+  employees      Int?
+  website        String?
+  description    Json?     // Descriptions multilingues
+  fate           String?   // Ce qui est arrivé à l'entreprise
+  anecdotes      String[]  // Anecdotes sur l'entreprise
+  logoUrl        String?   // Logo de l'entreprise
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  roles          CorporationRole[]
+  developedGames Game[]    @relation("DeveloperGames")
+  publishedGames Game[]    @relation("PublisherGames")
+  
+  @@map("corporations")
+}
+
+// Table pour les rôles des corporations
+model CorporationRole {
+  id             String      @id @default(cuid())
+  corporationId  String
+  role           String      // "developer", "publisher", "both"
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  corporation    Corporation @relation(fields: [corporationId], references: [id], onDelete: Cascade)
+  
+  @@map("corporation_roles")
+}
+
+// Table Generation pour classifier les consoles
+model Generation {
+  id        String    @id @default(cuid())
+  name      String    @unique  // "1ère génération", "2ème génération", etc.
+  nameEn    String?   // "1st generation", "2nd generation", etc.
+  startYear Int?      // Année de début approximative
+  endYear   Int?      // Année de fin approximative
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  consoles  Console[] @relation("ConsoleGeneration")
+  
+  @@map("generations")
+}
+
+// Table GameType pour les types de jeux
+model GameType {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "Action", "RPG", "Platform", etc.
+  nameEn      String?  // Nom en anglais
+  description String?  // Description du type
+  color       String?  // Couleur pour l'UI
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  games       Game[]   @relation("GameTypes")
+  
+  @@map("game_types")
+}
+
+// Table Manual pour les manuels de jeux
+model Manual {
+  id          String    @id @default(cuid())
+  gameId      String
+  region      Region?
+  language    String?   // "FR", "EN", "JP", etc.
+  title       String?   // Titre du manuel
+  content     String?   // Contenu du manuel (markdown/html)
+  pdfUrl      String?   // URL vers le PDF du manuel
+  pages       Int?      // Nombre de pages
+  fileSize    Int?      // Taille du fichier en octets
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@map("manuals")
+}
+
+// Table Video pour les vidéos de jeux
+model Video {
+  id          String   @id @default(cuid())
+  gameId      String
+  type        String   // "trailer", "gameplay", "longplay", "review"
+  title       String?  // Titre de la vidéo
+  url         String   // URL de la vidéo (YouTube, etc.)
+  thumbnailUrl String? // URL de la miniature
+  duration    Int?     // Durée en secondes
+  quality     String?  // "HD", "4K", etc.
+  language    String?  // Langue de la vidéo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@map("videos")
+}
+
+// Table Family pour regrouper les jeux par série/franchise
+model Family {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "Super Mario", "Final Fantasy", etc.
+  nameEn      String?  // Nom en anglais
+  description String?  // Description de la série
+  logoUrl     String?  // Logo de la série
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  games       Game[]   @relation("GameFamilies")
+  
+  @@map("families")
+}
+
+// ================================
+// MODIFICATIONS À APPORTER AUX MODÈLES EXISTANTS
+// ================================
+
+// CONSOLE - Ajouter ces champs
+// generationId     String?
+// unitsSold        Int?
+// bestSellingGameId String?
+// dimensions       String?
+// media            String?  // Type de média (cartridge, CD, etc.)
+// coProcessor      String?
+// audioChip        String?
+
+// GAME - Ajouter ces champs  
+// corporationDevId String?  // ID de Corporation au lieu de developerId String
+// corporationPubId String?  // ID de Corporation au lieu de publisherId String
+// gameTypeId       String?  // ID de GameType
+// familyId         String?  // ID de Family
+// sizeMB           Float?   // Taille du jeu
+// onlinePlay       Boolean  @default(false)
+// cloneOf          String?  // ID du jeu original si c'est un clone
+
+// ================================
+// NOUVELLES RELATIONS À AJOUTER
+// ================================
+
+// Pour Console:
+// generation       Generation? @relation("ConsoleGeneration", fields: [generationId], references: [id])
+// bestSellingGame  Game?       @relation("BestSellingGame", fields: [bestSellingGameId], references: [id])
+
+// Pour Game:
+// corporationDev   Corporation? @relation("DeveloperGames", fields: [corporationDevId], references: [id])
+// corporationPub   Corporation? @relation("PublisherGames", fields: [corporationPubId], references: [id])
+// gameType         GameType?    @relation("GameTypes", fields: [gameTypeId], references: [id])
+// family           Family?      @relation("GameFamilies", fields: [familyId], references: [id])
+// manuals          Manual[]
+// videos           Video[]
+
+// ================================
+// AMÉLIORATIONS DES ENUMS
+// ================================
+
+// Ajouter à Region si nécessaire:
+// ASI (déjà présent)
+// KOR (Corée)
+// CN  (Chine)
+
+// Nouveau enum pour les langues
+enum Language {
+  FR
+  EN
+  JP
+  ES
+  DE
+  IT
+  PT
+  RU
+  KR
+  CN
+}
+
+// ================================
+// INDEX À AJOUTER POUR LES PERFORMANCES
+// ================================
+
+// @@index([name]) sur Corporation
+// @@index([startYear, endYear]) sur Generation  
+// @@index([type]) sur Video
+// @@index([language]) sur Manual
+// @@index([familyId]) sur Game
+// @@index([gameTypeId]) sur Game
+// @@index([corporationDevId]) sur Game
+// @@index([corporationPubId]) sur Game
