@@ -3,10 +3,11 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
-import GameImageRegional from "@/components/game-image-regional"
+import AdaptiveGameImage from "@/components/adaptive-game-image"
+import GameWheelLogo from "@/components/game-wheel-logo"
 import { Calendar, Star, Gamepad2, Building, Users, Award } from "lucide-react"
-import { getGameBySlug, getConsoleWithMediasBySlug } from "@/lib/data-prisma"
-import { getGameFaviconUrl, getConsoleFaviconUrl, generateFaviconMetadata, getAbsoluteFaviconUrl } from "@/lib/favicon-utils"
+import { getGameBySlug } from "@/lib/data-prisma"
+import { getGameFaviconUrl, generateFaviconMetadata, getAbsoluteFaviconUrl } from "@/lib/favicon-utils"
 
 interface GamePageProps {
   params: Promise<{
@@ -95,6 +96,16 @@ export default async function GamePage({ params }: GamePageProps) {
           <div className="lg:col-span-2 space-y-8">
             {/* Game Header */}
             <div>
+              {/* Logo wheel du jeu si disponible */}
+              <div className="mb-4">
+                <GameWheelLogo 
+                  game={game}
+                  size="lg"
+                  showTitle={false}
+                  className="mb-2"
+                />
+              </div>
+              
               <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
@@ -210,17 +221,17 @@ export default async function GamePage({ params }: GamePageProps) {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Game Cover */}
+            {/* Game Cover avec affichage adaptatif */}
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
-              <div className="aspect-[3/4] overflow-hidden">
+              <div className="overflow-hidden bg-gray-100 dark:bg-gray-800">
                 <Suspense fallback={
-                  <div className="h-full w-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  <div className="aspect-[3/4] bg-gray-200 dark:bg-gray-700 animate-pulse" />
                 }>
-                  <GameImageRegional 
+                  <AdaptiveGameImage 
                     game={game}
-                    width={300}
-                    height={400}
-                    className="h-full w-full object-cover"
+                    alt={game.title}
+                    className="w-full"
+                    priority={true}
                   />
                 </Suspense>
               </div>
@@ -229,6 +240,16 @@ export default async function GamePage({ params }: GamePageProps) {
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {game.console?.name} • {game.releaseYear}
                 </p>
+                
+                {/* Affichage du wheel logo si disponible dans le sidebar */}
+                <div className="mt-3">
+                  <GameWheelLogo 
+                    game={game}
+                    size="md"
+                    showTitle={false}
+                    className="opacity-70"
+                  />
+                </div>
               </div>
             </div>
 

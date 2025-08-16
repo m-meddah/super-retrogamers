@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getContentManagementData } from "@/lib/data-prisma"
+import { getContentManagementData, generateGameCompositeSlug } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
@@ -285,10 +285,13 @@ async function ContentManagementContent() {
                       
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            Modifier
-                          </Button>
-                          <Link href={`/jeux/${game.slug}`}>
+                          <Link href={`/admin/content/jeux/${generateGameCompositeSlug(game)}/edit`}>
+                            <Button variant="outline" size="sm" className="gap-1">
+                              <Edit3 className="h-3 w-3" />
+                              Modifier
+                            </Button>
+                          </Link>
+                          <Link href={`/jeux/${generateGameCompositeSlug(game)}`}>
                             <Button variant="outline" size="sm">
                               Voir détails
                             </Button>

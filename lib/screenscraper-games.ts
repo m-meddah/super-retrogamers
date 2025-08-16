@@ -1178,12 +1178,9 @@ function shouldSkipMedia(media: ScreenscraperGameMediaItem): boolean {
     // 'box-2D',        // Boîte 2D - DÉJÀ INCLUS
     // 'box-3D',        // Boîte 3D - DÉJÀ INCLUS  
     'box-texture',   // Texture de boîte
-    // 'box-back',      // Dos de boîte
-    // 'box-spine',     // Tranche de boîte
-    // 'box-side',      // Côté de boîte
     
     // Supports physiques
-    'support-2D',    // Support 2D (CD, cartouche)
+    //'support-2D',    // Support 2D (CD, cartouche)
     'support-3D',    // Support 3D
     'support-texture', // Texture du support
     
@@ -1201,7 +1198,8 @@ function shouldSkipMedia(media: ScreenscraperGameMediaItem): boolean {
     'bezel',         // Bezels pour émulateurs
     'overlay',       // Overlays
     'background',    // Arrière-plans
-    
+    'steamgrid',     // Steam Grid
+
     // Documentation
     // 'manual',        // Manuels (PDF)
     'advert',        // Publicités
@@ -1219,7 +1217,7 @@ function shouldSkipMedia(media: ScreenscraperGameMediaItem): boolean {
     
     // Éditeur/Développeur
     'mixrbv1',       // Images mixtes
-    'mixrbv2',       // Images mixtes v2
+    //'mixrbv2',       // Images mixtes v2
     
     // Classifications et labels
     'rating',        // Classifications d'âge

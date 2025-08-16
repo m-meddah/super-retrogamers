@@ -55,8 +55,6 @@ export default function GameImageRegional({
   
   const imageUrl = selectBestGameImage(regionalGame, preferredRegionLowercase) || "/placeholder.svg"
   
-  console.log(`[GameImageRegional] Game ${gameData.slug} - Region: ${currentRegion}, ImageURL: ${imageUrl}`)
-  
   return (
     <Image
       src={imageUrl}

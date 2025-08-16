@@ -2,11 +2,11 @@
 
 import { Suspense } from 'react'
 import RegionalLink from "@/components/regional-link"
-import Image from "next/image"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
-import { selectBestGameImage } from "@/lib/regional-preferences"
 import { useRegionalGameTitle, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
+import AdaptiveGameImage from "@/components/adaptive-game-image"
+import GameWheelLogo from "@/components/game-wheel-logo"
 
 interface GameWithConsole extends Game {
   console?: {
@@ -48,38 +48,17 @@ interface GameCardWrapperProps {
 }
 
 
-export default function GameCardWrapper({ game, showConsole = true, preferredRegion = 'fr' }: GameCardWrapperProps) {
+export default function GameCardWrapper({ game, showConsole = true }: GameCardWrapperProps) {
   // Use regional hooks for title and release date (only for non-Screenscraper results)
   const isScreenscraperResult = game.slug.startsWith('screenscraper-')
   const { title: regionalTitle, loading: titleLoading } = useRegionalGameTitle(isScreenscraperResult ? '' : game.id)
   const { releaseDate: regionalReleaseDate, loading: dateLoading } = useRegionalReleaseDate(isScreenscraperResult ? '' : game.id, 'game')
 
-  // Transformer le jeu en format RegionalGameData pour la fonction selectBestGameImage
-  const regionalGame = {
-    id: game.id,
-    title: game.title,
-    slug: game.slug,
-    consoleId: game.console?.slug || '',
-    releaseYear: game.releaseYear,
-    description: 'description' in game ? game.description || null : null,
-    image: null, // Image column removed, using regional media only
-    medias: (game.medias || []).map(media => ({
-      id: `${media.mediaType}-${media.region}`,
-      mediaType: media.mediaType,
-      region: media.region,
-      url: media.localPath || '',
-      localPath: media.localPath,
-      fileName: media.localPath ? media.localPath.split('/').pop() || '' : ''
-    })),
-    // Dates régionales (à implémenter si nécessaire)
-    releaseDateEU: null,
-    releaseDateFR: null,
-    releaseDateJP: null,
-    releaseDateUS: null,
-    releaseDateWOR: null
+  // Créer un objet compatible avec AdaptiveGameImage
+  const gameForImage = {
+    ...game,
+    medias: game.medias || []
   }
-  
-  const imageUrl = selectBestGameImage(regionalGame, preferredRegion) || "/placeholder.svg"
   
   // Use regional data if available, otherwise fallback to default
   const displayTitle = isScreenscraperResult ? game.title : (regionalTitle || game.title)
@@ -92,15 +71,23 @@ export default function GameCardWrapper({ game, showConsole = true, preferredReg
   
   const cardContent = (
     <article className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700">
-      {/* Image */}
-      <div className="aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <Image 
-          src={imageUrl} 
+      {/* Image avec affichage adaptatif */}
+      <div className="relative overflow-hidden bg-gray-100 dark:bg-gray-800">
+        <AdaptiveGameImage 
+          game={gameForImage}
           alt={displayTitle}
-          width={300}
-          height={400}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          className="transition-transform duration-200 group-hover:scale-105"
+          priority={false}
         />
+        
+        {/* Logo wheel en overlay si disponible */}
+        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <GameWheelLogo 
+            game={gameForImage}
+            size="sm"
+            className="drop-shadow-lg"
+          />
+        </div>
       </div>
       
       {/* Content */}

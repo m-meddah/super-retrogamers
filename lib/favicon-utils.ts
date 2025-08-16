@@ -35,7 +35,7 @@ export function getConsoleFaviconUrl(console: ConsoleWithMedias, preferredRegion
 /**
  * Génère l'URL du favicon pour un jeu en utilisant ses médias ou l'icône de la console
  */
-export function getGameFaviconUrl(game: GameWithConsole, preferredRegion: string = 'fr'): string | null {
+export function getGameFaviconUrl(game: GameWithConsole): string | null {
   // 1. D'abord essayer avec les médias du jeu s'ils existent
   if (game.medias && game.medias.length > 0) {
     const gameImageTypes = ['wheel', 'box-2D', 'sstitle', 'ss']
@@ -50,7 +50,7 @@ export function getGameFaviconUrl(game: GameWithConsole, preferredRegion: string
   
   // 2. Fallback : construire le chemin vers le minicon de la console parente
   if (game.console) {
-    return getConsoleFaviconUrlFromConsole(game.console, preferredRegion)
+    return getConsoleFaviconUrlFromConsole(game.console)
   }
   
   return null
@@ -59,7 +59,7 @@ export function getGameFaviconUrl(game: GameWithConsole, preferredRegion: string
 /**
  * Génère l'URL du favicon pour une console à partir de données minimales
  */
-export function getConsoleFaviconUrlFromConsole(console: { id: string; slug: string; screenscrapeId?: number | null }, preferredRegion: string = 'fr'): string | null {
+export function getConsoleFaviconUrlFromConsole(console: { id: string; slug: string; screenscrapeId?: number | null }): string | null {
   // Construire le chemin vers le minicon de la console en utilisant screenscrapeId
   if (console.screenscrapeId) {
     return `/consoles/${console.slug}/minicon/unknown/${console.screenscrapeId}_minicon_undefined.png`
