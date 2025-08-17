@@ -12,6 +12,39 @@ export interface ActionState {
   data?: unknown
 }
 
+export async function getConsoleSlugByScreenscraperId(screenscrapeId: number): Promise<string | null> {
+  try {
+    const console = await prisma.console.findUnique({
+      where: { screenscrapeId: screenscrapeId },
+      select: { slug: true }
+    })
+    return console?.slug || null
+  } catch (error) {
+    console.error('Erreur lors de la récupération du slug:', error)
+    return null
+  }
+}
+
+export async function getAllConsolesForScraping(): Promise<Array<{id: string, name: string, slug: string, screenscrapeId: number | null}>> {
+  try {
+    const consoles = await prisma.console.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        screenscrapeId: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    })
+    return consoles
+  } catch (error) {
+    console.error('Erreur lors de la récupération des consoles:', error)
+    return []
+  }
+}
+
 export async function scrapeSingleConsoleAction(
   prevState: ActionState,
   formData: FormData

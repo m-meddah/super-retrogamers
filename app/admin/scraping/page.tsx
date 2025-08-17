@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useActionState } from "react"
+import { useState, useActionState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +36,9 @@ import {
   scrapeConsoleRegionalNamesAction, 
   scrapeGameRegionalTitlesAction, 
   scrapeGamesForConsoleBySlugAction,
-  syncGenresAction
+  syncGenresAction,
+  getConsoleSlugByScreenscraperId,
+  getAllConsolesForScraping
 } from "@/lib/actions/admin-scraping-actions"
 
 interface ScrapingStats {
@@ -61,6 +63,9 @@ export default function ScrapingManagement() {
   
   const [isScrapingGames, setIsScrapingGames] = useState(false)
   const [selectedConsoleSlug, setSelectedConsoleSlug] = useState('')
+  const [selectedConsoleForSelect, setSelectedConsoleForSelect] = useState('')
+  const [availableConsoles, setAvailableConsoles] = useState<Array<{id: string, name: string, slug: string, screenscrapeId: number | null}>>([])
+  const [loadingConsoles, setLoadingConsoles] = useState(true)
   
   // Server Actions states
   const [consoleScrapingState, consoleScrapingAction, consoleScrapingPending] = useActionState(scrapeSingleConsoleAction, { success: false })
@@ -72,11 +77,69 @@ export default function ScrapingManagement() {
   const [isScrapingAll, setIsScrapingAll] = useState(false)
   const [isScrapingLimited, setIsScrapingLimited] = useState(false)
 
+  // Charger les consoles disponibles
+  useEffect(() => {
+    const loadConsoles = async () => {
+      try {
+        const consoles = await getAllConsolesForScraping()
+        setAvailableConsoles(consoles)
+      } catch (error) {
+        console.error('Erreur lors du chargement des consoles:', error)
+      } finally {
+        setLoadingConsoles(false)
+      }
+    }
+    
+    loadConsoles()
+  }, [])
 
   const startGameScraping = async (consoleSlug: string) => {
     setIsScrapingGames(true)
     
     try {
+      const result = await scrapeGamesForConsoleBySlugAction(consoleSlug)
+      
+      if (result.success) {
+        toast({
+          title: "Scraping des jeux terminé",
+          description: result.message,
+        })
+      } else {
+        toast({
+          title: "Erreur",
+          description: result.error || "Erreur lors du scraping des jeux",
+          variant: "destructive",
+        })
+      }
+      
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors du scraping des jeux",
+        variant: "destructive",
+      })
+    } finally {
+      setIsScrapingGames(false)
+    }
+  }
+
+  const startGameScrapingById = async (screenscrapeId: number) => {
+    setIsScrapingGames(true)
+    
+    try {
+      // D'abord récupérer le slug de la console
+      const consoleSlug = await getConsoleSlugByScreenscraperId(screenscrapeId)
+      
+      if (!consoleSlug) {
+        toast({
+          title: "Erreur",
+          description: `Console avec l'ID Screenscraper ${screenscrapeId} non trouvée. Veuillez d'abord scraper cette console.`,
+          variant: "destructive",
+        })
+        return
+      }
+      
+      // Puis lancer le scraping des jeux
       const result = await scrapeGamesForConsoleBySlugAction(consoleSlug)
       
       if (result.success) {
@@ -558,27 +621,123 @@ export default function ScrapingManagement() {
             <AlertTitle>Prérequis</AlertTitle>
             <AlertDescription>
               Les consoles doivent d&apos;abord être scrapées avant de pouvoir synchroniser leurs jeux.
+              Vous pouvez choisir la console par ID Screenscraper ou par sélection dans la liste.
             </AlertDescription>
           </Alert>
 
-          <div className="grid gap-2 md:grid-cols-3">
-            {['nes', 'snes', 'playstation', 'neo-geo', 'gameboy'].map((consoleSlug) => (
-              <Button 
-                key={consoleSlug}
-                variant="outline"
-                onClick={() => startGameScraping(consoleSlug)}
-                disabled={isScrapingGames}
-                className="flex items-center space-x-2"
-              >
-                {isScrapingGames ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Gamepad2 className="h-4 w-4" />
-                )}
-                <span>{consoleSlug.toUpperCase()}</span>
-              </Button>
-            ))}
+          {/* Méthode 1: Par ID Screenscraper */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Méthode 1: Par ID Console Screenscraper</h4>
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <Label htmlFor="gameScrapingConsoleId">ID Console Screenscraper</Label>
+                <Input
+                  id="gameScrapingConsoleId"
+                  placeholder="Ex: 1 (Megadrive), 2 (Master System), 57 (PlayStation)"
+                  type="number"
+                  value={selectedConsoleSlug}
+                  onChange={(e) => setSelectedConsoleSlug(e.target.value)}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  onClick={() => {
+                    if (selectedConsoleSlug) {
+                      // Pour l'ID, on doit d'abord récupérer le slug de la console
+                      startGameScrapingById(parseInt(selectedConsoleSlug))
+                    }
+                  }}
+                  disabled={isScrapingGames || !selectedConsoleSlug}
+                  className="flex items-center space-x-2"
+                >
+                  {isScrapingGames ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Gamepad2 className="h-4 w-4" />
+                  )}
+                  <span>Scraper jeux</span>
+                </Button>
+              </div>
+            </div>
           </div>
+
+          {/* Méthode 2: Sélection parmi toutes les consoles */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Méthode 2: Sélectionnez une console existante</h4>
+            <div className="flex space-x-4">
+              <div className="flex-1">
+                <Label htmlFor="consoleSelect">Console</Label>
+                <Select value={selectedConsoleForSelect} onValueChange={setSelectedConsoleForSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={loadingConsoles ? "Chargement..." : "Sélectionner une console"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableConsoles.map((console) => (
+                      <SelectItem key={console.id} value={console.slug}>
+                        {console.name} {console.screenscrapeId ? `(ID: ${console.screenscrapeId})` : '(Pas d\'ID)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  onClick={() => {
+                    if (selectedConsoleForSelect) {
+                      startGameScraping(selectedConsoleForSelect)
+                    }
+                  }}
+                  disabled={isScrapingGames || !selectedConsoleForSelect}
+                  className="flex items-center space-x-2"
+                >
+                  {isScrapingGames ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Gamepad2 className="h-4 w-4" />
+                  )}
+                  <span>Scraper jeux</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Méthode 3: Consoles populaires (accès rapide) */}
+          <div className="space-y-4">
+            <h4 className="font-medium">Méthode 3: Consoles populaires (accès rapide)</h4>
+            <div className="grid gap-2 md:grid-cols-3">
+              {[
+                { slug: 'nes', name: 'NES', id: 4 },
+                { slug: 'snes', name: 'SNES', id: 3 },
+                { slug: 'playstation', name: 'PlayStation', id: 57 },
+                { slug: 'neo-geo', name: 'Neo Geo', id: 142 },
+                { slug: 'gameboy', name: 'Game Boy', id: 9 },
+                { slug: 'megadrive', name: 'Megadrive', id: 1 }
+              ].map((console) => (
+                <Button 
+                  key={console.slug}
+                  variant="outline"
+                  onClick={() => startGameScraping(console.slug)}
+                  disabled={isScrapingGames}
+                  className="flex items-center space-x-2"
+                >
+                  {isScrapingGames ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Gamepad2 className="h-4 w-4" />
+                  )}
+                  <span>{console.name}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>IDs populaires</AlertTitle>
+            <AlertDescription>
+              Consoles populaires - Megadrive: 1, Master System: 2, SNES: 3, NES: 4, Game Boy: 9, PlayStation: 57, Nintendo 64: 14, Dreamcast: 23, Neo Geo: 142
+            </AlertDescription>
+          </Alert>
         </CardContent>
       </Card>
 
