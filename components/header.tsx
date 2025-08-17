@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { Gamepad2, Menu, X, User, LogOut, BarChart3 } from "lucide-react"
 import { useState } from "react"
@@ -41,11 +42,33 @@ export default function Header() {
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
           <RegionalLink href="/" className="flex items-center gap-2">
-            <Gamepad2 className="h-5 w-5 text-blue-600" />
-            <span className="text-lg font-semibold text-gray-900 dark:text-white">
-              <span className="hidden sm:inline">Super Retrogamers</span>
-              <span className="sm:hidden">SR</span>
-            </span>
+            <div className="flex items-center">
+              {/* Logo complet sur desktop */}
+              <div className="hidden sm:block">
+                <Image
+                  src="/logo-simple.svg"
+                  alt="Super Retrogamers - スーパーレトロゲーマー"
+                  width={200}
+                  height={50}
+                  className="h-8 w-auto"
+                  priority
+                />
+              </div>
+              {/* Version compacte sur mobile avec icône */}
+              <div className="sm:hidden flex items-center gap-2">
+                <Image
+                  src="/favicon.svg"
+                  alt="Super Retrogamers"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                  priority
+                />
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
+                  SR
+                </span>
+              </div>
+            </div>
           </RegionalLink>
 
           {/* Desktop Navigation */}

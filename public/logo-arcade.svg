@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="140" viewBox="0 0 500 140" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient néon cyberpunk -->
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff0080;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#ff8c00;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ffff00;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#00ff80;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0080ff;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradient pour le fond -->
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#2a0845;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Effet glow -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Ombre portée -->
+    <filter id="dropshadow">
+      <feOffset dx="4" dy="4" in="SourceGraphic" result="offset"/>
+      <feFlood flood-color="#000000" flood-opacity="0.8"/>
+      <feComposite in="SourceGraphic" in2="offset" operator="over"/>
+    </filter>
+    
+    <style>
+      .arcade-text {
+        font-family: 'Arial Black', 'Impact', sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+      .katakana-text {
+        font-family: 'MS Gothic', 'Hiragino Kaku Gothic Pro', monospace;
+        font-weight: bold;
+      }
+    </style>
+  </defs>
+  
+  <!-- Fond dégradé -->
+  <rect width="500" height="140" fill="url(#bgGradient)"/>
+  
+  <!-- Grille de fond style Tron -->
+  <defs>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1a4a6b" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <rect width="500" height="140" fill="url(#grid)"/>
+  
+  <!-- Bordure néon avec coins arrondis -->
+  <rect x="10" y="10" width="480" height="120" fill="none" stroke="url(#neonGradient)" stroke-width="3" rx="15" filter="url(#glow)"/>
+  
+  <!-- SUPER (première ligne) -->
+  <text x="250" y="50" 
+        text-anchor="middle" 
+        class="arcade-text" 
+        font-size="32" 
+        fill="url(#neonGradient)" 
+        filter="url(#glow)">SUPER</text>
+  
+  <!-- RETROGAMERS (deuxième ligne) -->
+  <text x="250" y="85" 
+        text-anchor="middle" 
+        class="arcade-text" 
+        font-size="28" 
+        fill="url(#neonGradient)" 
+        filter="url(#glow)">RETROGAMERS</text>
+  
+  <!-- Ligne de séparation stylée -->
+  <line x1="100" y1="95" x2="400" y2="95" stroke="url(#neonGradient)" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Texte katakana avec effet néon -->
+  <text x="250" y="115" 
+        text-anchor="middle" 
+        class="katakana-text" 
+        font-size="16" 
+        fill="#ffffff" 
+        filter="url(#glow)">スーパーレトロゲーマー</text>
+  
+  <!-- Éléments décoratifs style circuit -->
+  <!-- Circuit pattern à gauche -->
+  <g transform="translate(30, 30)" opacity="0.4">
+    <rect width="8" height="8" fill="#00ff80"/>
+    <rect x="12" y="0" width="8" height="2" fill="#00ff80"/>
+    <rect x="12" y="6" width="8" height="2" fill="#00ff80"/>
+    <rect x="24" y="0" width="2" height="8" fill="#00ff80"/>
+  </g>
+  
+  <!-- Circuit pattern à droite -->
+  <g transform="translate(460, 30)" opacity="0.4">
+    <rect width="8" height="8" fill="#ff0080"/>
+    <rect x="-12" y="0" width="8" height="2" fill="#ff0080"/>
+    <rect x="-12" y="6" width="8" height="2" fill="#ff0080"/>
+    <rect x="-14" y="0" width="2" height="8" fill="#ff0080"/>
+  </g>
+  
+  <!-- Pixels décoratifs animés (effet statique) -->
+  <rect x="80" y="60" width="3" height="3" fill="#ffff00" opacity="0.8"/>
+  <rect x="90" y="55" width="3" height="3" fill="#ff8c00" opacity="0.8"/>
+  <rect x="410" y="60" width="3" height="3" fill="#0080ff" opacity="0.8"/>
+  <rect x="420" y="55" width="3" height="3" fill="#00ff80" opacity="0.8"/>
+  
+  <!-- Petites étoiles/points lumineux -->
+  <circle cx="60" cy="40" r="1.5" fill="#ffffff" opacity="0.7"/>
+  <circle cx="440" cy="40" r="1.5" fill="#ffffff" opacity="0.7"/>
+  <circle cx="100" cy="120" r="1" fill="#ffffff" opacity="0.5"/>
+  <circle cx="400" cy="120" r="1" fill="#ffffff" opacity="0.5"/>
+</svg>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="120" viewBox="0 0 800 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="readmeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff6b9d;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#4ecdc4;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#45b7d1;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#96ceb4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#feca57;stop-opacity:1" />
+    </linearGradient>
+    
+    <style>
+      .readme-text {
+        font-family: 'Arial Black', sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+      .readme-katakana {
+        font-family: 'MS Gothic', monospace;
+        font-weight: bold;
+        letter-spacing: 1px;
+      }
+    </style>
+  </defs>
+  
+  <!-- Fond transparent pour README -->
+  <rect width="800" height="120" fill="transparent"/>
+  
+  <!-- SUPER RETROGAMERS en une ligne -->
+  <text x="400" y="50" 
+        text-anchor="middle" 
+        class="readme-text" 
+        font-size="36" 
+        fill="url(#readmeGradient)">SUPER RETROGAMERS</text>
+  
+  <!-- Ligne décorative -->
+  <line x1="200" y1="65" x2="600" y2="65" stroke="url(#readmeGradient)" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Katakana -->
+  <text x="400" y="85" 
+        text-anchor="middle" 
+        class="readme-katakana" 
+        font-size="16" 
+        fill="#666666">スーパーレトロゲーマー</text>
+  
+  <!-- Icônes de manettes simplifiées -->
+  <g transform="translate(150, 25)">
+    <rect width="20" height="12" fill="none" stroke="url(#readmeGradient)" stroke-width="2" rx="6"/>
+    <circle cx="6" cy="6" r="2" fill="url(#readmeGradient)"/>
+    <circle cx="14" cy="6" r="2" fill="url(#readmeGradient)"/>
+  </g>
+  
+  <g transform="translate(630, 25)">
+    <rect width="20" height="12" fill="none" stroke="url(#readmeGradient)" stroke-width="2" rx="6"/>
+    <circle cx="6" cy="6" r="2" fill="url(#readmeGradient)"/>
+    <circle cx="14" cy="6" r="2" fill="url(#readmeGradient)"/>
+  </g>
+</svg>
