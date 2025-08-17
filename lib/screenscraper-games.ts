@@ -10,87 +10,111 @@ function extractGameRegionalTitles(noms?: ScreenscraperGame['noms']): Array<{ re
   
   const regionalTitles: Array<{ region: string, title: string }> = []
   
-  // Mapping des noms Screenscraper vers nos régions
-  const regionMappings: Record<string, string> = {
-    'nom_eu': 'EU',
-    'nom_us': 'US', 
-    'nom_fr': 'FR',
-    'nom_jp': 'JP',
-    'nom_wor': 'WOR'
-  }
-  
-  // Extraire tous les titres régionaux disponibles
-  Object.entries(regionMappings).forEach(([screenscraperKey, region]) => {
-    const title = noms[screenscraperKey as keyof typeof noms]
-    if (title && title.trim()) {
-      regionalTitles.push({ region, title: title.trim() })
+  // Nouveau format: noms est un tableau d'objets avec { region, text }
+  if (Array.isArray(noms)) {
+    const regionMappings: Record<string, string> = {
+      'eu': 'EU',
+      'us': 'US', 
+      'fr': 'FR',
+      'jp': 'JP',
+      'wor': 'WOR',
+      'ss': 'WOR' // ScreenScraper default maps to World
     }
-  })
+    
+    noms.forEach((nomEntry) => {
+      if (nomEntry.region && nomEntry.text && nomEntry.text.trim()) {
+        const mappedRegion = regionMappings[nomEntry.region.toLowerCase()] || nomEntry.region.toUpperCase()
+        regionalTitles.push({ 
+          region: mappedRegion, 
+          title: nomEntry.text.trim() 
+        })
+      }
+    })
+  } else {
+    // Ancien format: noms est un objet avec des propriétés nommées (fallback)
+    const regionMappings: Record<string, string> = {
+      'nom_eu': 'EU',
+      'nom_us': 'US', 
+      'nom_fr': 'FR',
+      'nom_jp': 'JP',
+      'nom_wor': 'WOR'
+    }
+    
+    Object.entries(regionMappings).forEach(([screenscraperKey, region]) => {
+      const title = (noms as any)[screenscraperKey]
+      if (title && title.trim()) {
+        regionalTitles.push({ region, title: title.trim() })
+      }
+    })
+  }
   
   return regionalTitles
 }
 
-// Complete Screenscraper Game interface based on API documentation
+// Complete Screenscraper Game interface based on real API structure
 interface ScreenscraperGame {
   id: number
   romid?: number
   notgame?: boolean | string | number
-  nom?: string
   
-  // Names in different regions
-  noms?: {
-    nom_ss?: string
-    nom_eu?: string
-    nom_us?: string
-    nom_fr?: string
-    nom_jp?: string
-    nom_wor?: string
-    nom_recalbox?: string
-    nom_retropie?: string
-    nom_launchbox?: string
-    nom_hyperspin?: string
-    noms_commun?: string
-  }
-  
-  // Region short names
-  regionshortnames?: {
-    regionshortname?: string
-  }
+  // Names in different regions - nouveau format API
+  noms?: Array<{ region: string; text: string }>
   
   cloneof?: number | string
   
   // System information
   systeme?: {
     id: number
-    nom?: string
+    text?: string
     parentid?: number
-    noms?: {
-      nom_eu?: string
-      nom_us?: string
-    }
   }
   
-  // Publisher and developer - enhanced structure
+  // Publisher and developer - structure API réelle
   editeur?: {
     id?: number
     text?: string
-    nom?: string
-  } | string
-  
-  editeurmedias?: {
-    editeurmedia_pictomonochrome?: string
-    editeurmedia_pictocouleur?: string
   }
   
   developpeur?: {
     id?: number
     text?: string
-    nom?: string
-  } | string
+  }
   
-  developpeurmedias?: {
-    developpeurmedia_pictomonochrome?: string
-    developpeurmedia_pictocouleur?: string
+  // Game info
+  joueurs?: string
+  note?: {
+    text?: string
+  }
+  topstaff?: string
+  rotation?: string
+  resolution?: string
+  
+  // Descriptions (structure simplifiée)
+  synopsis?: Array<{ langue: string; text: string }>
+  
+  // Release dates by region
+  dates?: Array<{ region: string; text: string }>
+  
+  // Genres - structure API réelle
+  genres?: Array<{
+    id: number
+    nomcourt?: string
+    principale?: string
+    parentid?: number
+    noms?: Array<{ langue: string; text: string }>
+  }>
+  
+  // Medias - structure API réelle
+  medias?: Array<{
+    type: string
+    url: string
+    region?: string
+    crc?: string
+    md5?: string
+    sha1?: string
+    size?: string
+    format?: string
+  }>
   }
   
   // Game info
@@ -937,6 +961,7 @@ export async function createGameFromScreenscraper(
     
     // Sauvegarder les titres régionaux
     const regionalTitles = extractGameRegionalTitles(gameDetails.noms)
+    
     if (regionalTitles.length > 0) {
       const titleData = regionalTitles.map(title => ({
         gameId: createdGame.id,
