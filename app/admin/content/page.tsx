@@ -19,6 +19,7 @@ import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Monitor, Gamepad2, Users, Star, Calendar, AlertTriangle, Edit3, Building2, Tag, Layers, Cpu } from "lucide-react"
 import Link from "next/link"
+import { ScrapingButtons } from "@/components/admin/scraping-buttons"
 
 async function ContentManagementContent() {
   const [{ consoles, games }, corporations, families, generations] = await Promise.all([
@@ -289,9 +290,9 @@ async function ContentManagementContent() {
                   <div className="text-muted-foreground">
                     Aucune console référencée pour le moment
                   </div>
-                  <Button className="mt-4">
-                    Lancer le scraping
-                  </Button>
+                  <div className="mt-4">
+                    <ScrapingButtons />
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -393,9 +394,9 @@ async function ContentManagementContent() {
                   <div className="text-muted-foreground">
                     Aucun jeu référencé pour le moment
                   </div>
-                  <Button className="mt-4">
-                    Lancer le scraping
-                  </Button>
+                  <div className="mt-4">
+                    <ScrapingButtons />
+                  </div>
                 </div>
               )}
               

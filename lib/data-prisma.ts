@@ -175,7 +175,16 @@ export async function getPopularGamesByConsoleSlug(consoleSlug: string): Promise
     where: {
       console: {
         slug: consoleSlug
-      }
+      },
+      OR: [
+        { topStaff: true },  // Toujours inclure les top staff même sans note
+        { 
+          AND: [
+            { rating: { not: null } },  // Ou inclure seulement les jeux avec une note
+            { rating: { gt: 0 } }       // Et une note positive
+          ]
+        }
+      ]
     },
     include: {
       console: true,
@@ -451,11 +460,22 @@ export async function getConsolePopularGames(consoleSlug: string): Promise<strin
     where: {
       console: {
         slug: consoleSlug
-      }
+      },
+      OR: [
+        { topStaff: true },  // Toujours inclure les top staff même sans note
+        { 
+          AND: [
+            { rating: { not: null } },  // Ou inclure seulement les jeux avec une note
+            { rating: { gt: 0 } }       // Et une note positive
+          ]
+        }
+      ]
     },
-    orderBy: {
-      rating: 'desc'
-    },
+    orderBy: [
+      { topStaff: 'desc' },  // Top staff en premier
+      { rating: 'desc' },    // Puis par note décroissante
+      { title: 'asc' }       // En cas d'égalité, par ordre alphabétique
+    ],
     take: 4,
     select: {
       title: true

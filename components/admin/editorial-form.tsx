@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useActionState } from 'react'
 import { Save, Eye, EyeOff } from 'lucide-react'
 import { EditorialArticle } from '@/components/editorial-article'
+import { updateConsoleEditorialAction } from '@/lib/actions/admin-scraping-actions'
 import type { Console } from '@prisma/client'
 
 interface EditorialFormProps {
@@ -17,33 +18,23 @@ export function EditorialForm({ console }: EditorialFormProps) {
     editorialAuthor: console.editorialAuthor || '',
     editorialContent: console.editorialContent || '',
   })
+  
+  const [editorialState, editorialAction] = useActionState(updateConsoleEditorialAction, { success: false })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    startTransition(async () => {
-      try {
-        const response = await fetch(`/api/admin/consoles/${console.slug}/editorial`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...formData,
-            editorialPublishedAt: formData.editorialContent ? new Date().toISOString() : null,
-          }),
-        })
-
-        if (!response.ok) {
-          throw new Error('Erreur lors de la sauvegarde')
-        }
-
-        // Recharger la page pour voir les changements
-        window.location.reload()
-      } catch (err: unknown) {
-        window.console.log('Erreur:', err)
-        alert('Erreur lors de la sauvegarde')
-      }
+    const formDataObj = new FormData()
+    formDataObj.set('slug', console.slug)
+    formDataObj.set('editorialTitle', formData.editorialTitle)
+    formDataObj.set('editorialAuthor', formData.editorialAuthor)
+    formDataObj.set('editorialContent', formData.editorialContent)
+    if (formData.editorialContent) {
+      formDataObj.set('editorialPublishedAt', new Date().toISOString())
+    }
+    
+    startTransition(() => {
+      editorialAction(formDataObj)
     })
   }
 
@@ -62,6 +53,23 @@ export function EditorialForm({ console }: EditorialFormProps) {
 
   return (
     <div className="space-y-6">
+      {/* Messages de feedback */}
+      {editorialState.success && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/20">
+          <p className="text-sm text-green-800 dark:text-green-300">
+            ✅ {editorialState.message}
+          </p>
+        </div>
+      )}
+      
+      {editorialState.error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+          <p className="text-sm text-red-800 dark:text-red-300">
+            ❌ {editorialState.error}
+          </p>
+        </div>
+      )}
+      
       {/* Toggle Preview */}
       <div className="flex items-center justify-between">
         <button

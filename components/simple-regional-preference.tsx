@@ -3,10 +3,10 @@
 import { startTransition } from 'react'
 import { Globe } from 'lucide-react'
 import { RegionFlag } from '@/components/ui/region-flag'
+import { updatePreferredRegionAction } from '@/lib/actions/settings-actions'
 
 interface SimpleRegionalPreferenceProps {
   currentRegion: string
-  userId: string
 }
 
 const REGIONS = [
@@ -18,37 +18,30 @@ const REGIONS = [
   { code: 'ASI', name: 'Asie' }
 ] as const
 
-async function updateUserRegion(userId: string, region: string) {
+async function updateUserRegion(region: string) {
   try {
-    const response = await fetch('/api/user/update-region', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId,
-        preferredRegion: region
-      })
-    })
+    const formData = new FormData()
+    formData.set('preferredRegion', region)
     
-    if (!response.ok) {
-      throw new Error('Erreur lors de la mise à jour')
+    const result = await updatePreferredRegionAction({ success: false }, formData)
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Erreur lors de la mise à jour')
     }
     
-    // Recharger la page pour voir les changements
-    window.location.reload()
+    // La redirection est gérée par l'action
   } catch (error) {
     console.error('Erreur:', error)
     alert('Erreur lors de la mise à jour de la région')
   }
 }
 
-export function SimpleRegionalPreference({ currentRegion, userId }: SimpleRegionalPreferenceProps) {
+export function SimpleRegionalPreference({ currentRegion }: SimpleRegionalPreferenceProps) {
   const handleRegionChange = (region: string) => {
     if (region === currentRegion) return
     
     startTransition(() => {
-      updateUserRegion(userId, region)
+      updateUserRegion(region)
     })
   }
 

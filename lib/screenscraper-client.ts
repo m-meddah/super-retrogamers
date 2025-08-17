@@ -368,6 +368,19 @@ export class ScreenscraperService {
       // Créer tous les dossiers nécessaires
       await fs.mkdir(regionDir, { recursive: true })
       
+      const filePath = path.join(regionDir, fileName)
+      
+      // Vérifier si le fichier existe déjà
+      try {
+        await fs.access(filePath)
+        console.log(`📁 Media jeu déjà présent: ${filePath}`)
+        // Retourner le chemin relatif existant
+        return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
+      } catch {
+        // Fichier n'existe pas, on continue le téléchargement
+      }
+      
+      console.log(`⬇️ Téléchargement jeu: ${url} -> ${filePath}`)
       const response = await rateLimitedFetch(url)
       if (!response.ok) {
         console.error(`Erreur lors du téléchargement de l'image ${url}: ${response.status}`)
@@ -377,8 +390,8 @@ export class ScreenscraperService {
       const arrayBuffer = await response.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
       
-      const filePath = path.join(regionDir, fileName)
       await fs.writeFile(filePath, buffer)
+      console.log(`✅ Media jeu téléchargé: ${filePath}`)
       
       // Retourner le chemin relatif depuis public/
       return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`

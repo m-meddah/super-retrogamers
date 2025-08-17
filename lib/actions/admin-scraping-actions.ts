@@ -3,7 +3,7 @@
 import { getScreenscraperService } from '@/lib/screenscraper-client'
 import { prisma } from '@/lib/prisma'
 import { scrapeConsolesFromScreenscraper, scrapeRegionalNamesForExistingConsoles } from '@/lib/screenscraper-service'
-import { scrapeRegionalTitlesForExistingGames } from '@/lib/screenscraper-games'
+import { scrapeRegionalTitlesForExistingGames, scrapeGamesForConsole } from '@/lib/screenscraper-games'
 
 export interface ActionState {
   success?: boolean
@@ -261,6 +261,116 @@ export async function scrapeGameRegionalTitlesAction(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erreur lors du scraping des titres régionaux'
+    }
+  }
+}
+
+// Action pour scraper les jeux d'une console spécifique par slug
+export async function scrapeGamesForConsoleBySlugAction(
+  consoleSlug: string
+): Promise<ActionState> {
+  try {
+    // Trouver la console par slug
+    const console = await prisma.console.findUnique({
+      where: { slug: consoleSlug },
+      select: { id: true, name: true, screenscrapeId: true }
+    })
+
+    if (!console) {
+      return {
+        success: false,
+        error: `Console avec le slug "${consoleSlug}" non trouvée`
+      }
+    }
+
+    if (!console.screenscrapeId) {
+      return {
+        success: false,
+        error: `La console "${console.name}" n'a pas d'ID Screenscraper`
+      }
+    }
+
+    // Scraper les jeux pour cette console
+    await scrapeGamesForConsole(console.id, console.screenscrapeId, 50)
+
+    // Compter les jeux scrapés
+    const gamesCount = await prisma.game.count({
+      where: { consoleId: console.id }
+    })
+
+    return {
+      success: true,
+      message: `${gamesCount} jeux traités pour ${console.name}`,
+      data: {
+        consoleName: console.name,
+        gamesProcessed: gamesCount
+      }
+    }
+  } catch (error) {
+    console.error('Erreur scraping jeux pour console:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors du scraping des jeux'
+    }
+  }
+}
+
+// Action pour mettre à jour le contenu éditorial d'une console
+export async function updateConsoleEditorialAction(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  try {
+    const slug = formData.get('slug') as string
+    const editorialTitle = formData.get('editorialTitle') as string
+    const editorialAuthor = formData.get('editorialAuthor') as string
+    const editorialContent = formData.get('editorialContent') as string
+    const editorialPublishedAt = formData.get('editorialPublishedAt') as string
+
+    if (!slug) {
+      return {
+        success: false,
+        error: 'Slug de console requis'
+      }
+    }
+
+    // Vérifier que la console existe
+    const console = await prisma.console.findUnique({
+      where: { slug }
+    })
+
+    if (!console) {
+      return {
+        success: false,
+        error: 'Console non trouvée'
+      }
+    }
+
+    // Mettre à jour le contenu éditorial
+    const updatedConsole = await prisma.console.update({
+      where: { slug },
+      data: {
+        editorialTitle: editorialTitle || null,
+        editorialAuthor: editorialAuthor || null,
+        editorialContent: editorialContent || null,
+        editorialPublishedAt: editorialPublishedAt ? new Date(editorialPublishedAt) : null,
+        updatedAt: new Date(),
+      }
+    })
+
+    return {
+      success: true,
+      message: `Contenu éditorial mis à jour pour ${updatedConsole.name}`,
+      data: {
+        consoleName: updatedConsole.name,
+        slug: updatedConsole.slug
+      }
+    }
+  } catch (error) {
+    console.error('Erreur mise à jour contenu éditorial:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors de la mise à jour du contenu éditorial'
     }
   }
 }

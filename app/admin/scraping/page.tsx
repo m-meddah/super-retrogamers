@@ -27,7 +27,17 @@ import {
   Trash2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction, scrapeConsoleRegionalNamesAction, scrapeGameRegionalTitlesAction, syncGenresAction } from "@/lib/actions/admin-scraping-actions"
+import { 
+  scrapeSingleConsoleAction, 
+  scrapeSingleGameAction, 
+  addConsoleManuallyAction, 
+  scrapeAllConsolesAction, 
+  scrapeLimitedConsolesAction, 
+  scrapeConsoleRegionalNamesAction, 
+  scrapeGameRegionalTitlesAction, 
+  scrapeGamesForConsoleBySlugAction,
+  syncGenresAction
+} from "@/lib/actions/admin-scraping-actions"
 
 interface ScrapingStats {
   consolesProcessed: number
@@ -56,7 +66,7 @@ export default function ScrapingManagement() {
   const [consoleScrapingState, consoleScrapingAction, consoleScrapingPending] = useActionState(scrapeSingleConsoleAction, { success: false })
   const [gameScrapingState, gameScrapingAction, gameScrapingPending] = useActionState(scrapeSingleGameAction, { success: false })
   const [addConsoleState, addConsoleAction, addConsolePending] = useActionState(addConsoleManuallyAction, { success: false })
-  const [syncGenresState, syncGenresFormAction, syncGenresPending] = useActionState(syncGenresAction, { success: false, message: '', error: '' })
+  const [syncGenresState, syncGenresFormAction, syncGenresPending] = useActionState(syncGenresAction, { success: false })
   const [regionalNamesState, regionalNamesAction, regionalNamesPending] = useActionState(scrapeConsoleRegionalNamesAction, { success: false })
   const [regionalTitlesState, regionalTitlesAction, regionalTitlesPending] = useActionState(scrapeGameRegionalTitlesAction, { success: false })
   const [isScrapingAll, setIsScrapingAll] = useState(false)
@@ -67,20 +77,20 @@ export default function ScrapingManagement() {
     setIsScrapingGames(true)
     
     try {
-      const response = await fetch(`/api/scraping/games/${consoleSlug}`, {
-        method: 'POST',
-      })
+      const result = await scrapeGamesForConsoleBySlugAction(consoleSlug)
       
-      if (!response.ok) {
-        throw new Error('Erreur lors du scraping des jeux')
+      if (result.success) {
+        toast({
+          title: "Scraping des jeux terminé",
+          description: result.message,
+        })
+      } else {
+        toast({
+          title: "Erreur",
+          description: result.error || "Erreur lors du scraping des jeux",
+          variant: "destructive",
+        })
       }
-      
-      const result = await response.json()
-      
-      toast({
-        title: "Scraping des jeux terminé",
-        description: `${result.gamesProcessed} jeux traités pour ${consoleSlug}`,
-      })
       
     } catch {
       toast({

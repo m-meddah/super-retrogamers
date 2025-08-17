@@ -1294,6 +1294,22 @@ async function downloadGameMedia(
     // Create all necessary directories
     await fs.mkdir(regionDir, { recursive: true })
     
+    const filePath = path.join(regionDir, fileName)
+    
+    // Check if file already exists
+    try {
+      await fs.access(filePath)
+      console.log(`📁 Media de jeu déjà présent: ${filePath}`)
+      // Return existing relative path
+      const relativePath = consoleSlug 
+        ? `/games/${gameSlug}-${consoleSlug}/${mediaType}/${region}/${fileName}`
+        : `/games/${gameSlug}/${mediaType}/${region}/${fileName}`
+      return relativePath
+    } catch {
+      // File doesn't exist, continue with download
+    }
+    
+    console.log(`⬇️ Téléchargement média jeu: ${url} -> ${filePath}`)
     const response = await rateLimitedFetch(url)
     if (!response.ok) {
       console.error(`Erreur téléchargement média ${url}: ${response.status}`)
@@ -1303,8 +1319,8 @@ async function downloadGameMedia(
     const arrayBuffer = await response.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     
-    const filePath = path.join(regionDir, fileName)
     await fs.writeFile(filePath, buffer)
+    console.log(`✅ Media de jeu téléchargé: ${filePath}`)
     
     // Return relative path from public/
     const relativePath = consoleSlug 
