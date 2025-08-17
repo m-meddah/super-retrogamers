@@ -115,146 +115,19 @@ interface ScreenscraperGame {
     size?: string
     format?: string
   }>
-  }
-  
-  // Game info
-  joueurs?: string
-  note?: number | string  // Rating out of 20
-  topstaff?: number | string  // Top staff inclusion (0/1)
-  rotation?: string
-  resolution?: string
-  
-  // Descriptions
-  synopsis?: {
-    synopsis_eu?: string
-    synopsis_us?: string
-    synopsis_fr?: string
-    synopsis_jp?: string
-    synopsis_wor?: string
-  }
-  
-  // Classifications
-  classifications?: {
-    [organisme: string]: string
-  }
-  
-  // Release dates by region
-  dates?: {
-    date_eu?: string
-    date_us?: string
-    date_jp?: string
-    date_fr?: string
-    date_wor?: string
-  }
-  
-  // Genres - enhanced structure
-  genres?: {
-    genres_id?: Array<{
-      genre_id: number
-      nomcourt?: number
-      principale?: number
-      parentid?: number
-      text?: string
-      nom?: string
-    }>
-    genres_eu?: string[]
-    genres_us?: string[]
-    genres_fr?: string[]
-  }
-  
-  // Game modes - enhanced structure
-  modes?: {
-    modes_id?: Array<{
-      mode_id: number
-      text?: string
-      nom?: string
-    }>
-    modes_eu?: string[]
-    modes_us?: string[]
-    modes_fr?: string[]
-  }
-  
-  // Game families - enhanced structure
-  familles?: {
-    familles_id?: Array<{
-      famille_id: number
-      text?: string
-      nom?: string
-    }>
-    familles_eu?: string[]
-    familles_us?: string[]
-    familles_fr?: string[]
-  }
-  
-  // Themes
-  themes?: {
-    themes_id?: Array<{
-      theme_id: number
-    }>
-    themes_eu?: string[]
-    themes_us?: string[]
-    themes_fr?: string[]
-  }
-  
-  // Media files
-  medias?: ScreenscraperGameMedia
-  
-  // ROM information
-  roms?: Array<{
-    romid: number
-    romnumsupport?: number
-    romtotalsupport?: number
-    romfilename?: string
-    romsize?: number
-    romcrc?: string
-    rommd5?: string
-    romsha1?: string
-    beta?: number
-    demo?: number
-    trad?: number
-    hack?: number
-    unl?: number
-    alt?: number
-    best?: number
-    netplay?: number
-  }>
-  
-  // Specific ROM info (if scraped by ROM)
-  rom?: {
-    romid: number
-    romnumsupport?: number
-    romtotalsupport?: number
-    romfilename?: string
-    romregions?: string
-    romlangues?: string
-    romtype?: string
-    romsupporttype?: string
-    romsize?: number
-    romcrc?: string
-    rommd5?: string
-    romsha1?: string
-    beta?: number
-    demo?: number
-    trad?: number
-    hack?: number
-    unl?: number
-    alt?: number
-    best?: number
-    netplay?: number
-  }
 }
 
 // Media interface for actual Screenscraper response structure
 interface ScreenscraperGameMediaItem {
   type: string          // e.g. "sstitle", "ss", "wheel", "box-2D", "fanart", etc.
-  parent: string        // e.g. "jeu"
+  parent?: string       // e.g. "jeu" (optional)
   url: string          // Direct download URL
-  region: string       // e.g. "wor", "eu", "us", "fr", "jp"
+  region?: string       // e.g. "wor", "eu", "us", "fr", "jp" (optional)
   crc?: string
   md5?: string
   sha1?: string
   size?: string        // File size in bytes
-  format: string       // e.g. "png", "jpg", "mp4", "pdf"
+  format?: string      // e.g. "png", "jpg", "mp4", "pdf" (optional)
 }
 
 // Media array type (actual structure from Screenscraper API)
@@ -324,7 +197,7 @@ export async function getGameDetailsWithMedias(gameId: number, systemId?: number
     }
     
     const game = data.response.jeu
-    console.log(`Jeu ${gameId} trouvé: ${game.nom || 'Nom inconnu'} avec ${game.medias?.length || 0} médias`)
+    console.log(`Jeu ${gameId} trouvé avec ${game.medias?.length || 0} médias`)
     return game
     
   } catch (error) {
@@ -508,23 +381,18 @@ function extractReleaseYear(dates?: ScreenscraperGame['dates']): number | null {
   
   let dateStr: string | null = null
   
-  if (Array.isArray(dates)) {
-    // New format: array of { region: 'us', text: '2000-02-25' }
-    const preferredRegions = ['fr', 'eu', 'wor', 'us', 'jp']
-    for (const region of preferredRegions) {
-      const dateEntry = dates.find(d => d.region === region)
-      if (dateEntry?.text) {
-        dateStr = dateEntry.text
-        break
-      }
+  // New format: array of { region: 'us', text: '2000-02-25' }
+  const preferredRegions = ['fr', 'eu', 'wor', 'us', 'jp']
+  for (const region of preferredRegions) {
+    const dateEntry = dates.find(d => d.region === region)
+    if (dateEntry?.text) {
+      dateStr = dateEntry.text
+      break
     }
-    // If no preferred region found, take the first available
-    if (!dateStr && dates.length > 0 && dates[0]?.text) {
-      dateStr = dates[0].text
-    }
-  } else {
-    // Old format: object with date_eu, date_fr, etc.
-    dateStr = dates.date_eu || dates.date_fr || dates.date_us || dates.date_wor || dates.date_jp || null
+  }
+  // If no preferred region found, take the first available
+  if (!dateStr && dates.length > 0 && dates[0]?.text) {
+    dateStr = dates[0].text
   }
   
   if (!dateStr) return null
@@ -575,27 +443,22 @@ function extractRegionReleaseDate(dates: ScreenscraperGame['dates'] | undefined,
 function extractMainGenre(genres?: ScreenscraperGame['genres']): string | null {
   if (!genres) return null
   
-  if (Array.isArray(genres)) {
-    // New format: array of genre objects with noms array
-    // Find the main genre (principale: "1")
-    const mainGenre = genres.find(g => g.principale === "1")
-    if (mainGenre?.noms) {
-      // Get genre name in preferred language
-      const preferredLanguages = ['fr', 'en', 'de', 'es', 'it', 'pt']
-      for (const lang of preferredLanguages) {
-        const nameEntry = mainGenre.noms.find((n: { langue?: string; text?: string }) => n.langue === lang)
-        if (nameEntry?.text) {
-          return nameEntry.text
-        }
-      }
-      // If no preferred language found, take the first available
-      if (mainGenre.noms.length > 0 && mainGenre.noms[0]?.text) {
-        return mainGenre.noms[0].text
+  // New format: array of genre objects with noms array
+  // Find the main genre (principale: "1")
+  const mainGenre = genres.find(g => g.principale === "1")
+  if (mainGenre?.noms) {
+    // Get genre name in preferred language
+    const preferredLanguages = ['fr', 'en', 'de', 'es', 'it', 'pt']
+    for (const lang of preferredLanguages) {
+      const nameEntry = mainGenre.noms.find((n: { langue?: string; text?: string }) => n.langue === lang)
+      if (nameEntry?.text) {
+        return nameEntry.text
       }
     }
-  } else {
-    // Old format: object with genres_fr, genres_eu, etc.
-    return genres.genres_fr?.[0] || genres.genres_eu?.[0] || null
+    // If no preferred language found, take the first available
+    if (mainGenre.noms.length > 0 && mainGenre.noms[0]?.text) {
+      return mainGenre.noms[0].text
+    }
   }
   
   return null
@@ -788,14 +651,7 @@ export async function createGameFromScreenscraper(
         if (!selectedName && gameDetails.noms.length > 0 && gameDetails.noms[0]?.text) {
           gameTitle = gameDetails.noms[0].text
         }
-      } else {
-        // Old format: object with nom_fr, nom_eu, etc.
-        gameTitle = gameDetails.noms.nom_fr || gameDetails.noms.nom_eu || 
-                   gameDetails.noms.nom_us || gameDetails.noms.noms_commun || 
-                   gameDetails.nom || `Jeu ${gameDetails.id}`
       }
-    } else if (gameDetails.nom) {
-      gameTitle = gameDetails.nom
     }
     
     console.log(`🎮 Titre extrait: "${gameTitle}" pour jeu ${gameDetails.id}`)
@@ -833,10 +689,6 @@ export async function createGameFromScreenscraper(
         if (!description && gameDetails.synopsis.length > 0 && gameDetails.synopsis[0]?.text) {
           description = gameDetails.synopsis[0].text
         }
-      } else {
-        // Old format: object with synopsis_fr, synopsis_eu, etc.
-        description = gameDetails.synopsis.synopsis_fr || gameDetails.synopsis.synopsis_eu || 
-                     gameDetails.synopsis.synopsis_us || null
       }
     }
     
@@ -976,21 +828,9 @@ export async function createGameFromScreenscraper(
     }
     
     // Process genres if available (commented until Genre table exists)
-    if (gameDetails.genres?.genres_id) {
+    if (gameDetails.genres) {
       // await processGameGenres(createdGame.id, gameDetails.genres)
-      console.log(`📋 ${gameDetails.genres.genres_id.length} genres trouvés (table Genre pas encore créée)`)
-    }
-    
-    // Process modes if available (commented until GameMode table exists)
-    if (gameDetails.modes?.modes_id) {
-      // await processGameModes(createdGame.id, gameDetails.modes)
-      console.log(`🎮 ${gameDetails.modes.modes_id.length} modes trouvés (table GameMode pas encore créée)`)
-    }
-    
-    // Process families if available (commented until GameFamily table exists)
-    if (gameDetails.familles?.familles_id) {
-      // await processGameFamilies(createdGame.id, gameDetails.familles)
-      console.log(`👨‍👩‍👧‍👦 ${gameDetails.familles.familles_id.length} familles trouvées (table GameFamily pas encore créée)`)
+      console.log(`📋 ${gameDetails.genres.length} genres trouvés (table Genre pas encore créée)`)
     }
     
     // Process media files
@@ -1084,12 +924,15 @@ async function processGameMedias(
           continue
         }
 
-        const fileName = `${gameSlug}_${media.type}_${media.region}.${media.format}`
+        const mediaType = media.type || 'unknown'
+        const mediaRegion = media.region || 'unknown'
+        const mediaFormat = media.format || 'png'
+        const fileName = `${gameSlug}_${mediaType}_${mediaRegion}.${mediaFormat}`
         let localPath: string | null = null
         let downloadError: string | null = null
         
         try {
-          localPath = await downloadGameMedia(media.url, fileName, gameSlug, media.type, media.region, consoleSlug)
+          localPath = await downloadGameMedia(media.url, fileName, gameSlug, mediaType, mediaRegion, consoleSlug)
           if (localPath) {
             console.log(`   ✅ ${media.type} (${media.region}) téléchargé`)
           } else {
@@ -1110,9 +953,9 @@ async function processGameMedias(
         
         // Always save media info to database (even if download failed)
         processedMedias.push({
-          mediaType: media.type,
-          region: media.region,
-          format: media.format,
+          mediaType: mediaType,
+          region: mediaRegion,
+          format: mediaFormat,
           url: media.url,
           fileName,
           localPath,
