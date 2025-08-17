@@ -38,6 +38,7 @@ export default function RegisterPage() {
         email,
         password,
         name,
+        preferredRegion: "FR",
       })
       setSuccess(true)
       setTimeout(() => {

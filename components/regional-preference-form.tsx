@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 import { Globe, CheckCircle, AlertCircle } from 'lucide-react'
-import { ActionState, updateRegionalPreferenceAction } from '@/lib/actions/settings-actions'
+import { ActionState, updatePreferredRegionAction } from '@/lib/actions/settings-actions'
 import { RegionFlag } from '@/components/ui/region-flag'
 
 interface RegionalPreferenceFormProps {
@@ -25,7 +25,7 @@ const REGIONS = [
 ] as const
 
 export function RegionalPreferenceForm({ currentRegion }: RegionalPreferenceFormProps) {
-  const [state, formAction, isPending] = useActionState(updateRegionalPreferenceAction, initialState)
+  const [state, formAction, isPending] = useActionState(updatePreferredRegionAction, initialState)
 
   return (
     <form action={formAction} className="space-y-4">

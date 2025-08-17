@@ -3,7 +3,7 @@
 import { Suspense } from 'react'
 import RegionalLink from "@/components/regional-link"
 import { Star, Award, Users } from "lucide-react"
-import type { Game } from "@prisma/client"
+import type { Game, GameMedia } from "@prisma/client"
 import { useRegionalGameTitle, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
 import AdaptiveGameImage from "@/components/adaptive-game-image"
 import GameWheelLogo from "@/components/game-wheel-logo"
@@ -13,11 +13,7 @@ interface GameWithConsole extends Game {
     name: string
     slug: string
   }
-  medias?: Array<{
-    mediaType: string
-    region: string
-    localPath: string | null
-  }>
+  medias?: GameMedia[]
 }
 
 // Type pour les résultats de recherche
@@ -34,11 +30,7 @@ interface SearchGameResult {
     name: string
     slug: string
   } | null
-  medias: Array<{
-    mediaType: string
-    region: string
-    localPath: string | null
-  }>
+  medias: GameMedia[]
 }
 
 interface GameCardWrapperProps {
@@ -57,8 +49,18 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
   // Créer un objet compatible avec AdaptiveGameImage
   const gameForImage = {
     ...game,
-    medias: game.medias || []
-  }
+    medias: game.medias || [],
+    console: game.console ? {
+      ...game.console,
+      id: '', manufacturer: '', releaseYear: null, description: '',
+      cpu: null, memory: null, graphics: null, screenscrapeId: null,
+      aiEnhancedDescription: null, historicalContext: null, technicalAnalysis: null,
+      culturalImpact: null, editorialContent: null, editorialTitle: null,
+      editorialAuthor: null, editorialPublishedAt: null, generationId: null,
+      unitsSold: null, bestSellingGameId: null, dimensions: null, media: null,
+      coProcessor: null, audioChip: null, createdAt: new Date(), updatedAt: new Date()
+    } : null
+  } as any
   
   // Use regional data if available, otherwise fallback to default
   const displayTitle = isScreenscraperResult ? game.title : (regionalTitle || game.title)

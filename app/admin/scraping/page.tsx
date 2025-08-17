@@ -27,8 +27,7 @@ import {
   Trash2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction, scrapeConsoleRegionalNamesAction, scrapeGameRegionalTitlesAction } from "@/lib/actions/admin-scraping-actions"
-import { rescrapConsoleMediasAction, rescrapGameMediasAction } from "@/lib/actions/scraping-actions"
+import { scrapeSingleConsoleAction, scrapeSingleGameAction, addConsoleManuallyAction, scrapeAllConsolesAction, scrapeLimitedConsolesAction, scrapeConsoleRegionalNamesAction, scrapeGameRegionalTitlesAction, syncGenresAction } from "@/lib/actions/admin-scraping-actions"
 
 interface ScrapingStats {
   consolesProcessed: number
@@ -57,8 +56,7 @@ export default function ScrapingManagement() {
   const [consoleScrapingState, consoleScrapingAction, consoleScrapingPending] = useActionState(scrapeSingleConsoleAction, { success: false })
   const [gameScrapingState, gameScrapingAction, gameScrapingPending] = useActionState(scrapeSingleGameAction, { success: false })
   const [addConsoleState, addConsoleAction, addConsolePending] = useActionState(addConsoleManuallyAction, { success: false })
-  const [mediaRescrapState, mediaRescrapAction, mediaRescrapPending] = useActionState(rescrapConsoleMediasAction, { success: false })
-  const [gameMediaRescrapState, gameMediaRescrapAction, gameMediaRescrapPending] = useActionState(rescrapGameMediasAction, { success: false })
+  const [syncGenresState, syncGenresFormAction, syncGenresPending] = useActionState(syncGenresAction, { success: false, message: '', error: '' })
   const [regionalNamesState, regionalNamesAction, regionalNamesPending] = useActionState(scrapeConsoleRegionalNamesAction, { success: false })
   const [regionalTitlesState, regionalTitlesAction, regionalTitlesPending] = useActionState(scrapeGameRegionalTitlesAction, { success: false })
   const [isScrapingAll, setIsScrapingAll] = useState(false)
@@ -147,38 +145,21 @@ export default function ScrapingManagement() {
     addConsoleState.error = undefined
   }
   
-  if (mediaRescrapState.success && mediaRescrapState.data?.errorDetails?.[0]) {
+  if (syncGenresState.success && syncGenresState.message) {
     toast({
-      title: "Re-scraping des médias terminé",
-      description: mediaRescrapState.data.errorDetails[0],
+      title: "Synchronisation des genres terminée",
+      description: syncGenresState.message,
     })
-    mediaRescrapState.success = false
+    syncGenresState.success = false
   }
   
-  if (mediaRescrapState.error) {
+  if (syncGenresState.error) {
     toast({
       title: "Erreur",
-      description: mediaRescrapState.error,
+      description: syncGenresState.error,
       variant: "destructive",
     })
-    mediaRescrapState.error = undefined
-  }
-  
-  if (gameMediaRescrapState.success && gameMediaRescrapState.data?.errorDetails?.[0]) {
-    toast({
-      title: "Re-scraping des médias de jeu terminé",
-      description: gameMediaRescrapState.data.errorDetails[0],
-    })
-    gameMediaRescrapState.success = false
-  }
-  
-  if (gameMediaRescrapState.error) {
-    toast({
-      title: "Erreur",
-      description: gameMediaRescrapState.error,
-      variant: "destructive",
-    })
-    gameMediaRescrapState.error = undefined
+    syncGenresState.error = undefined
   }
   
   const handleScrapeAll = async () => {
@@ -450,91 +431,47 @@ export default function ScrapingManagement() {
         </CardContent>
       </Card>
 
-      {/* Re-scraping Console Medias */}
+      {/* Synchronisation des genres */}
       <Card>
         <CardHeader>
-          <CardTitle>Re-scraping des médias de console</CardTitle>
+          <CardTitle>Synchronisation des genres</CardTitle>
           <CardDescription>
-            Re-télécharger les médias pour une console existante (utile si certains médias n&apos;ont pas été téléchargés)
+            Synchroniser tous les genres de jeux depuis Screenscraper (156 genres avec hiérarchie parent-enfant)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form action={mediaRescrapAction} className="flex space-x-4">
+          <form action={syncGenresFormAction} className="flex space-x-4">
             <div className="flex-1">
-              <Label htmlFor="consoleIdForMedias">ID Console (Base de données)</Label>
-              <Input
-                id="consoleIdForMedias"
-                name="consoleId"
-                placeholder="Ex: cme8t72pp0000sj4o6n395y5p (Neo Geo)"
-                required
-              />
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Synchronisation automatique</AlertTitle>
+                <AlertDescription>
+                  Cette action va synchroniser tous les 156 genres depuis l&apos;API Screenscraper avec leur hiérarchie complète (genres principaux et sous-genres).
+                </AlertDescription>
+              </Alert>
             </div>
             <div className="flex items-end">
               <Button 
                 type="submit"
-                disabled={mediaRescrapPending}
+                disabled={syncGenresPending}
                 className="flex items-center space-x-2"
               >
-                {mediaRescrapPending ? (
+                {syncGenresPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Download className="h-4 w-4" />
+                  <Database className="h-4 w-4" />
                 )}
-                <span>Re-scraper les médias</span>
+                <span>Synchroniser les genres</span>
               </Button>
             </div>
           </form>
           
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Test Neo Geo</AlertTitle>
+            <AlertTitle>Information</AlertTitle>
             <AlertDescription>
-              ID Neo Geo pour test : <strong>cme8t72pp0000sj4o6n395y5p</strong>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-
-      {/* Re-scraping Game Medias */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Re-scraping des médias de jeu</CardTitle>
-          <CardDescription>
-            Re-télécharger les médias pour un jeu existant (utile si certains médias n&apos;ont pas été téléchargés)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form action={gameMediaRescrapAction} className="flex space-x-4">
-            <div className="flex-1">
-              <Label htmlFor="gameIdForMedias">ID Jeu (Base de données)</Label>
-              <Input
-                id="gameIdForMedias"
-                name="gameId"
-                placeholder="Ex: cmge8t72pp0000sj4o6n395y5p"
-                required
-              />
-            </div>
-            <div className="flex items-end">
-              <Button 
-                type="submit"
-                disabled={gameMediaRescrapPending}
-                className="flex items-center space-x-2"
-              >
-                {gameMediaRescrapPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                <span>Re-scraper les médias</span>
-              </Button>
-            </div>
-          </form>
-          
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Comment trouver l&apos;ID</AlertTitle>
-            <AlertDescription>
-              Rendez-vous dans l&apos;onglet &quot;Consoles&quot; ou &quot;Jeux&quot; de l&apos;admin, trouvez votre jeu et copiez son ID unique.
+              Cette synchronisation récupère les genres principaux (31) et les sous-genres (125) avec leurs couleurs et relations hiérarchiques. 
+              Les genres existants seront mis à jour, les nouveaux seront créés.
             </AlertDescription>
           </Alert>
         </CardContent>

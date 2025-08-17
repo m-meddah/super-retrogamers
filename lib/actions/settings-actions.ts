@@ -32,7 +32,7 @@ const updatePasswordSchema = z.object({
 
 const updatePreferredRegionSchema = z.object({
   preferredRegion: z.enum(['FR', 'EU', 'WOR', 'JP', 'ASI', 'US'], {
-    errorMap: () => ({ message: 'Région invalide' })
+    message: 'Région invalide'
   })
 })
 

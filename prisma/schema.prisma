@@ -206,7 +206,6 @@ model Game {
   // Nouveaux champs optionnels
   corporationDevId       String?              // ID de Corporation au lieu de developerId String
   corporationPubId       String?              // ID de Corporation au lieu de publisherId String
-  gameTypeId             String?              // ID de GameType
   familyId               String?              // ID de Family
   sizeMB                 Float?               // Taille du jeu
   onlinePlay             Boolean              @default(false)
@@ -225,7 +224,6 @@ model Game {
   // Nouvelles relations
   corporationDev         Corporation?         @relation("DeveloperGames", fields: [corporationDevId], references: [id])
   corporationPub         Corporation?         @relation("PublisherGames", fields: [corporationPubId], references: [id])
-  gameType               GameType?            @relation("GameTypes", fields: [gameTypeId], references: [id])
   family                 Family?              @relation("GameFamilies", fields: [familyId], references: [id])
   manuals                Manual[]
   videos                 Video[]
@@ -233,7 +231,6 @@ model Game {
 
   @@unique([slug, consoleId])
   @@index([familyId])
-  @@index([gameTypeId])
   @@index([corporationDevId])
   @@index([corporationPubId])
   @@map("games")
@@ -293,13 +290,16 @@ model GameVariant {
 model GameGenre {
   id            String   @id @default(cuid())
   gameId        String
-  genreId       Int
+  genreId       Int      // ID Screenscraper du genre
   genreName     String
   genreNameEn   String?
   isPrimary     Boolean  @default(false)
   parentGenreId Int?
   createdAt     DateTime @default(now())
+  
+  // Relations
   game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  genre         Genre?   @relation("GenreRelation", fields: [genreId], references: [screenscrapeId])
 
   @@unique([gameId, genreId])
   @@map("game_genres")
@@ -496,21 +496,42 @@ enum CollectionStatus {
 // NOUVELLES TABLES POUR AMÉLIORATIONS
 // ================================
 
+// Table Genre pour stocker tous les genres Screenscraper
+model Genre {
+  id               String   @id @default(cuid())
+  screenscrapeId   Int      @unique  // ID Screenscraper
+  name             String   // Nom français
+  parentId         Int?     // Genre parent (0 = genre principal)
+  color            String?  // Couleur pour l'UI
+  isMainGenre      Boolean  @default(false) // Genre principal ou sous-genre
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  gameGenres       GameGenre[] @relation("GenreRelation")
+  
+  @@index([screenscrapeId])
+  @@index([parentId])
+  @@index([isMainGenre])
+  @@map("genres")
+}
+
 // Table Corporation pour gérer developers/publishers
 model Corporation {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  foundedDate    DateTime?
-  defunctDate    DateTime?
-  headquarters   String?
-  employees      Int?
-  website        String?
-  description    Json?     // Descriptions multilingues
-  fate           String?   // Ce qui est arrivé à l'entreprise
-  anecdotes      String[]  // Anecdotes sur l'entreprise
-  logoUrl        String?   // Logo de l'entreprise
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String   @unique
+  screenscrapeId   Int?     @unique  // ID Screenscraper pour sync
+  foundedDate      DateTime?
+  defunctDate      DateTime?
+  headquarters     String?
+  employees        Int?
+  website          String?
+  description      Json?     // Descriptions multilingues
+  fate             String?   // Ce qui est arrivé à l'entreprise
+  anecdotes        String[]  // Anecdotes sur l'entreprise
+  logoUrl          String?   // Logo de l'entreprise
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
   
   // Relations
   roles          CorporationRole[]
@@ -518,6 +539,7 @@ model Corporation {
   publishedGames Game[]    @relation("PublisherGames")
   
   @@index([name])
+  @@index([screenscrapeId])
   @@map("corporations")
 }
 
@@ -552,20 +574,6 @@ model Generation {
   @@map("generations")
 }
 
-// Table GameType pour les types de jeux
-model GameType {
-  id          String   @id @default(cuid())
-  name        String   @unique  // "Action", "RPG", "Platform", etc.
-  nameEn      String?  // Nom en anglais
-  description String?  // Description du type
-  color       String?  // Couleur pour l'UI
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  games       Game[]   @relation("GameTypes")
-  
-  @@map("game_types")
-}
 
 // Table Manual pour les manuels de jeux
 model Manual {
@@ -609,16 +617,18 @@ model Video {
 
 // Table Family pour regrouper les jeux par série/franchise
 model Family {
-  id          String   @id @default(cuid())
-  name        String   @unique  // "Super Mario", "Final Fantasy", etc.
-  nameEn      String?  // Nom en anglais
-  description String?  // Description de la série
-  logoUrl     String?  // Logo de la série
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String   @unique  // "Super Mario", "Final Fantasy", etc.
+  nameEn         String?  // Nom en anglais
+  screenscrapeId Int?     @unique  // ID Screenscraper pour sync
+  description    String?  // Description de la série
+  logoUrl        String?  // Logo de la série
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   
   games       Game[]   @relation("GameFamilies")
   
+  @@index([screenscrapeId])
   @@map("families")
 }
 

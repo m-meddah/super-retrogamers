@@ -367,7 +367,7 @@ export function getConsoleMediasByRegion(console: ConsoleWithMedias, region: str
 }
 
 // Fonction utilitaire pour générer le slug composé d'un jeu
-export function generateGameCompositeSlug(game: Game & { console?: Console }): string {
+export function generateGameCompositeSlug(game: Game & { console?: { slug: string } | Console }): string {
   if (game.console?.slug) {
     return `${game.slug}-console-${game.console.slug}`
   }
@@ -820,7 +820,8 @@ export async function getContentManagementData() {
       include: {
         console: {
           select: {
-            name: true
+            name: true,
+            slug: true
           }
         },
         _count: {
@@ -1007,4 +1008,219 @@ export async function getUserRecentActivity(userId: string): Promise<UserActivit
   return activities
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 10)
+}
+
+// ================================
+// NOUVELLES FONCTIONS POUR LES ENTITÉS AJOUTÉES
+// ================================
+
+// Fonctions pour les Corporations
+export async function getAllCorporations() {
+  return await prisma.corporation.findMany({
+    include: {
+      _count: {
+        select: {
+          developedGames: true,
+          publishedGames: true
+        }
+      }
+    },
+    orderBy: {
+      name: 'asc'
+    }
+  })
+}
+
+export async function getCorporationById(id: string) {
+  return await prisma.corporation.findUnique({
+    where: { id },
+    include: {
+      developedGames: {
+        include: {
+          console: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      },
+      publishedGames: {
+        include: {
+          console: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      },
+      roles: true
+    }
+  })
+}
+
+export async function getCorporationByName(name: string) {
+  return await prisma.corporation.findUnique({
+    where: { name },
+    include: {
+      developedGames: {
+        include: {
+          console: true
+        }
+      },
+      publishedGames: {
+        include: {
+          console: true
+        }
+      }
+    }
+  })
+}
+
+
+// Fonctions pour les Générations
+export async function getAllGenerations() {
+  return await prisma.generation.findMany({
+    include: {
+      _count: {
+        select: {
+          consoles: true
+        }
+      }
+    },
+    orderBy: {
+      startYear: 'asc'
+    }
+  })
+}
+
+export async function getGenerationById(id: string) {
+  return await prisma.generation.findUnique({
+    where: { id },
+    include: {
+      consoles: {
+        include: {
+          _count: {
+            select: {
+              games: true
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      }
+    }
+  })
+}
+
+// Fonctions pour les Familles
+export async function getAllFamilies() {
+  return await prisma.family.findMany({
+    include: {
+      _count: {
+        select: {
+          games: true
+        }
+      }
+    },
+    orderBy: {
+      name: 'asc'
+    }
+  })
+}
+
+export async function getFamilyById(id: string) {
+  return await prisma.family.findUnique({
+    where: { id },
+    include: {
+      games: {
+        include: {
+          console: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      }
+    }
+  })
+}
+
+// Fonctions pour récupérer les jeux avec toutes les nouvelles relations
+export async function getGameWithAllRelations(slug: string) {
+  if (slug.includes('-console-')) {
+    const parts = slug.split('-console-')
+    if (parts.length === 2) {
+      const gameSlug = parts[0]
+      const consoleSlug = parts[1]
+      
+      return await prisma.game.findFirst({
+        where: {
+          slug: gameSlug,
+          console: {
+            slug: consoleSlug
+          }
+        },
+        include: {
+          console: true,
+          medias: {
+            orderBy: [
+              { mediaType: 'asc' },
+              { region: 'asc' }
+            ]
+          },
+          genres: {
+            orderBy: { isPrimary: 'desc' }
+          },
+          corporationDev: true,
+          corporationPub: true,
+          family: true,
+          manuals: true,
+          videos: true
+        }
+      })
+    }
+  }
+  
+  return await prisma.game.findFirst({
+    where: { slug },
+    include: {
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      },
+      genres: {
+        orderBy: { isPrimary: 'desc' }
+      },
+      corporationDev: true,
+      corporationPub: true,
+      family: true,
+      manuals: true,
+      videos: true
+    }
+  })
+}
+
+// Fonctions pour récupérer les consoles avec toutes les nouvelles relations
+export async function getConsoleWithAllRelations(slug: string) {
+  return await prisma.console.findUnique({
+    where: { slug },
+    include: {
+      medias: true,
+      regionalNames: true,
+      regionalDates: true,
+      variants: true,
+      games: {
+        include: {
+          corporationDev: true,
+          corporationPub: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      },
+      generation: true,
+      bestSellingGame: true
+    }
+  })
 }

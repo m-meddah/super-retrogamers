@@ -262,14 +262,14 @@ export async function syncExistingMediasToDatabase() {
       select: { id: true, slug: true }
     })
 
-    for (const console of consoles) {
-      const existingMedias = scanExistingConsoleMedias(console.slug)
+    for (const gameConsole of consoles) {
+      const existingMedias = scanExistingConsoleMedias(gameConsole.slug)
       
       for (const media of existingMedias) {
         // Vérifier si le média existe déjà en base
         const existingDbMedia = await prisma.consoleMedia.findFirst({
           where: {
-            consoleId: console.id,
+            consoleId: gameConsole.id,
             type: media.mediaType,
             region: media.region,
             fileName: media.fileName
@@ -280,7 +280,7 @@ export async function syncExistingMediasToDatabase() {
           // Ajouter le média en base
           await prisma.consoleMedia.create({
             data: {
-              consoleId: console.id,
+              consoleId: gameConsole.id,
               type: media.mediaType,
               region: media.region,
               url: media.localPath, // Même valeur que localPath pour les fichiers locaux
@@ -290,7 +290,7 @@ export async function syncExistingMediasToDatabase() {
             }
           })
           
-          console.log(`✅ Ajouté média console: ${console.slug}/${media.mediaType}/${media.region}`)
+          console.log(`✅ Ajouté média console: ${gameConsole.slug}/${media.mediaType}/${media.region}`)
         }
       }
     }

@@ -12,16 +12,21 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getContentManagementData, generateGameCompositeSlug } from "@/lib/data-prisma"
+import { getContentManagementData, generateGameCompositeSlug, getAllCorporations, getAllFamilies, getAllGenerations } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Monitor, Gamepad2, Users, Star, Calendar, AlertTriangle, Edit3 } from "lucide-react"
+import { Monitor, Gamepad2, Users, Star, Calendar, AlertTriangle, Edit3, Building2, Tag, Layers, Cpu } from "lucide-react"
 import Link from "next/link"
 
 async function ContentManagementContent() {
-  const { consoles, games } = await getContentManagementData()
+  const [{ consoles, games }, corporations, families, generations] = await Promise.all([
+    getContentManagementData(),
+    getAllCorporations(),
+    getAllFamilies(),
+    getAllGenerations()
+  ])
 
   const formatDate = (date: Date) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
@@ -99,6 +104,86 @@ async function ContentManagementContent() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Management Entities Section */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold">Gestion des entités</h2>
+          <p className="text-muted-foreground">
+            Gérez les corporations, genres, familles et générations
+          </p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Corporations</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{corporations.length}</div>
+              <div className="mt-2">
+                <Link href="/admin/content/corporations">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Gérer
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Genres</CardTitle>
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">156</div>
+              <div className="mt-2">
+                <Link href="/admin/content/genres">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Gérer
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Familles</CardTitle>
+              <Layers className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{families.length}</div>
+              <div className="mt-2">
+                <Link href="/admin/content/families">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Gérer
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Générations</CardTitle>
+              <Cpu className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{generations.length}</div>
+              <div className="mt-2">
+                <Link href="/admin/content/generations">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Gérer
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Content Tabs */}

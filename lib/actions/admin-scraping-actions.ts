@@ -264,3 +264,92 @@ export async function scrapeGameRegionalTitlesAction(
     }
   }
 }
+
+// Action pour synchroniser les genres depuis Screenscraper
+export async function syncGenresAction(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _prevState: ActionState,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _formData: FormData
+): Promise<ActionState> {
+  try {
+    // Récupérer les genres depuis Screenscraper
+    const response = await fetch('https://api.screenscraper.fr/api2/genresListe.php?devid=Fradz&devpassword=AGeJikPS7jZ&output=json')
+    
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des genres depuis Screenscraper')
+    }
+    
+    const data = await response.json()
+    
+    if (!data.response?.genres) {
+      throw new Error('Format de réponse invalide depuis Screenscraper')
+    }
+    
+    let genresUpdated = 0
+    let genresCreated = 0
+    
+    // Synchroniser chaque genre
+    for (const genreData of data.response.genres) {
+      const genreInfo = genreData.genre
+      
+      // Couleurs par défaut pour les genres principaux
+      const colors: Record<number, string> = {
+        1: '#FF6B6B',   // Action
+        2: '#4ECDC4',   // Plateforme
+        3: '#45B7D1',   // Sport
+        4: '#FFA07A',   // Course
+        5: '#98D8C8',   // Puzzle
+        6: '#F7DC6F',   // Réflexion
+        7: '#BB8FCE',   // Aventure
+        8: '#85C1E9',   // RPG
+        9: '#F8C471',   // Simulation
+        10: '#82E0AA',  // Éducatif
+        11: '#F1948A'   // Autre
+      }
+      
+      const existingGenre = await prisma.genre.findUnique({
+        where: { screenscrapeId: parseInt(genreInfo.id) }
+      })
+      
+      if (existingGenre) {
+        // Mettre à jour le genre existant
+        await prisma.genre.update({
+          where: { screenscrapeId: parseInt(genreInfo.id) },
+          data: {
+            name: genreInfo.nom_fr,
+            parentId: genreInfo.parentid ? parseInt(genreInfo.parentid) : null,
+            isMainGenre: !genreInfo.parentid || genreInfo.parentid === '0',
+            color: colors[parseInt(genreInfo.id)] || null
+          }
+        })
+        genresUpdated++
+      } else {
+        // Créer un nouveau genre
+        await prisma.genre.create({
+          data: {
+            screenscrapeId: parseInt(genreInfo.id),
+            name: genreInfo.nom_fr,
+            parentId: genreInfo.parentid ? parseInt(genreInfo.parentid) : null,
+            isMainGenre: !genreInfo.parentid || genreInfo.parentid === '0',
+            color: colors[parseInt(genreInfo.id)] || null
+          }
+        })
+        genresCreated++
+      }
+    }
+    
+    return {
+      success: true,
+      message: `Synchronisation des genres terminée - ${genresCreated} créés, ${genresUpdated} mis à jour`,
+      data: { genresCreated, genresUpdated, totalGenres: data.response.genres.length }
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la synchronisation des genres:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur lors de la synchronisation des genres'
+    }
+  }
+}
