@@ -46,7 +46,7 @@ export async function getAllConsolesForScraping(): Promise<Array<{id: string, na
 }
 
 export async function scrapeSingleConsoleAction(
-  prevState: ActionState,
+  _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {
@@ -80,7 +80,7 @@ export async function scrapeSingleConsoleAction(
 }
 
 export async function scrapeSingleGameAction(
-  prevState: ActionState,
+  _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {
@@ -116,7 +116,7 @@ export async function scrapeSingleGameAction(
 }
 
 export async function addConsoleManuallyAction(
-  prevState: ActionState,
+  _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {
@@ -350,7 +350,7 @@ export async function scrapeGamesForConsoleBySlugAction(
 
 // Action pour mettre à jour le contenu éditorial d'une console
 export async function updateConsoleEditorialAction(
-  prevState: ActionState,
+  _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
   try {
@@ -420,13 +420,20 @@ export async function syncGenresAction(
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 secondes de timeout
     
-    let response: Response
+    let response: Response | undefined
     let retryCount = 0
     const maxRetries = 3
     
     while (retryCount < maxRetries) {
       try {
-        response = await fetch('https://api.screenscraper.fr/api2/genresListe.php?devid=Fradz&devpassword=AGeJikPS7jZ&output=json', {
+        const devId = process.env.SCREENSCRAPER_DEV_ID
+        const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
+        
+        if (!devId || !devPassword) {
+          throw new Error('Identifiants Screenscraper manquants dans les variables d\'environnement')
+        }
+        
+        response = await fetch(`https://api.screenscraper.fr/api2/genresListe.php?devid=${devId}&devpassword=${devPassword}&output=json`, {
           signal: controller.signal,
           headers: {
             'User-Agent': 'Super-Retrogamers-Admin/1.0'
@@ -438,7 +445,6 @@ export async function syncGenresAction(
         if (!response.ok) {
           if (response.status >= 500 && retryCount < maxRetries - 1) {
             retryCount++
-            console.log(`Erreur serveur ${response.status}, tentative ${retryCount + 1}/${maxRetries}`)
             await new Promise(resolve => setTimeout(resolve, 2000 * retryCount)) // Délai progressif
             continue
           }
@@ -458,14 +464,15 @@ export async function syncGenresAction(
           throw new Error(`Impossible de se connecter à Screenscraper après ${maxRetries} tentatives: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
         }
         
-        console.log(`Tentative ${retryCount} échouée, retry dans ${2000 * retryCount}ms...`)
         await new Promise(resolve => setTimeout(resolve, 2000 * retryCount))
       }
     }
     
-    const data = await response.json()
+    if (!response) {
+      throw new Error('Aucune réponse valide reçue de Screenscraper')
+    }
     
-    console.log('Structure de la réponse Screenscraper:', JSON.stringify(data, null, 2))
+    const data = await response.json()
     
     if (!data.response?.genres) {
       throw new Error('Format de réponse invalide depuis Screenscraper: pas de genres trouvés')
@@ -493,7 +500,6 @@ export async function syncGenresAction(
       const genreInfo = genreData.genre || genreData
       
       if (!genreInfo || !genreInfo.id || !genreInfo.nom_fr) {
-        console.log('Genre ignoré - données incomplètes:', genreInfo)
         continue
       }
       
