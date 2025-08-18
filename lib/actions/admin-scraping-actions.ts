@@ -465,16 +465,37 @@ export async function syncGenresAction(
     
     const data = await response.json()
     
+    console.log('Structure de la réponse Screenscraper:', JSON.stringify(data, null, 2))
+    
     if (!data.response?.genres) {
-      throw new Error('Format de réponse invalide depuis Screenscraper')
+      throw new Error('Format de réponse invalide depuis Screenscraper: pas de genres trouvés')
     }
+    
+    // Vérifier si genres est un objet ou un tableau
+    let genresArray: any[]
+    if (Array.isArray(data.response.genres)) {
+      genresArray = data.response.genres
+    } else if (typeof data.response.genres === 'object') {
+      // Si c'est un objet, convertir en tableau des valeurs
+      genresArray = Object.values(data.response.genres)
+    } else {
+      throw new Error('Format de genres non supporté depuis Screenscraper')
+    }
+    
+    console.log(`Genres trouvés: ${genresArray.length}`)
     
     let genresUpdated = 0
     let genresCreated = 0
     
     // Synchroniser chaque genre
-    for (const genreData of data.response.genres) {
-      const genreInfo = genreData.genre
+    for (const genreData of genresArray) {
+      // Gérer différentes structures de données possibles
+      const genreInfo = genreData.genre || genreData
+      
+      if (!genreInfo || !genreInfo.id || !genreInfo.nom_fr) {
+        console.log('Genre ignoré - données incomplètes:', genreInfo)
+        continue
+      }
       
       // Couleurs par défaut pour les genres principaux
       const colors: Record<number, string> = {
@@ -525,7 +546,7 @@ export async function syncGenresAction(
     return {
       success: true,
       message: `Synchronisation des genres terminée - ${genresCreated} créés, ${genresUpdated} mis à jour`,
-      data: { genresCreated, genresUpdated, totalGenres: data.response.genres.length }
+      data: { genresCreated, genresUpdated, totalGenres: genresArray.length }
     }
     
   } catch (error) {
