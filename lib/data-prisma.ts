@@ -161,6 +161,69 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
           { mediaType: 'asc' },
           { region: 'asc' }
         ]
+      },
+      genres: {
+        orderBy: { isPrimary: 'desc' }
+      }
+    },
+    orderBy: {
+      title: 'asc'
+    }
+  })
+}
+
+// Fonction pour récupérer les genres disponibles pour une console
+export async function getGenresByConsoleSlug(consoleSlug: string): Promise<Array<{genreName: string, count: number}>> {
+  const genresWithCount = await prisma.gameGenre.groupBy({
+    by: ['genreName'],
+    where: {
+      game: {
+        console: {
+          slug: consoleSlug
+        }
+      }
+    },
+    _count: {
+      genreName: true
+    },
+    orderBy: {
+      _count: {
+        genreName: 'desc'
+      }
+    }
+  })
+  
+  return genresWithCount.map(genre => ({
+    genreName: genre.genreName,
+    count: genre._count.genreName
+  }))
+}
+
+// Fonction pour récupérer les jeux filtrés par genre
+export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?: string): Promise<GameWithConsole[]> {
+  return await prisma.game.findMany({
+    where: {
+      console: {
+        slug: consoleSlug
+      },
+      ...(genreName && genreName !== 'all' ? {
+        genres: {
+          some: {
+            genreName: genreName
+          }
+        }
+      } : {})
+    },
+    include: {
+      console: true,
+      medias: {
+        orderBy: [
+          { mediaType: 'asc' },
+          { region: 'asc' }
+        ]
+      },
+      genres: {
+        orderBy: { isPrimary: 'desc' }
       }
     },
     orderBy: {
