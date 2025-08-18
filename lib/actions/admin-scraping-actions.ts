@@ -416,11 +416,51 @@ export async function syncGenresAction(
   _formData: FormData
 ): Promise<ActionState> {
   try {
-    // Récupérer les genres depuis Screenscraper
-    const response = await fetch('https://api.screenscraper.fr/api2/genresListe.php?devid=Fradz&devpassword=AGeJikPS7jZ&output=json')
+    // Récupérer les genres depuis Screenscraper avec timeout et retry
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 secondes de timeout
     
-    if (!response.ok) {
-      throw new Error('Erreur lors de la récupération des genres depuis Screenscraper')
+    let response: Response
+    let retryCount = 0
+    const maxRetries = 3
+    
+    while (retryCount < maxRetries) {
+      try {
+        response = await fetch('https://api.screenscraper.fr/api2/genresListe.php?devid=Fradz&devpassword=AGeJikPS7jZ&output=json', {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Super-Retrogamers-Admin/1.0'
+          }
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          if (response.status >= 500 && retryCount < maxRetries - 1) {
+            retryCount++
+            console.log(`Erreur serveur ${response.status}, tentative ${retryCount + 1}/${maxRetries}`)
+            await new Promise(resolve => setTimeout(resolve, 2000 * retryCount)) // Délai progressif
+            continue
+          }
+          throw new Error(`Erreur HTTP ${response.status} lors de la récupération des genres`)
+        }
+        
+        break // Succès, sortir de la boucle
+        
+      } catch (error) {
+        clearTimeout(timeoutId)
+        retryCount++
+        
+        if (retryCount >= maxRetries) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error('Timeout lors de la connexion à Screenscraper (30s). Vérifiez votre connexion internet.')
+          }
+          throw new Error(`Impossible de se connecter à Screenscraper après ${maxRetries} tentatives: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+        }
+        
+        console.log(`Tentative ${retryCount} échouée, retry dans ${2000 * retryCount}ms...`)
+        await new Promise(resolve => setTimeout(resolve, 2000 * retryCount))
+      }
     }
     
     const data = await response.json()
@@ -490,9 +530,24 @@ export async function syncGenresAction(
     
   } catch (error) {
     console.error('Erreur lors de la synchronisation des genres:', error)
+    
+    // Vérifier s'il y a déjà des genres dans la base de données
+    try {
+      const existingGenresCount = await prisma.genre.count()
+      
+      if (existingGenresCount > 0) {
+        return {
+          success: true,
+          message: `Synchronisation Screenscraper échouée (${error instanceof Error ? error.message : 'Erreur inconnue'}), mais ${existingGenresCount} genres sont déjà disponibles dans la base de données.`
+        }
+      }
+    } catch (dbError) {
+      console.error('Erreur lors de la vérification des genres existants:', dbError)
+    }
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Erreur lors de la synchronisation des genres'
+      message: `Erreur lors de la synchronisation des genres: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
     }
   }
 }

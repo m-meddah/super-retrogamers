@@ -2,6 +2,25 @@
 
 import { prisma } from '@/lib/prisma'
 
+/**
+ * Vérifie si nous avons des genres disponibles dans la base de données
+ */
+export async function checkGenresAvailability(): Promise<{ hasGenres: boolean; count: number }> {
+  try {
+    const count = await prisma.genre.count()
+    return {
+      hasGenres: count > 0,
+      count
+    }
+  } catch (error) {
+    console.error('Erreur lors de la vérification des genres:', error)
+    return {
+      hasGenres: false,
+      count: 0
+    }
+  }
+}
+
 // Rate limiting: 1.2 secondes entre les requêtes (même délai que pour les autres endpoints)
 const RATE_LIMIT_MS = 1200
 
