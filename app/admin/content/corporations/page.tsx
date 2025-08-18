@@ -16,7 +16,7 @@ import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Building2, Edit3, Plus, MapPin, Calendar, Users } from "lucide-react"
+import { Building2, Edit3, Plus, MapPin, Calendar } from "lucide-react"
 import Link from "next/link"
 
 async function CorporationsManagementContent() {

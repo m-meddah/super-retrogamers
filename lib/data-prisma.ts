@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, ConsoleMedia, GameMedia, GameGenre } from "@prisma/client"
+import type { Console, Game, ConsoleMedia, GameMedia, GameGenre, Genre } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -15,6 +15,7 @@ export type ConsoleWithMedias = Console & {
 
 export type GameWithConsole = Game & {
   console: Console
+  genre?: Genre | null
   medias?: GameMedia[]
   genres?: GameGenre[]
 }
@@ -156,6 +157,7 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
     },
     include: {
       console: true,
+      genre: true, // Inclure le genre principal normalisé
       medias: {
         orderBy: [
           { mediaType: 'asc' },
@@ -172,50 +174,78 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
   })
 }
 
-// Fonction pour récupérer les genres disponibles pour une console
+// Fonction pour récupérer les genres disponibles pour une console (utilise la nouvelle structure normalisée)
 export async function getGenresByConsoleSlug(consoleSlug: string): Promise<Array<{genreName: string, count: number}>> {
-  const genresWithCount = await prisma.gameGenre.groupBy({
-    by: ['genreName'],
-    where: {
-      game: {
-        console: {
-          slug: consoleSlug
-        }
-      }
-    },
-    _count: {
-      genreName: true
-    },
-    orderBy: {
-      _count: {
-        genreName: 'desc'
-      }
-    }
-  })
-  
-  return genresWithCount.map(genre => ({
-    genreName: genre.genreName,
-    count: genre._count.genreName
-  }))
-}
-
-// Fonction pour récupérer les jeux filtrés par genre
-export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?: string): Promise<GameWithConsole[]> {
-  return await prisma.game.findMany({
+  const genresWithCount = await prisma.game.groupBy({
+    by: ['genreId'],
     where: {
       console: {
         slug: consoleSlug
       },
-      ...(genreName && genreName !== 'all' ? {
-        genres: {
-          some: {
-            genreName: genreName
-          }
-        }
-      } : {})
+      genreId: {
+        not: null
+      }
     },
+    _count: {
+      genreId: true
+    },
+    orderBy: {
+      _count: {
+        genreId: 'desc'
+      }
+    }
+  })
+  
+  // Pour chaque genre ID, récupérer le nom du genre
+  const genresWithNames: Array<{genreName: string, count: number}> = []
+  
+  for (const genreGroup of genresWithCount) {
+    if (genreGroup.genreId) {
+      const genre = await prisma.genre.findUnique({
+        where: { screenscrapeId: genreGroup.genreId }
+      })
+      
+      if (genre) {
+        genresWithNames.push({
+          genreName: genre.name,
+          count: genreGroup._count.genreId
+        })
+      }
+    }
+  }
+  
+  return genresWithNames
+}
+
+// Fonction pour récupérer les jeux filtrés par genre (utilise la nouvelle structure normalisée)
+export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?: string): Promise<GameWithConsole[]> {
+  const whereClause: {
+    console: { slug: string }
+    genreId?: number
+  } = {
+    console: {
+      slug: consoleSlug
+    }
+  }
+  
+  // Si un nom de genre est spécifié, trouver le genre correspondant
+  if (genreName && genreName !== 'all') {
+    const genre = await prisma.genre.findFirst({
+      where: {
+        name: genreName
+      }
+    })
+    
+    if (genre) {
+      whereClause.genreId = genre.screenscrapeId
+    }
+  }
+  
+  return await prisma.game.findMany({
+    where: whereClause,
     include: {
       console: true,
+      genre: true, // Inclure le genre principal
       medias: {
         orderBy: [
           { mediaType: 'asc' },
@@ -1243,6 +1273,7 @@ export async function getGameWithAllRelations(slug: string) {
         },
         include: {
           console: true,
+          genre: true,
           medias: {
             orderBy: [
               { mediaType: 'asc' },
@@ -1266,6 +1297,7 @@ export async function getGameWithAllRelations(slug: string) {
     where: { slug },
     include: {
       console: true,
+      genre: true,
       medias: {
         orderBy: [
           { mediaType: 'asc' },

@@ -16,7 +16,7 @@ import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Layers, Edit3, Plus, Calendar, Gamepad2 } from "lucide-react"
+import { Layers, Edit3, Plus, Gamepad2 } from "lucide-react"
 import Link from "next/link"
 
 async function FamiliesManagementContent() {

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { Gamepad2, Menu, X, User, LogOut, BarChart3 } from "lucide-react"
+import { Menu, X, User, LogOut, BarChart3 } from "lucide-react"
 import { useState } from "react"
 import { useSession, signOut } from "@/lib/auth-client"
 import { ThemeToggle } from "@/components/theme-toggle"

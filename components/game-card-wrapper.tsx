@@ -60,11 +60,30 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
       unitsSold: null, bestSellingGameId: null, dimensions: null, media: null,
       coProcessor: null, audioChip: null, createdAt: new Date(), updatedAt: new Date()
     } : null
-  } as any
+  } as GameWithConsole | SearchGameResult
   
+  // Helper function to get genre
+  const getGameGenre = (gameData: GameWithConsole | SearchGameResult): string => {
+    // Pour SearchGameResult qui a un champ genre string
+    if ('genre' in gameData && typeof gameData.genre === 'string' && gameData.genre) {
+      return gameData.genre
+    }
+    // Pour GameWithConsole qui a une relation genre
+    if ('genre' in gameData && gameData.genre && typeof gameData.genre === 'object' && 'name' in gameData.genre) {
+      return gameData.genre.name
+    }
+    // Pour les genres multiples
+    if ('genres' in gameData && gameData.genres && gameData.genres.length > 0) {
+      const firstGenre = gameData.genres[0]
+      return typeof firstGenre === 'string' ? firstGenre : ('genreName' in firstGenre ? firstGenre.genreName : '') || ''
+    }
+    return ''
+  }
+
   // Use regional data if available, otherwise fallback to default
   const displayTitle = isScreenscraperResult ? game.title : (regionalTitle || game.title)
   const displayYear = isScreenscraperResult ? game.releaseYear : (regionalReleaseDate?.getFullYear() || game.releaseYear)
+  const displayGenre = getGameGenre(game)
   
   // Générer le slug composé pour les liens
   const gameSlug = game.console?.slug ? 
@@ -112,12 +131,12 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
         </div>
         
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mb-2">
-          {game.genre && <span>{game.genre}</span>}
-          {game.genre && displayYear && <span>•</span>}
+          {displayGenre && <span>{displayGenre}</span>}
+          {displayGenre && displayYear && <span>•</span>}
           {displayYear && (
             <span>{!isScreenscraperResult && dateLoading ? '...' : displayYear}</span>
           )}
-          {(game.genre || displayYear) && game.playerCount && <span>•</span>}
+          {(displayGenre || displayYear) && game.playerCount && <span>•</span>}
           {game.playerCount && (
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3" />

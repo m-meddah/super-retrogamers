@@ -57,7 +57,7 @@ export default async function EditEnhancedGamePage({ params }: EditEnhancedGameP
           <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
             <span>Corporation Dev: {game.corporationDev?.name || 'Aucune'}</span>
             <span>Corporation Pub: {game.corporationPub?.name || 'Aucune'}</span>
-            <span>Genre: {game.genre || 'Aucun'}</span>
+            <span>Genre: {game.genre?.name || 'Aucun'}</span>
             <span>Famille: {game.family?.name || 'Aucune'}</span>
           </div>
         </div>

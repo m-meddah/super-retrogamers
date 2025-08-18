@@ -178,7 +178,7 @@ model Game {
   title                  String
   consoleId              String
   releaseYear            Int?
-  genre                  String?
+  genreId                Int?                 // ID du genre principal depuis Screenscraper
   developer              String?
   publisher              String?
   description            String?
@@ -218,6 +218,7 @@ model Game {
   reviews                GameReview[]
   variants               GameVariant[]
   console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
+  genre                  Genre?               @relation("PrimaryGenre", fields: [genreId], references: [screenscrapeId])
   roms                   Rom[]
   userCollections        UserGameCollection[]
   wishlistItems          UserWishlist[]
@@ -233,6 +234,7 @@ model Game {
   @@index([familyId])
   @@index([corporationDevId])
   @@index([corporationPubId])
+  @@index([genreId])
   @@map("games")
 }
 
@@ -509,6 +511,7 @@ model Genre {
   
   // Relations
   gameGenres       GameGenre[] @relation("GenreRelation")
+  gamesAsPrimary   Game[]      @relation("PrimaryGenre")
   
   @@index([screenscrapeId])
   @@index([parentId])

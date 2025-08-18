@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation"
 import { getFamilyById } from "@/lib/data-prisma"
-import Link from "next/link"
 import { ArrowLeft, Calendar, GamepadIcon } from "lucide-react"
 import GameCardWrapper from "@/components/game-card-wrapper"
 import RegionalLink from "@/components/regional-link"

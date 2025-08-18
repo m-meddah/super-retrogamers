@@ -35,7 +35,7 @@ export async function updateGameAction(
     const description = formData.get('description') as string
     const developer = formData.get('developer') as string
     const publisher = formData.get('publisher') as string
-    const genre = formData.get('genre') as string
+    // const genre = formData.get('genre') as string // Deprecated field
     const releaseYear = formData.get('releaseYear') as string
     const playerCount = formData.get('playerCount') as string
     const resolution = formData.get('resolution') as string
@@ -87,7 +87,7 @@ export async function updateGameAction(
         description: description.trim() || null,
         developer: developer.trim() || null,
         publisher: publisher.trim() || null,
-        genre: genre.trim() || null,
+        // genre: deprecated field - now using genreId relation
         releaseYear: releaseYear ? parseInt(releaseYear) : null,
         playerCount: playerCount.trim() || null,
         resolution: resolution.trim() || null,
@@ -148,7 +148,7 @@ export async function updateGameEnhancedAction(
     const description = formData.get('description') as string
     const developer = formData.get('developer') as string
     const publisher = formData.get('publisher') as string
-    const genre = formData.get('genre') as string
+    // const genre = formData.get('genre') as string // Deprecated field
     const releaseYear = formData.get('releaseYear') as string
     const playerCount = formData.get('playerCount') as string
     const resolution = formData.get('resolution') as string
@@ -202,13 +202,36 @@ export async function updateGameEnhancedAction(
       }
     }
 
-    // Préparation des données de mise à jour
-    const updateData: any = {
+    // Préparation des données de mise à jour  
+    const updateData: {
+      title: string
+      description: string | null
+      developer: string | null
+      publisher: string | null
+      releaseYear: number | null
+      playerCount: string | null
+      resolution: string | null
+      rotation: string | null
+      rating: number | null
+      topStaff: boolean
+      onlinePlay: boolean
+      sizeMB: number | null
+      cloneOf: string | null
+      aiEnhancedDescription: string | null
+      gameplayAnalysis: string | null
+      historicalSignificance: string | null
+      developmentStory: string | null
+      legacyImpact: string | null
+      screenshots: string[]
+      updatedAt: Date
+      corporationDevId?: string
+      corporationPubId?: string
+      familyId?: string
+    } = {
       title: title.trim(),
       description: description.trim() || null,
       developer: developer.trim() || null,
       publisher: publisher.trim() || null,
-      genre: genre.trim() || null,
       releaseYear: releaseYear ? parseInt(releaseYear) : null,
       playerCount: playerCount.trim() || null,
       resolution: resolution.trim() || null,

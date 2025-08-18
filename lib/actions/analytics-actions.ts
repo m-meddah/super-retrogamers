@@ -137,12 +137,12 @@ export async function getDetailedStatsAction() {
 
     // Statistiques par genre (si disponible)
     const genreStats = await prisma.game.groupBy({
-      by: ['genre'],
+      by: ['genreId'],
       _count: {
         id: true
       },
       where: {
-        genre: {
+        genreId: {
           not: null
         }
       },
@@ -182,8 +182,8 @@ export async function getDetailedStatsAction() {
         count: y._count.id
       })),
       genreStats: genreStats.map(g => ({
-        genre: g.genre || 'Non classé',
-        count: g._count.id
+        genre: g.genreId || 'Non classé',
+        count: g._count && typeof g._count === 'object' && 'id' in g._count ? g._count.id : 0
       })),
       recentActivity: recentActivity.map(a => ({
         title: a.title,

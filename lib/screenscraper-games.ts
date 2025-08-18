@@ -41,7 +41,7 @@ function extractGameRegionalTitles(noms?: ScreenscraperGame['noms']): Array<{ re
     }
     
     Object.entries(regionMappings).forEach(([screenscraperKey, region]) => {
-      const title = (noms as any)[screenscraperKey]
+      const title = noms && typeof noms === 'object' && screenscraperKey in noms ? (noms as Record<string, string>)[screenscraperKey] : null
       if (title && title.trim()) {
         regionalTitles.push({ region, title: title.trim() })
       }
@@ -802,8 +802,8 @@ export async function createGameFromScreenscraper(
       releaseDateJP: extractRegionReleaseDate(gameDetails.dates, 'jp'),
       releaseDateWOR: extractRegionReleaseDate(gameDetails.dates, 'wor'),
       
-      // Simple genre for now - handle both old and new API formats
-      genre: extractMainGenre(gameDetails.genres)
+      // Note: genre now handled via separate genre relation table
+      // genre: deprecated field, using normalized Genre model
     }
     
     // Create the game

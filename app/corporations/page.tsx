@@ -14,7 +14,7 @@ export default async function CorporationsPage() {
             Corporations
           </h1>
           <p className="mt-2 text-lg text-gray-600 dark:text-gray-300">
-            Découvrez les entreprises qui ont marqué l'histoire du jeu vidéo
+            Découvrez les entreprises qui ont marqué l&apos;histoire du jeu vidéo
           </p>
         </div>
 

@@ -78,7 +78,30 @@ export async function updateConsoleEnhancedAction(
     }
 
     // Préparation des données de mise à jour
-    const updateData: any = {
+    const updateData: {
+      name: string
+      manufacturer: string | null
+      releaseYear: number | null
+      description: string | null
+      cpu: string | null
+      memory: string | null
+      graphics: string | null
+      unitsSold: number | null
+      dimensions: string | null
+      media: string | null
+      coProcessor: string | null
+      audioChip: string | null
+      aiEnhancedDescription: string | null
+      historicalContext: string | null
+      technicalAnalysis: string | null
+      culturalImpact: string | null
+      editorialContent: string | null
+      editorialTitle: string | null
+      editorialAuthor: string | null
+      updatedAt: Date
+      generationId?: string
+      bestSellingGameId?: string
+    } = {
       name: name.trim(),
       manufacturer: manufacturer.trim() || null,
       releaseYear: releaseYear ? parseInt(releaseYear) : null,
@@ -101,18 +124,21 @@ export async function updateConsoleEnhancedAction(
       updatedAt: new Date()
     }
 
+    // Préparation de l'objet de mise à jour avec les relations optionnelles
+    const finalUpdateData: any = { ...updateData }
+    
     // Ajout des nouvelles relations si spécifiées
     if (generationId) {
-      updateData.generationId = generationId
+      finalUpdateData.generationId = generationId
     }
     if (bestSellingGameId) {
-      updateData.bestSellingGameId = bestSellingGameId
+      finalUpdateData.bestSellingGameId = bestSellingGameId
     }
 
     // Mise à jour de la console
     await prisma.console.update({
       where: { id: consoleId },
-      data: updateData
+      data: finalUpdateData
     })
 
     // Revalidation des pages concernées

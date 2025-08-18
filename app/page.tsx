@@ -144,7 +144,7 @@ export default async function HomePage() {
                 ))}
               </div>
               <p className="mb-4 text-gray-700 dark:text-gray-300">
-                "Enfin une plateforme qui comprend les collectionneurs ! La gestion de ma ludothèque n'a jamais été aussi simple."
+                &quot;Enfin une plateforme qui comprend les collectionneurs ! La gestion de ma ludothèque n&apos;a jamais été aussi simple.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
@@ -162,7 +162,7 @@ export default async function HomePage() {
                 ))}
               </div>
               <p className="mb-4 text-gray-700 dark:text-gray-300">
-                "Les fiches techniques sont d'une précision remarquable. C'est ma référence pour toute recherche retrogaming."
+                &quot;Les fiches techniques sont d&apos;une précision remarquable. C&apos;est ma référence pour toute recherche retrogaming.&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-teal-500"></div>
@@ -180,7 +180,7 @@ export default async function HomePage() {
                 ))}
               </div>
               <p className="mb-4 text-gray-700 dark:text-gray-300">
-                "Une communauté bienveillante et des contenus de qualité. Exactement ce que je cherchais !"
+                &quot;Une communauté bienveillante et des contenus de qualité. Exactement ce que je cherchais !&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 to-red-500"></div>

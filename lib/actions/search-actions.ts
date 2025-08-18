@@ -68,8 +68,10 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
     // Filtre par genre
     if (filters.genre) {
       whereConditions.genre = {
-        contains: filters.genre,
-        mode: 'insensitive'
+        name: {
+          contains: filters.genre,
+          mode: 'insensitive'
+        }
       }
     }
 
@@ -137,13 +139,18 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
     }
 
     // Exécution de la requête principale
-    const games = await prisma.game.findMany({
+    const gamesRaw = await prisma.game.findMany({
       where: whereConditions,
       include: {
         console: {
           select: {
             name: true,
             slug: true
+          }
+        },
+        genre: {
+          select: {
+            name: true
           }
         },
         medias: {
@@ -165,6 +172,20 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
       ],
       take: 100 // Limite raisonnable pour éviter les problèmes de performance
     })
+
+    // Mapper les résultats pour correspondre à l'interface SearchGameResult
+    const games = gamesRaw.map(game => ({
+      id: game.id,
+      slug: game.slug,
+      title: game.title,
+      rating: game.rating,
+      releaseYear: game.releaseYear,
+      genre: game.genre?.name || null,
+      playerCount: game.playerCount,
+      topStaff: game.topStaff,
+      console: game.console,
+      medias: game.medias
+    }))
 
     return {
       games,
@@ -203,23 +224,17 @@ export async function getSearchMetadataAction(): Promise<{
       }
     })
 
-    // Récupération des genres uniques
-    const genresResult = await prisma.game.findMany({
-      where: {
-        genre: {
-          not: null
-        }
-      },
+    // Récupération des genres uniques depuis la table Genre
+    const genresResult = await prisma.genre.findMany({
       select: {
-        genre: true
+        name: true
       },
-      distinct: ['genre']
+      orderBy: {
+        name: 'asc'
+      }
     })
 
-    const genres = genresResult
-      .map(g => g.genre)
-      .filter((genre): genre is string => Boolean(genre))
-      .sort()
+    const genres = genresResult.map(g => g.name)
 
     return {
       consoles,

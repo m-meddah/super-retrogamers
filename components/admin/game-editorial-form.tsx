@@ -22,7 +22,7 @@ export function GameEditorialForm({ game }: GameEditorialFormProps) {
     description: game.description || '',
     developer: game.developer || '',
     publisher: game.publisher || '',
-    genre: game.genre || '',
+    genre: '', // Deprecated field - genre now managed via genreId relation
     releaseYear: game.releaseYear || '',
     playerCount: game.playerCount || '',
     resolution: game.resolution || '',

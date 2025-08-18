@@ -34,14 +34,16 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
         game.title.toLowerCase().includes(query) ||
         game.developer?.toLowerCase().includes(query) ||
         game.publisher?.toLowerCase().includes(query) ||
-        game.genres?.some(genre => genre.genreName.toLowerCase().includes(query))
+        game.genre?.name?.toLowerCase().includes(query) ||
+        game.genres?.some(g => g.genreName.toLowerCase().includes(query))
       )
     }
 
     // Filter by genre
     if (selectedGenre !== "all") {
       filtered = filtered.filter(game => 
-        game.genres?.some(genre => genre.genreName === selectedGenre)
+        game.genre?.name === selectedGenre ||
+        game.genres?.some(g => g.genreName === selectedGenre)
       )
     }
 
@@ -216,7 +218,7 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
               <span className="text-sm text-gray-500 dark:text-gray-400">Filtres actifs :</span>
               {searchQuery.trim() && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Recherche: "{searchQuery}"
+                  Recherche: &quot;{searchQuery}&quot;
                   <button
                     onClick={() => setSearchQuery("")}
                     className="ml-1 hover:text-red-500"
@@ -295,9 +297,9 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
             <Gamepad2 className="mx-auto mb-4 h-16 w-16 text-gray-400" />
             <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
               {searchQuery.trim() ? 
-                `Aucun jeu trouvé pour "${searchQuery}"` :
+                `Aucun jeu trouvé pour &quot;${searchQuery}&quot;` :
                 selectedGenre !== "all" ? 
-                  `Aucun jeu trouvé pour le genre "${selectedGenre}"` : 
+                  `Aucun jeu trouvé pour le genre &quot;${selectedGenre}&quot;` : 
                   "Aucun jeu disponible"
               }
             </h3>
