@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: GamePageProps): Promise<Metad
 
   return {
     ...metadata,
-    description: game.description || `Découvrez ${game.title}, jeu ${game.console?.name ? `sur ${game.console.name}` : 'rétro'}. ${game.developer ? `Développé par ${game.developer}` : ''} ${game.releaseYear ? `en ${game.releaseYear}` : ''}.`,
+    description: game.description || `Découvrez ${game.title}, jeu ${game.console?.name ? `sur ${game.console.name}` : 'rétro'}. ${game.corporationDev?.name ? `Développé par ${game.corporationDev.name}` : ''} ${game.releaseYear ? `en ${game.releaseYear}` : ''}.`,
     openGraph: {
       title: `${game.title} - ${game.console?.name || 'Jeu rétro'}`,
       description: game.description || `Jeu ${game.title}${game.console?.name ? ` sur ${game.console.name}` : ''}`,
@@ -175,22 +175,22 @@ export default async function GamePage({ params }: GamePageProps) {
                 Informations
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
-                {game.developer && (
+                {game.corporationDev && (
                   <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
                       <Building className="h-4 w-4" />
                       Développeur
                     </div>
-                    <p className="text-gray-600 dark:text-gray-300">{game.developer}</p>
+                    <p className="text-gray-600 dark:text-gray-300">{game.corporationDev.name}</p>
                   </div>
                 )}
-                {game.publisher && (
+                {game.corporationPub && (
                   <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
                       <Users className="h-4 w-4" />
                       Éditeur
                     </div>
-                    <p className="text-gray-600 dark:text-gray-300">{game.publisher}</p>
+                    <p className="text-gray-600 dark:text-gray-300">{game.corporationPub.name}</p>
                   </div>
                 )}
               </div>

@@ -20,8 +20,8 @@ export function GameEditorialForm({ game }: GameEditorialFormProps) {
   const [formData, setFormData] = useState({
     title: game.title || '',
     description: game.description || '',
-    developer: game.developer || '',
-    publisher: game.publisher || '',
+    developer: game.corporationDev?.name || '',
+    publisher: game.corporationPub?.name || '',
     genre: '', // Deprecated field - genre now managed via genreId relation
     releaseYear: game.releaseYear || '',
     playerCount: game.playerCount || '',

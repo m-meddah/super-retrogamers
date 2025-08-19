@@ -32,8 +32,8 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
       const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter(game => 
         game.title.toLowerCase().includes(query) ||
-        game.developer?.toLowerCase().includes(query) ||
-        game.publisher?.toLowerCase().includes(query) ||
+        game.corporationDev?.name?.toLowerCase().includes(query) ||
+        game.corporationPub?.name?.toLowerCase().includes(query) ||
         game.genre?.name?.toLowerCase().includes(query) ||
         game.genres?.some(g => g.genreName.toLowerCase().includes(query))
       )

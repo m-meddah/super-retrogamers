@@ -179,14 +179,10 @@ model Game {
   consoleId              String
   releaseYear            Int?
   genreId                Int?                 // ID du genre principal depuis Screenscraper
-  developer              String?
-  publisher              String?
   description            String?
   screenshots            String[]
   rating                 Float?               @default(0)
   ssGameId               Int?
-  developerId            String?
-  publisherId            String?
   isClone                Boolean              @default(false)
   cloneOfId              Int?
   aiEnhancedDescription  String?

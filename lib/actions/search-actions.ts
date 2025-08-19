@@ -163,6 +163,12 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
             { mediaType: 'asc' },
             { region: 'asc' }
           ]
+        },
+        corporationDev: {
+          select: { name: true }
+        },
+        corporationPub: {
+          select: { name: true }
         }
       },
       orderBy: [
@@ -262,14 +268,18 @@ export async function getQuickSearchSuggestionsAction(query: string): Promise<st
       where: {
         OR: [
           { title: { contains: query, mode: 'insensitive' } },
-          { developer: { contains: query, mode: 'insensitive' } },
-          { publisher: { contains: query, mode: 'insensitive' } }
+          { corporationDev: { name: { contains: query, mode: 'insensitive' } } },
+          { corporationPub: { name: { contains: query, mode: 'insensitive' } } }
         ]
       },
       select: {
         title: true,
-        developer: true,
-        publisher: true
+        corporationDev: {
+          select: { name: true }
+        },
+        corporationPub: {
+          select: { name: true }
+        }
       },
       take: 10
     })
@@ -280,11 +290,11 @@ export async function getQuickSearchSuggestionsAction(query: string): Promise<st
       if (game.title.toLowerCase().includes(query.toLowerCase())) {
         suggestions.add(game.title)
       }
-      if (game.developer?.toLowerCase().includes(query.toLowerCase())) {
-        suggestions.add(game.developer)
+      if (game.corporationDev?.name?.toLowerCase().includes(query.toLowerCase())) {
+        suggestions.add(game.corporationDev.name)
       }
-      if (game.publisher?.toLowerCase().includes(query.toLowerCase())) {
-        suggestions.add(game.publisher)
+      if (game.corporationPub?.name?.toLowerCase().includes(query.toLowerCase())) {
+        suggestions.add(game.corporationPub.name)
       }
     })
 

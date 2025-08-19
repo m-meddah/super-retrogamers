@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, ConsoleMedia, GameMedia, GameGenre, Genre, GameRegionalDate } from "@prisma/client"
+import type { Console, Game, ConsoleMedia, GameMedia, GameGenre, Genre, GameRegionalDate, Corporation } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -19,6 +19,8 @@ export type GameWithConsole = Game & {
   medias?: GameMedia[]
   genres?: GameGenre[]
   regionalDates?: GameRegionalDate[]
+  corporationDev?: Corporation | null
+  corporationPub?: Corporation | null
 }
 
 // Fonctions pour récupérer les consoles
@@ -115,7 +117,9 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
           },
           regionalDates: {
             orderBy: { region: 'asc' }
-          }
+          },
+          corporationDev: true,
+          corporationPub: true
         }
       })
     }
@@ -137,7 +141,9 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
       },
       regionalDates: {
         orderBy: { region: 'asc' }
-      }
+      },
+      corporationDev: true,
+      corporationPub: true
     }
   })
 }
@@ -176,7 +182,9 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
       },
       regionalDates: {
         orderBy: { region: 'asc' }
-      }
+      },
+      corporationDev: true,
+      corporationPub: true
     },
     orderBy: {
       title: 'asc'
@@ -267,7 +275,9 @@ export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?:
       },
       regionalDates: {
         orderBy: { region: 'asc' }
-      }
+      },
+      corporationDev: true,
+      corporationPub: true
     },
     orderBy: {
       title: 'asc'
@@ -571,7 +581,9 @@ export async function getTopRatedGames(limit: number = 6): Promise<GameWithConso
       },
       regionalDates: {
         orderBy: { region: 'asc' }
-      }
+      },
+      corporationDev: true,
+      corporationPub: true
     },
     orderBy: {
       rating: 'desc'
@@ -592,7 +604,9 @@ export async function getRecentlyAddedGames(limit: number = 6): Promise<GameWith
       },
       regionalDates: {
         orderBy: { region: 'asc' }
-      }
+      },
+      corporationDev: true,
+      corporationPub: true
     },
     orderBy: {
       createdAt: 'desc'

@@ -4,6 +4,89 @@ import { prisma } from '@/lib/prisma'
 import fs from 'fs/promises'
 import path from 'path'
 
+// Function to create or get corporation from Screenscraper data
+async function createOrGetCorporation(
+  corporationData: any, 
+  role: 'developer' | 'publisher'
+): Promise<string | null> {
+  if (!corporationData) return null
+  
+  let corporationName: string | null = null
+  let ssCorporationId: number | null = null
+  
+  // Extract name and ID from different formats
+  if (typeof corporationData === 'string') {
+    corporationName = corporationData
+  } else if (typeof corporationData === 'object') {
+    const corpObj = corporationData as Record<string, unknown>
+    
+    // Extract name
+    const nameValue = corpObj.text || corpObj.nom || corpObj.name || corpObj[Object.keys(corpObj)[0]]
+    corporationName = typeof nameValue === 'string' ? nameValue : null
+    
+    // Extract Screenscraper ID if available
+    if (corpObj.id && typeof corpObj.id === 'number') {
+      ssCorporationId = corpObj.id
+    }
+  }
+  
+  if (!corporationName) return null
+  
+  try {
+    // First, try to find by Screenscraper ID if available
+    let corporation
+    if (ssCorporationId) {
+      corporation = await prisma.corporation.findUnique({
+        where: { ssCorporationId }
+      })
+    }
+    
+    // If not found by ID, try by name
+    if (!corporation) {
+      corporation = await prisma.corporation.findUnique({
+        where: { name: corporationName }
+      })
+    }
+    
+    // If still not found, create new corporation
+    if (!corporation) {
+      corporation = await prisma.corporation.create({
+        data: {
+          name: corporationName,
+          ssCorporationId,
+          roles: {
+            create: {
+              role: role
+            }
+          }
+        }
+      })
+    } else {
+      // Update role if corporation exists but doesn't have this role
+      const existingRole = await prisma.corporationRole.findFirst({
+        where: {
+          corporationId: corporation.id,
+          role: role
+        }
+      })
+      
+      if (!existingRole) {
+        await prisma.corporationRole.create({
+          data: {
+            corporationId: corporation.id,
+            role: role
+          }
+        })
+      }
+    }
+    
+    return corporation.id
+  } catch (error) {
+    console.error(`Error creating/getting corporation "${corporationName}":`, error)
+    return null
+  }
+}
+
 // Utility functions for regional names and dates
 function extractGameRegionalTitles(noms?: ScreenscraperGame['noms']): Array<{ region: string, title: string }> {
   if (!noms) return []
@@ -721,34 +804,9 @@ export async function createGameFromScreenscraper(
       }
     }
     
-    // Handle developer and publisher relations (commented until Company table exists)
-    // const developerId = await createOrGetCompany(gameDetails.developpeur, 'developpeur')
-    // const publisherId = await createOrGetCompany(gameDetails.editeur, 'editeur')
-    const developerId: string | null = null
-    const publisherId: string | null = null
-    
-    // Keep legacy fields for backward compatibility
-    let developer: string | null = null
-    if (gameDetails.developpeur) {
-      if (typeof gameDetails.developpeur === 'string') {
-        developer = gameDetails.developpeur
-      } else if (typeof gameDetails.developpeur === 'object') {
-        const devObj = gameDetails.developpeur as Record<string, unknown>
-        const value = devObj.text || devObj.nom || devObj.name || devObj[Object.keys(devObj)[0]]
-        developer = typeof value === 'string' ? value : null
-      }
-    }
-    
-    let publisher: string | null = null
-    if (gameDetails.editeur) {
-      if (typeof gameDetails.editeur === 'string') {
-        publisher = gameDetails.editeur
-      } else if (typeof gameDetails.editeur === 'object') {
-        const pubObj = gameDetails.editeur as Record<string, unknown>
-        const value = pubObj.text || pubObj.nom || pubObj.name || pubObj[Object.keys(pubObj)[0]]
-        publisher = typeof value === 'string' ? value : null
-      }
-    }
+    // Handle developer and publisher relations through Corporation table
+    const corporationDevId = await createOrGetCorporation(gameDetails.developpeur, 'developer')
+    const corporationPubId = await createOrGetCorporation(gameDetails.editeur, 'publisher')
     
     // Handle player count
     let playerCount: string | null = null
@@ -775,13 +833,9 @@ export async function createGameFromScreenscraper(
       releaseYear,
       description,
       
-      // Company relations
-      developerId,
-      publisherId,
-      
-      // Legacy fields (for backward compatibility)
-      developer,
-      publisher,
+      // Corporation relations  
+      corporationDevId,
+      corporationPubId,
       
       // Enhanced data
       rating,
