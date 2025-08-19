@@ -15,7 +15,7 @@ export interface ActionState {
 export async function getConsoleSlugByScreenscraperId(screenscrapeId: number): Promise<string | null> {
   try {
     const console = await prisma.console.findUnique({
-      where: { screenscrapeId: screenscrapeId },
+      where: { ssConsoleId: screenscrapeId },
       select: { slug: true }
     })
     return console?.slug || null
@@ -25,14 +25,14 @@ export async function getConsoleSlugByScreenscraperId(screenscrapeId: number): P
   }
 }
 
-export async function getAllConsolesForScraping(): Promise<Array<{id: string, name: string, slug: string, screenscrapeId: number | null}>> {
+export async function getAllConsolesForScraping(): Promise<Array<{id: string, name: string, slug: string, ssConsoleId: number | null}>> {
   try {
     const consoles = await prisma.console.findMany({
       select: {
         id: true,
         name: true,
         slug: true,
-        screenscrapeId: true
+        ssConsoleId: true
       },
       orderBy: {
         name: 'asc'
@@ -306,7 +306,7 @@ export async function scrapeGamesForConsoleBySlugAction(
     // Trouver la console par slug
     const console = await prisma.console.findUnique({
       where: { slug: consoleSlug },
-      select: { id: true, name: true, screenscrapeId: true }
+      select: { id: true, name: true, ssConsoleId: true }
     })
 
     if (!console) {
@@ -316,7 +316,7 @@ export async function scrapeGamesForConsoleBySlugAction(
       }
     }
 
-    if (!console.screenscrapeId) {
+    if (!console.ssConsoleId) {
       return {
         success: false,
         error: `La console "${console.name}" n'a pas d'ID Screenscraper`
@@ -324,7 +324,7 @@ export async function scrapeGamesForConsoleBySlugAction(
     }
 
     // Scraper les jeux pour cette console
-    await scrapeGamesForConsole(console.id, console.screenscrapeId, 50)
+    await scrapeGamesForConsole(console.id, console.ssConsoleId, 50)
 
     // Compter les jeux scrapés
     const gamesCount = await prisma.game.count({
@@ -519,13 +519,13 @@ export async function syncGenresAction(
       }
       
       const existingGenre = await prisma.genre.findUnique({
-        where: { screenscrapeId: parseInt(genreInfo.id) }
+        where: { ssGenreId: parseInt(genreInfo.id) }
       })
       
       if (existingGenre) {
         // Mettre à jour le genre existant
         await prisma.genre.update({
-          where: { screenscrapeId: parseInt(genreInfo.id) },
+          where: { ssGenreId: parseInt(genreInfo.id) },
           data: {
             name: genreInfo.nom_fr,
             parentId: genreInfo.parentid ? parseInt(genreInfo.parentid) : null,
@@ -538,7 +538,7 @@ export async function syncGenresAction(
         // Créer un nouveau genre
         await prisma.genre.create({
           data: {
-            screenscrapeId: parseInt(genreInfo.id),
+            ssGenreId: parseInt(genreInfo.id),
             name: genreInfo.nom_fr,
             parentId: genreInfo.parentid ? parseInt(genreInfo.parentid) : null,
             isMainGenre: !genreInfo.parentid || genreInfo.parentid === '0',

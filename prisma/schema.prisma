@@ -81,7 +81,7 @@ model Console {
   cpu                   String?
   memory                String?
   graphics              String?
-  screenscrapeId        Int?                    @unique
+  ssConsoleId           Int?                    @unique
   aiEnhancedDescription String?
   historicalContext     String?
   technicalAnalysis     String?
@@ -184,7 +184,7 @@ model Game {
   description            String?
   screenshots            String[]
   rating                 Float?               @default(0)
-  screenscrapeId         Int?
+  ssGameId               Int?
   developerId            String?
   publisherId            String?
   isClone                Boolean              @default(false)
@@ -218,7 +218,7 @@ model Game {
   reviews                GameReview[]
   variants               GameVariant[]
   console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
-  genre                  Genre?               @relation("PrimaryGenre", fields: [genreId], references: [screenscrapeId])
+  genre                  Genre?               @relation("PrimaryGenre", fields: [genreId], references: [ssGenreId])
   roms                   Rom[]
   userCollections        UserGameCollection[]
   wishlistItems          UserWishlist[]
@@ -301,7 +301,7 @@ model GameGenre {
   
   // Relations
   game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  genre         Genre?   @relation("GenreRelation", fields: [genreId], references: [screenscrapeId])
+  genre         Genre?   @relation("GenreRelation", fields: [genreId], references: [ssGenreId])
 
   @@unique([gameId, genreId])
   @@map("game_genres")
@@ -501,7 +501,7 @@ enum CollectionStatus {
 // Table Genre pour stocker tous les genres Screenscraper
 model Genre {
   id               String   @id @default(cuid())
-  screenscrapeId   Int      @unique  // ID Screenscraper
+  ssGenreId        Int      @unique  // ID Screenscraper
   name             String   // Nom français
   parentId         Int?     // Genre parent (0 = genre principal)
   color            String?  // Couleur pour l'UI
@@ -513,7 +513,7 @@ model Genre {
   gameGenres       GameGenre[] @relation("GenreRelation")
   gamesAsPrimary   Game[]      @relation("PrimaryGenre")
   
-  @@index([screenscrapeId])
+  @@index([ssGenreId])
   @@index([parentId])
   @@index([isMainGenre])
   @@map("genres")
@@ -523,7 +523,7 @@ model Genre {
 model Corporation {
   id               String   @id @default(cuid())
   name             String   @unique
-  screenscrapeId   Int?     @unique  // ID Screenscraper pour sync
+  ssCorporationId  Int?     @unique  // ID Screenscraper pour sync
   foundedDate      DateTime?
   defunctDate      DateTime?
   headquarters     String?
@@ -542,7 +542,7 @@ model Corporation {
   publishedGames Game[]    @relation("PublisherGames")
   
   @@index([name])
-  @@index([screenscrapeId])
+  @@index([ssCorporationId])
   @@map("corporations")
 }
 
@@ -623,7 +623,7 @@ model Family {
   id             String   @id @default(cuid())
   name           String   @unique  // "Super Mario", "Final Fantasy", etc.
   nameEn         String?  // Nom en anglais
-  screenscrapeId Int?     @unique  // ID Screenscraper pour sync
+  ssFamilyId     Int?     @unique  // ID Screenscraper pour sync
   description    String?  // Description de la série
   logoUrl        String?  // Logo de la série
   createdAt      DateTime @default(now())
@@ -631,20 +631,9 @@ model Family {
   
   games       Game[]   @relation("GameFamilies")
   
-  @@index([screenscrapeId])
+  @@index([ssFamilyId])
   @@map("families")
 }
 
-// Nouveau enum pour les langues
-enum Language {
-  FR
-  EN
-  JP
-  ES
-  DE
-  IT
-  PT
-  RU
-  KR
-  CN
-}
+// Note: Enum Language supprimé car le site ne sera qu'en français
+// Utiliser des chaînes de caractères directement pour les champs language
