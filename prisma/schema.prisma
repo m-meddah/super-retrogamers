@@ -642,3 +642,28 @@ model Family {
 
 // Note: Enum Language supprimé car le site ne sera qu'en français
 // Utiliser des chaînes de caractères directement pour les champs language
+
+// Table pour cache des URLs de médias externes (éviter téléchargement massif)
+model MediaUrlCache {
+  id               String   @id @default(cuid())
+  entityType       String   // "game" ou "console"
+  entityId         String   // ID du jeu ou de la console
+  mediaType        String   // "box-2D", "wheel", "ss", etc.
+  region           String   // "FR", "EU", "WOR", etc.
+  url              String   // URL directe vers Screenscraper
+  screenscrapeId   Int?     // ID Screenscraper pour référence
+  cachedAt         DateTime @default(now())
+  expiresAt        DateTime // Cache 24h pour éviter rate limiting
+  isValid          Boolean  @default(true)
+  lastAccessedAt   DateTime @default(now())
+  accessCount      Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Index pour performance
+  @@unique([entityType, entityId, mediaType, region])
+  @@index([expiresAt])
+  @@index([entityType, entityId])
+  @@index([isValid, expiresAt])
+  @@map("media_url_cache")
+}
