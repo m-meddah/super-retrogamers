@@ -23,7 +23,7 @@ async function checkRegionalData() {
     console.log('\n📱 Console Megadrive:')
     console.log(`ID: ${megadrive.id}`)
     console.log(`Nom par défaut: ${megadrive.name}`)
-    console.log(`Screenscraper ID: ${megadrive.screenscrapeId}`)
+    console.log(`Screenscraper ID: ${megadrive.ssConsoleId}`)
     
     console.log('\n🌍 Noms régionaux:')
     if (megadrive.regionalNames.length === 0) {
@@ -46,7 +46,7 @@ async function checkRegionalData() {
     // Vérifier toutes les consoles avec screenscrapeId
     const consolesWithScreenscrapeId = await prisma.console.count({
       where: {
-        screenscrapeId: { not: null }
+        ssConsoleId: { not: null }
       }
     })
     
@@ -59,7 +59,7 @@ async function checkRegionalData() {
     })
     
     console.log(`\n📊 Statistiques:`)
-    console.log(`Consoles avec screenscrapeId: ${consolesWithScreenscrapeId}`)
+    console.log(`Consoles avec ssConsoleId: ${consolesWithScreenscrapeId}`)
     console.log(`Consoles avec noms régionaux: ${consolesWithRegionalNames}`)
     
   } catch (error) {

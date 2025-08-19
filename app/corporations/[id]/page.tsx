@@ -92,9 +92,9 @@ export default async function CorporationPage({ params }: CorporationPageProps) 
                   <Building2Icon className="h-4 w-4" />
                   {corporation.publishedGames?.length || 0} jeux publiés
                 </span>
-                {corporation.screenscrapeId && (
+                {corporation.ssCorporationId && (
                   <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
-                    Screenscraper ID: {corporation.screenscrapeId}
+                    Screenscraper ID: {corporation.ssCorporationId}
                   </span>
                 )}
               </div>

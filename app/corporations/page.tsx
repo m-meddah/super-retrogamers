@@ -85,7 +85,7 @@ export default async function CorporationsPage() {
                       {corporation._count?.publishedGames || 0} publiés
                     </span>
                   </div>
-                  {corporation.screenscrapeId && (
+                  {corporation.ssCorporationId && (
                     <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
                       Screenscraper
                     </span>

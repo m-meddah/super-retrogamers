@@ -59,9 +59,9 @@ export default async function FamilyPage({ params }: FamilyPageProps) {
                   <GamepadIcon className="h-4 w-4" />
                   {family.games?.length || 0} {family.games?.length === 1 ? 'jeu' : 'jeux'}
                 </span>
-                {family.screenscrapeId && (
+                {family.ssFamilyId && (
                   <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
-                    Screenscraper ID: {family.screenscrapeId}
+                    Screenscraper ID: {family.ssFamilyId}
                   </span>
                 )}
                 <span className="flex items-center gap-1">

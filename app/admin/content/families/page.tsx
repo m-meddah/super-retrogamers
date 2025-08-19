@@ -87,7 +87,7 @@ async function FamiliesManagementContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {families.filter(f => f.screenscrapeId).length}
+              {families.filter(f => f.ssFamilyId).length}
             </div>
           </CardContent>
         </Card>
@@ -154,9 +154,9 @@ async function FamiliesManagementContent() {
                   </TableCell>
                   
                   <TableCell>
-                    {family.screenscrapeId ? (
+                    {family.ssFamilyId ? (
                       <Badge variant="default" className="bg-green-100 text-green-800">
-                        #{family.screenscrapeId}
+                        #{family.ssFamilyId}
                       </Badge>
                     ) : (
                       <Badge variant="outline">Non lié</Badge>

@@ -202,7 +202,7 @@ export async function getGenresByConsoleSlug(consoleSlug: string): Promise<Array
   for (const genreGroup of genresWithCount) {
     if (genreGroup.genreId) {
       const genre = await prisma.genre.findUnique({
-        where: { screenscrapeId: genreGroup.genreId }
+        where: { ssGenreId: genreGroup.genreId }
       })
       
       if (genre) {
@@ -237,7 +237,7 @@ export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?:
     })
     
     if (genre) {
-      whereClause.genreId = genre.screenscrapeId
+      whereClause.genreId = genre.ssGenreId
     }
   }
   
@@ -377,7 +377,7 @@ export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]
       where: {
         OR: [
           { slug: 'neo-geo' },
-          { screenscrapeId: 142 },
+          { ssConsoleId: 142 },
           { name: { contains: 'Neo Geo', mode: 'insensitive' } },
           { name: { contains: 'NeoGeo', mode: 'insensitive' } }
         ]
@@ -804,7 +804,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
         updatedAt: true
       },
       where: {
-        screenscrapeId: {
+        ssConsoleId: {
           not: null
         }
       }

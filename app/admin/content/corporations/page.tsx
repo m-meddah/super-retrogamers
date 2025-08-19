@@ -87,7 +87,7 @@ async function CorporationsManagementContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {corporations.filter(c => c.screenscrapeId).length}
+              {corporations.filter(c => c.ssCorporationId).length}
             </div>
           </CardContent>
         </Card>
@@ -165,9 +165,9 @@ async function CorporationsManagementContent() {
                   </TableCell>
                   
                   <TableCell>
-                    {corporation.screenscrapeId ? (
+                    {corporation.ssCorporationId ? (
                       <Badge variant="default" className="bg-green-100 text-green-800">
-                        #{corporation.screenscrapeId}
+                        #{corporation.ssCorporationId}
                       </Badge>
                     ) : (
                       <Badge variant="outline">Non lié</Badge>

@@ -79,7 +79,7 @@ export default async function FamiliesPage() {
                   <span className="text-gray-500 dark:text-gray-400">
                     {family._count?.games || 0} {family._count?.games === 1 ? 'jeu' : 'jeux'}
                   </span>
-                  {family.screenscrapeId && (
+                  {family.ssFamilyId && (
                     <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
                       Screenscraper
                     </span>

@@ -13,8 +13,8 @@ export function getConsoleFaviconUrl(console: ConsoleWithMedias, preferredRegion
   
   // 2. Essayer le chemin direct vers le dossier minicon basé sur la structure observée
   // Utiliser le screenscrapeId au lieu de l'id interne
-  if (console.screenscrapeId) {
-    const miniconPath = `/consoles/${console.slug}/minicon/unknown/${console.screenscrapeId}_minicon_undefined.png`
+  if (console.ssConsoleId) {
+    const miniconPath = `/consoles/${console.slug}/minicon/unknown/${console.ssConsoleId}_minicon_undefined.png`
     return miniconPath
   }
   
@@ -61,8 +61,8 @@ export function getGameFaviconUrl(game: GameWithConsole): string | null {
  */
 export function getConsoleFaviconUrlFromConsole(console: { id: string; slug: string; screenscrapeId?: number | null }): string | null {
   // Construire le chemin vers le minicon de la console en utilisant screenscrapeId
-  if (console.screenscrapeId) {
-    return `/consoles/${console.slug}/minicon/unknown/${console.screenscrapeId}_minicon_undefined.png`
+  if (console.ssConsoleId) {
+    return `/consoles/${console.slug}/minicon/unknown/${console.ssConsoleId}_minicon_undefined.png`
   }
   return null
 }

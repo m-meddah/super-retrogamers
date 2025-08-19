@@ -96,7 +96,7 @@ export async function scrapeGenresFromScreenscraper(): Promise<{ success: boolea
       
       // Vérifier si le genre existe déjà
       const existingGenre = await prisma.genre.findUnique({
-        where: { screenscrapeId: genre.id }
+        where: { ssGenreId: genre.id }
       })
       
       if (existingGenre) {
@@ -116,7 +116,7 @@ export async function scrapeGenresFromScreenscraper(): Promise<{ success: boolea
         // Créer un nouveau genre
         await prisma.genre.create({
           data: {
-            screenscrapeId: genre.id,
+            ssGenreId: genre.id,
             name: frenchName,
             parentId: parentId,
             isMainGenre: isMainGenre
@@ -173,7 +173,7 @@ export async function syncGameGenresToNormalizedStructure(): Promise<{ success: 
       // Chercher le genre correspondant dans la table Genre
       const matchingGenre = await prisma.genre.findFirst({
         where: {
-          screenscrapeId: game.genreId
+          ssGenreId: game.genreId
         }
       })
       
@@ -183,7 +183,7 @@ export async function syncGameGenresToNormalizedStructure(): Promise<{ success: 
           where: {
             gameId_genreId: {
               gameId: game.id,
-              genreId: matchingGenre.screenscrapeId
+              genreId: matchingGenre.ssGenreId
             }
           }
         })
@@ -193,7 +193,7 @@ export async function syncGameGenresToNormalizedStructure(): Promise<{ success: 
           await prisma.gameGenre.create({
             data: {
               gameId: game.id,
-              genreId: matchingGenre.screenscrapeId,
+              genreId: matchingGenre.ssGenreId,
               genreName: matchingGenre.name,
               isPrimary: true // Premier genre = primaire
             }

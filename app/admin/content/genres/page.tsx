@@ -147,7 +147,7 @@ async function GenresManagementContent() {
                   </div>
                   <div className="ml-4 flex-shrink-0">
                     <Badge variant="default" className="bg-green-100 text-green-800">
-                      #{genre.screenscrapeId}
+                      #{genre.ssGenreId}
                     </Badge>
                   </div>
                 </div>
@@ -234,7 +234,7 @@ async function GenresManagementContent() {
                   
                   <TableCell>
                     <Badge variant="default" className="bg-green-100 text-green-800">
-                      #{genre.screenscrapeId}
+                      #{genre.ssGenreId}
                     </Badge>
                   </TableCell>
                   

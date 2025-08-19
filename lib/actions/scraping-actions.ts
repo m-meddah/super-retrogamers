@@ -92,7 +92,7 @@ export async function scrapeGamesBySystemAction(
   try {
     // Trouver la console correspondant au systemId
     const console = await prisma.console.findFirst({
-      where: { screenscrapeId: systemId }
+      where: { ssConsoleId: systemId }
     })
     
     if (!console) {
@@ -133,13 +133,13 @@ export async function scrapeFullAction(
     // Step 2: Get consoles that have screenscrapeId for games scraping
     const consoles = await prisma.console.findMany({
       where: {
-        screenscrapeId: { not: null }
+        ssConsoleId: { not: null }
       },
       select: {
         id: true,
         name: true,
         slug: true,
-        screenscrapeId: true
+        ssConsoleId: true
       }
     })
 
@@ -147,10 +147,10 @@ export async function scrapeFullAction(
     let totalErrors = 0
 
     for (const gameConsole of consoles) {
-      if (!gameConsole.screenscrapeId) continue
+      if (!gameConsole.ssConsoleId) continue
       
       try {
-        await scrapeGamesForConsole(gameConsole.id, gameConsole.screenscrapeId, maxGamesPerSystem)
+        await scrapeGamesForConsole(gameConsole.id, gameConsole.ssConsoleId, maxGamesPerSystem)
         
         const gameCount = await prisma.game.count({
           where: { consoleId: gameConsole.id }
@@ -297,8 +297,8 @@ export async function getScrapingStatusAction() {
       await Promise.all([
         prisma.console.count(),
         prisma.game.count(),
-        prisma.console.count({ where: { screenscrapeId: { not: null } } }),
-        prisma.game.count({ where: { screenscrapeId: { not: null } } }),
+        prisma.console.count({ where: { ssConsoleId: { not: null } } }),
+        prisma.game.count({ where: { ssConsoleId: { not: null } } }),
       ])
 
     // Get games by console
@@ -306,7 +306,7 @@ export async function getScrapingStatusAction() {
       select: {
         id: true,
         name: true,
-        screenscrapeId: true,
+        ssConsoleId: true,
         _count: {
           select: {
             games: true
@@ -314,7 +314,7 @@ export async function getScrapingStatusAction() {
         }
       },
       where: {
-        screenscrapeId: {
+        ssConsoleId: {
           not: null
         }
       },
@@ -327,10 +327,10 @@ export async function getScrapingStatusAction() {
 
     // Get recent imports
     const recentConsoles = await prisma.console.findMany({
-      where: { screenscrapeId: { not: null } },
+      where: { ssConsoleId: { not: null } },
       select: {
         name: true,
-        screenscrapeId: true,
+        ssConsoleId: true,
         createdAt: true
       },
       orderBy: { createdAt: 'desc' },
@@ -338,10 +338,10 @@ export async function getScrapingStatusAction() {
     })
 
     const recentGames = await prisma.game.findMany({
-      where: { screenscrapeId: { not: null } },
+      where: { ssConsoleId: { not: null } },
       select: {
         title: true,
-        screenscrapeId: true,
+        ssConsoleId: true,
         createdAt: true,
         console: {
           select: { name: true }
@@ -366,7 +366,7 @@ export async function getScrapingStatusAction() {
         },
         gamesByConsole: gamesByConsole.map(console => ({
           consoleName: console.name,
-          screenscrapeId: console.screenscrapeId,
+          ssConsoleId: console.ssConsoleId,
           gamesCount: console._count.games
         })),
         recent: {

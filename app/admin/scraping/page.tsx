@@ -64,7 +64,7 @@ export default function ScrapingManagement() {
   const [isScrapingGames, setIsScrapingGames] = useState(false)
   const [selectedConsoleSlug, setSelectedConsoleSlug] = useState('')
   const [selectedConsoleForSelect, setSelectedConsoleForSelect] = useState('')
-  const [availableConsoles, setAvailableConsoles] = useState<Array<{id: string, name: string, slug: string, screenscrapeId: number | null}>>([])
+  const [availableConsoles, setAvailableConsoles] = useState<Array<{id: string, name: string, slug: string, ssConsoleId: number | null}>>([])
   const [loadingConsoles, setLoadingConsoles] = useState(true)
   
   // Server Actions states
@@ -123,7 +123,7 @@ export default function ScrapingManagement() {
     }
   }
 
-  const startGameScrapingById = async (screenscrapeId: number) => {
+  const startGameScrapingById = async (ssConsoleId: number) => {
     setIsScrapingGames(true)
     
     try {
@@ -674,7 +674,7 @@ export default function ScrapingManagement() {
                   <SelectContent>
                     {availableConsoles.map((console) => (
                       <SelectItem key={console.id} value={console.slug}>
-                        {console.name} {console.screenscrapeId ? `(ID: ${console.screenscrapeId})` : '(Pas d\'ID)'}
+                        {console.name} {console.ssGenreId ? `(ID: ${console.ssGenreId})` : '(Pas d\'ID)'}
                       </SelectItem>
                     ))}
                   </SelectContent>

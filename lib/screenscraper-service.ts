@@ -428,7 +428,7 @@ export async function rescrapConsoleMedias(consoleId: string): Promise<{ success
       }
     }
     
-    if (!gameConsole.screenscrapeId) {
+    if (!gameConsole.ssConsoleId) {
       return {
         success: false,
         message: 'Console sans ID Screenscraper',
@@ -436,10 +436,10 @@ export async function rescrapConsoleMedias(consoleId: string): Promise<{ success
       }
     }
     
-    console.log(`Re-scraping médias pour ${gameConsole.name} (ID: ${gameConsole.screenscrapeId})`)
+    console.log(`Re-scraping médias pour ${gameConsole.name} (ID: ${gameConsole.ssConsoleId})`)
     
     // Récupérer les détails du système avec ses médias
-    const systemDetails = await getSystemDetailsWithMedias(gameConsole.screenscrapeId)
+    const systemDetails = await getSystemDetailsWithMedias(gameConsole.ssConsoleId)
     
     if (!systemDetails?.medias) {
       return {
@@ -526,7 +526,7 @@ export async function scrapeRegionalNamesForExistingConsoles(): Promise<{ succes
     // Récupérer toutes les consoles avec un screenscrapeId
     const existingConsoles = await prisma.console.findMany({
       where: {
-        screenscrapeId: {
+        ssConsoleId: {
           not: null
         }
       },
@@ -542,10 +542,10 @@ export async function scrapeRegionalNamesForExistingConsoles(): Promise<{ succes
     
     for (const gameConsole of existingConsoles) {
       try {
-        console.log(`Traitement de ${gameConsole.name} (ID Screenscraper: ${gameConsole.screenscrapeId})`)
+        console.log(`Traitement de ${gameConsole.name} (ID Screenscraper: ${gameConsole.ssConsoleId})`)
         
         // Récupérer les détails du système depuis Screenscraper
-        const systemDetails = await getSystemDetailsWithMedias(gameConsole.screenscrapeId!)
+        const systemDetails = await getSystemDetailsWithMedias(gameConsole.ssConsoleId!)
         
         if (!systemDetails) {
           console.log(`❌ Impossible de récupérer les détails pour ${gameConsole.name}`)
@@ -695,7 +695,7 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
         
         // Vérifier si la console existe déjà
         const existingConsole = await prisma.console.findUnique({
-          where: { screenscrapeId: system.id }
+          where: { ssConsoleId: system.id }
         })
         
         if (existingConsole) {
@@ -754,7 +754,7 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
             manufacturer,
             releaseYear,
             description: `Console ${mainName} développée par ${manufacturer}. Type: ${system.type || 'Console'}. Support: ${system.supporttype || 'Cartouche'}.`,
-            screenscrapeId: system.id,
+            ssConsoleId: system.id,
           }
         })
         

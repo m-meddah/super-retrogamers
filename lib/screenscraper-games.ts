@@ -284,14 +284,14 @@ export async function getAllGameIdsForAllSystems(): Promise<Map<number, number[]
     // Récupérer toutes les consoles avec leur screenscrapeId
     const consoles = await prisma.console.findMany({
       where: {
-        screenscrapeId: {
+        ssConsoleId: {
           not: null
         }
       },
       select: {
         id: true,
         name: true,
-        screenscrapeId: true
+        ssConsoleId: true
       }
     })
     
@@ -300,10 +300,10 @@ export async function getAllGameIdsForAllSystems(): Promise<Map<number, number[]
     const gameIdsMap = new Map<number, number[]>()
     
     for (const gameConsole of consoles) {
-      if (gameConsole.screenscrapeId) {
-        console.log(`\nTraitement: ${gameConsole.name} (ID: ${gameConsole.screenscrapeId})`)
-        const gameIds = await getGameIdsForSystem(gameConsole.screenscrapeId)
-        gameIdsMap.set(gameConsole.screenscrapeId, gameIds)
+      if (gameConsole.ssConsoleId) {
+        console.log(`\nTraitement: ${gameConsole.name} (ID: ${gameConsole.ssConsoleId})`)
+        const gameIds = await getGameIdsForSystem(gameConsole.ssConsoleId)
+        gameIdsMap.set(gameConsole.ssConsoleId, gameIds)
         
         // Pause entre chaque console pour respecter les limites
         await new Promise(resolve => setTimeout(resolve, 2000))
@@ -480,7 +480,7 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
     // Récupérer tous les jeux avec un screenscrapeId
     const existingGames = await prisma.game.findMany({
       where: {
-        screenscrapeId: {
+        ssConsoleId: {
           not: null
         }
       },
@@ -490,7 +490,7 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
           select: {
             name: true,
             slug: true,
-            screenscrapeId: true
+            ssConsoleId: true
           }
         }
       }
@@ -502,15 +502,15 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
     
     for (const game of existingGames) {
       try {
-        if (!game.console?.screenscrapeId) {
+        if (!game.console?.ssGenreId) {
           console.log(`❌ Console sans screenscrapeId pour ${game.title}`)
           continue
         }
         
-        console.log(`Traitement de ${game.title} (ID Screenscraper: ${game.screenscrapeId})`)
+        console.log(`Traitement de ${game.title} (ID Screenscraper: ${game.ssGameId})`)
         
         // Récupérer les détails du jeu depuis Screenscraper
-        const gameDetails = await fetchGameDetailsFromScreenscraper(game.screenscrapeId!, game.console.screenscrapeId)
+        const gameDetails = await fetchGameDetailsFromScreenscraper(game.ssGameId!, game.console.ssGenreId)
         
         if (!gameDetails) {
           console.log(`❌ Impossible de récupérer les détails pour ${game.title}`)
@@ -769,7 +769,7 @@ export async function createGameFromScreenscraper(
       slug: finalSlug,
       title: gameTitle,
       consoleId: gameConsole.id,
-      screenscrapeId: typeof gameDetails.id === 'number' ? gameDetails.id : parseInt(String(gameDetails.id)),
+      ssConsoleId: typeof gameDetails.id === 'number' ? gameDetails.id : parseInt(String(gameDetails.id)),
       
       // Basic info
       releaseYear,
@@ -1274,7 +1274,7 @@ export async function rescrapGameMedias(gameId: string): Promise<{ success: bool
       }
     }
     
-    if (!game.screenscrapeId) {
+    if (!game.ssGameId) {
       return {
         success: false,
         message: 'Jeu sans ID Screenscraper',
@@ -1282,11 +1282,11 @@ export async function rescrapGameMedias(gameId: string): Promise<{ success: bool
       }
     }
     
-    console.log(`Re-scraping médias pour ${game.title} (ID: ${game.screenscrapeId})`)
+    console.log(`Re-scraping médias pour ${game.title} (ID: ${game.ssGameId})`)
     
     // Récupérer les détails du jeu avec ses médias
-    const systemId = game.console?.screenscrapeId || undefined
-    const gameDetails = await getGameDetailsWithMedias(game.screenscrapeId, systemId)
+    const systemId = game.console?.ssGenreId || undefined
+    const gameDetails = await getGameDetailsWithMedias(game.ssGameId, systemId)
     
     if (!gameDetails?.medias || !Array.isArray(gameDetails.medias) || gameDetails.medias.length === 0) {
       return {
@@ -1371,7 +1371,7 @@ export async function scrapeGamesForConsole(consoleId: string, systemId: number,
         // Vérifier si le jeu existe déjà
         const existingGame = await prisma.game.findFirst({
           where: {
-            screenscrapeId: gameId,
+            ssGameId: gameId,
             consoleId: gameConsole.id
           }
         })
