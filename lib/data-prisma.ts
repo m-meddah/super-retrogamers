@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, ConsoleMedia, GameMedia, GameGenre, Genre } from "@prisma/client"
+import type { Console, Game, ConsoleMedia, GameMedia, GameGenre, Genre, GameRegionalDate } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -18,6 +18,7 @@ export type GameWithConsole = Game & {
   genre?: Genre | null
   medias?: GameMedia[]
   genres?: GameGenre[]
+  regionalDates?: GameRegionalDate[]
 }
 
 // Fonctions pour récupérer les consoles
@@ -111,6 +112,9 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
           },
           genres: {
             orderBy: { isPrimary: 'desc' }
+          },
+          regionalDates: {
+            orderBy: { region: 'asc' }
           }
         }
       })
@@ -130,6 +134,9 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
       },
       genres: {
         orderBy: { isPrimary: 'desc' }
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     }
   })
@@ -166,6 +173,9 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
       },
       genres: {
         orderBy: { isPrimary: 'desc' }
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     },
     orderBy: {
@@ -254,6 +264,9 @@ export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?:
       },
       genres: {
         orderBy: { isPrimary: 'desc' }
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     },
     orderBy: {
@@ -286,6 +299,9 @@ export async function getPopularGamesByConsoleSlug(consoleSlug: string): Promise
           { mediaType: 'asc' },
           { region: 'asc' }
         ]
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     },
     orderBy: [
@@ -486,6 +502,9 @@ export async function getAllGamesWithCompositeSlug(): Promise<(GameWithConsole &
           { mediaType: 'asc' },
           { region: 'asc' }
         ]
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     },
     orderBy: {
@@ -506,6 +525,34 @@ export function getAvailableRegions(console: ConsoleWithMedias): string[] {
   return Array.from(new Set(regions)).sort()
 }
 
+// Fonction utilitaire pour récupérer une date de sortie régionale spécifique
+export function getGameRegionalDate(game: GameWithConsole, region: string): Date | null {
+  if (!game.regionalDates) return null
+  
+  const regionalDate = game.regionalDates.find(rd => rd.region === region)
+  return regionalDate?.releaseDate || null
+}
+
+// Fonction utilitaire pour récupérer toutes les dates de sortie d'un jeu
+export function getGameReleaseDates(game: GameWithConsole): Record<string, Date | null> {
+  const dates: Record<string, Date | null> = {
+    FR: null,
+    EU: null,
+    WOR: null,
+    JP: null,
+    ASI: null,
+    US: null
+  }
+  
+  if (game.regionalDates) {
+    game.regionalDates.forEach(rd => {
+      dates[rd.region] = rd.releaseDate
+    })
+  }
+  
+  return dates
+}
+
 export async function getTopRatedGames(limit: number = 6): Promise<GameWithConsole[]> {
   return await prisma.game.findMany({
     take: limit,
@@ -521,6 +568,9 @@ export async function getTopRatedGames(limit: number = 6): Promise<GameWithConso
           { mediaType: 'asc' },
           { region: 'asc' }
         ]
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     },
     orderBy: {
@@ -539,6 +589,9 @@ export async function getRecentlyAddedGames(limit: number = 6): Promise<GameWith
           { mediaType: 'asc' },
           { region: 'asc' }
         ]
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       }
     },
     orderBy: {
@@ -1283,6 +1336,9 @@ export async function getGameWithAllRelations(slug: string) {
           genres: {
             orderBy: { isPrimary: 'desc' }
           },
+          regionalDates: {
+            orderBy: { region: 'asc' }
+          },
           corporationDev: true,
           corporationPub: true,
           family: true,
@@ -1306,6 +1362,9 @@ export async function getGameWithAllRelations(slug: string) {
       },
       genres: {
         orderBy: { isPrimary: 'desc' }
+      },
+      regionalDates: {
+        orderBy: { region: 'asc' }
       },
       corporationDev: true,
       corporationPub: true,

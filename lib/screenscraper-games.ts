@@ -795,12 +795,7 @@ export async function createGameFromScreenscraper(
       cloneOfId: (gameDetails.cloneof && gameDetails.cloneof !== 0 && gameDetails.cloneof !== '0') ? 
         (typeof gameDetails.cloneof === 'string' ? parseInt(gameDetails.cloneof) : gameDetails.cloneof) : null,
       
-      // Release dates by region - handle both old and new API formats
-      releaseDateFR: extractRegionReleaseDate(gameDetails.dates, 'fr'),
-      releaseDateEU: extractRegionReleaseDate(gameDetails.dates, 'eu'),
-      releaseDateUS: extractRegionReleaseDate(gameDetails.dates, 'us'),
-      releaseDateJP: extractRegionReleaseDate(gameDetails.dates, 'jp'),
-      releaseDateWOR: extractRegionReleaseDate(gameDetails.dates, 'wor'),
+      // Note: Release dates now handled via separate regional dates table
       
       // Note: genre now handled via separate genre relation table
       // genre: deprecated field, using normalized Genre model
@@ -825,6 +820,28 @@ export async function createGameFromScreenscraper(
         data: titleData
       })
       console.log(`📝 Titres régionaux ajoutés: ${regionalTitles.map(t => `${t.region}: ${t.title}`).join(', ')}`)
+    }
+
+    // Sauvegarder les dates de sortie régionales
+    const regionalDates = [
+      { region: 'FR' as const, date: extractRegionReleaseDate(gameDetails.dates, 'fr') },
+      { region: 'EU' as const, date: extractRegionReleaseDate(gameDetails.dates, 'eu') },
+      { region: 'US' as const, date: extractRegionReleaseDate(gameDetails.dates, 'us') },
+      { region: 'JP' as const, date: extractRegionReleaseDate(gameDetails.dates, 'jp') },
+      { region: 'WOR' as const, date: extractRegionReleaseDate(gameDetails.dates, 'wor') }
+    ].filter(item => item.date !== null)
+
+    if (regionalDates.length > 0) {
+      const dateData = regionalDates.map(item => ({
+        gameId: createdGame.id,
+        region: item.region as import('@prisma/client').Region,
+        releaseDate: item.date!
+      }))
+      
+      await prisma.gameRegionalDate.createMany({
+        data: dateData
+      })
+      console.log(`📅 Dates régionales ajoutées: ${regionalDates.map(d => `${d.region}: ${d.date!.toLocaleDateString('fr-FR')}`).join(', ')}`)
     }
     
     // Process genres if available (commented until Genre table exists)

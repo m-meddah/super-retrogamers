@@ -195,11 +195,6 @@ model Game {
   developmentStory       String?
   legacyImpact           String?
   playerCount            String?
-  releaseDateEU          DateTime?
-  releaseDateFR          DateTime?
-  releaseDateJP          DateTime?
-  releaseDateUS          DateTime?
-  releaseDateWOR         DateTime?
   resolution             String?
   rotation               String?
   topStaff               Boolean              @default(false)
@@ -215,6 +210,7 @@ model Game {
   genres                 GameGenre[]
   medias                 GameMedia[]
   regionalTitles         GameRegionalTitle[]
+  regionalDates          GameRegionalDate[]
   reviews                GameReview[]
   variants               GameVariant[]
   console                Console              @relation(fields: [consoleId], references: [id], onDelete: Cascade)
@@ -350,6 +346,19 @@ model GameRegionalTitle {
 
   @@unique([gameId, region])
   @@map("game_regional_titles")
+}
+
+model GameRegionalDate {
+  id          String    @id @default(cuid())
+  gameId      String
+  region      Region
+  releaseDate DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  game        Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, region])
+  @@map("game_regional_dates")
 }
 
 model UserConsoleCollection {
