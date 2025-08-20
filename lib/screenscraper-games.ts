@@ -586,7 +586,7 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
     
     for (const game of existingGames) {
       try {
-        if (!game.console?.ssGenreId) {
+        if (!game.console?.ssConsoleId) {
           console.log(`❌ Console sans screenscrapeId pour ${game.title}`)
           continue
         }
@@ -594,7 +594,7 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
         console.log(`Traitement de ${game.title} (ID Screenscraper: ${game.ssGameId})`)
         
         // Récupérer les détails du jeu depuis Screenscraper
-        const gameDetails = await fetchGameDetailsFromScreenscraper(game.ssGameId!, game.console.ssGenreId)
+        const gameDetails = await fetchGameDetailsFromScreenscraper(game.ssGameId!, game.console.ssConsoleId)
         
         if (!gameDetails) {
           console.log(`❌ Impossible de récupérer les détails pour ${game.title}`)
@@ -934,7 +934,7 @@ async function processGameMedias(
       return
     }
 
-    console.log(`📁 Traitement des médias pour ${gameSlug}...`)
+    console.log(`📁 Traitement des médias...`)
     console.log(`   ${mediasData.length} médias disponibles depuis Screenscraper`)
 
     const processedMedias: Array<{
@@ -982,7 +982,7 @@ async function processGameMedias(
         const mediaType = media.type || 'unknown'
         const mediaRegion = media.region || 'unknown'
         const mediaFormat = media.format || 'png'
-        const fileName = `${gameSlug}_${mediaType}_${mediaRegion}.${mediaFormat}`
+        const fileName = `game_${mediaType}_${mediaRegion}.${mediaFormat}`
         let localPath: string | null = null
         let downloadError: string | null = null
         
@@ -1072,9 +1072,9 @@ async function processGameMedias(
       }))
 
       // Plus de sauvegarde en base locale - les URLs sont déjà dans le cache
-      console.log(`📁 ${processedMedias.length} URLs de médias stockées dans le cache pour ${gameSlug}`)
+      console.log(`📁 ${processedMedias.length} URLs de médias stockées dans le cache`)
     } else {
-      console.log(`⚠️  Aucun média traité pour ${gameSlug}`)
+      console.log(`⚠️  Aucun média traité`)
     }
 
   } catch (error) {
@@ -1493,7 +1493,7 @@ async function processGameGenres(gameId: string, genresData: unknown[]) {
 
     // Prendre le premier genre comme genre principal
     const firstGenre = genresData[0]
-    const genreId = typeof firstGenre === 'object' ? firstGenre.id : firstGenre
+    const genreId = typeof firstGenre === 'object' && firstGenre && 'id' in firstGenre ? (firstGenre as { id: unknown }).id : firstGenre
     const genreSSId = parseInt(genreId)
 
     if (!genreSSId || isNaN(genreSSId)) {

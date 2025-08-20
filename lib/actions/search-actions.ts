@@ -47,9 +47,9 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
     if (filters.query && filters.query.trim()) {
       whereConditions.OR = [
         { title: { contains: filters.query, mode: 'insensitive' } },
-        { developer: { contains: filters.query, mode: 'insensitive' } },
-        { publisher: { contains: filters.query, mode: 'insensitive' } },
-        { description: { contains: filters.query, mode: 'insensitive' } }
+        { description: { contains: filters.query, mode: 'insensitive' } },
+        { corporationDev: { name: { contains: filters.query, mode: 'insensitive' } } },
+        { corporationPub: { name: { contains: filters.query, mode: 'insensitive' } } }
       ]
     }
 

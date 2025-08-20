@@ -97,37 +97,8 @@ export async function loadConsoleGamesStream(
       take: safeLimit
     })
 
-    // Transformation pour le client avec URLs optimisées
-    const gamesWithMedia = games.map(game => ({
-      ...game,
-      console: game.console ? {
-        ...game.console,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        manufacturer: '',
-        releaseYear: null,
-        description: '',
-        cpu: null,
-        memory: null,
-        graphics: null,
-        ssConsoleId: null,
-        aiEnhancedDescription: null,
-        historicalContext: null,
-        technicalSpecs: null,
-        editorialContent: null,
-        editorialAuthor: null,
-        popularity: 0,
-        emulationStatus: null,
-        systemArchitecture: null,
-        storageCapacity: null,
-        controllerType: null,
-        displayOutput: null,
-        audioChip: null,
-        videoChip: null,
-        customChips: null,
-        developmentName: null
-      } : null
-    })) as GameWithConsole[]
+    // Cast simple vers le type attendu
+    const gamesWithMedia = games as unknown as GameWithConsole[]
 
     // Préchargement des URLs pour optimiser l'affichage
     try {
@@ -250,7 +221,7 @@ export async function getConsoleStreamingStats(consoleSlug: string): Promise<{
     ])
 
     // Récupérer les noms des genres
-    const genreIds = genreStats.map(stat => stat.genreId).filter(Boolean) as string[]
+    const genreIds = genreStats.map(stat => stat.genreId).filter(Boolean).map(id => String(id))
     const genres = await prisma.genre.findMany({
       where: {
         id: {
@@ -264,7 +235,7 @@ export async function getConsoleStreamingStats(consoleSlug: string): Promise<{
     })
 
     const topGenres = genreStats.map(stat => {
-      const genre = genres.find(g => g.id === stat.genreId)
+      const genre = genres.find(g => g.id === String(stat.genreId))
       return {
         name: genre?.name || 'Genre inconnu',
         count: stat._count.id

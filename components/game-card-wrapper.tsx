@@ -4,11 +4,12 @@ import { Suspense } from 'react'
 import RegionalLink from "@/components/regional-link"
 import { Star, Award, Users } from "lucide-react"
 import type { Game } from "@prisma/client"
+import { GameWithConsole as FullGameWithConsole } from "@/lib/data-prisma"
 import { useRegionalGameTitle, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
 import AdaptiveGameImage from "@/components/adaptive-game-image"
 // GameWheelLogo supprimé - plus de composant wheel logo
 
-interface GameWithConsole extends Game {
+interface GameWithPartialConsole extends Game {
   console?: {
     name: string
     slug: string
@@ -32,7 +33,7 @@ interface SearchGameResult {
 }
 
 interface GameCardWrapperProps {
-  game: GameWithConsole | SearchGameResult
+  game: FullGameWithConsole | GameWithPartialConsole | SearchGameResult
   showConsole?: boolean
   preferredRegion?: string
 }
@@ -43,35 +44,23 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
   const { title: regionalTitle, loading: titleLoading } = useRegionalGameTitle(isScreenscraperResult ? '' : game.id)
   const { releaseDate: regionalReleaseDate, loading: dateLoading } = useRegionalReleaseDate(isScreenscraperResult ? '' : game.id, 'game')
 
-  // Créer un objet compatible avec AdaptiveGameImage
-  const gameForImage = {
-    ...game,
-    console: game.console ? {
-      ...game.console,
-      id: '', manufacturer: '', releaseYear: null, description: '',
-      cpu: null, memory: null, graphics: null, ssConsoleId: null,
-      aiEnhancedDescription: null, historicalContext: null, technicalAnalysis: null,
-      culturalImpact: null, editorialContent: null, editorialTitle: null,
-      editorialAuthor: null, editorialPublishedAt: null, generationId: null,
-      unitsSold: null, bestSellingGameId: null, dimensions: null, media: null,
-      coProcessor: null, audioChip: null, createdAt: new Date(), updatedAt: new Date()
-    } : null
-  } as GameWithConsole
+  // Utiliser le jeu tel quel pour AdaptiveGameImage
+  const gameForImage = game as FullGameWithConsole
   
   // Helper function to get genre
-  const getGameGenre = (gameData: GameWithConsole | SearchGameResult): string => {
+  const getGameGenre = (gameData: FullGameWithConsole | GameWithPartialConsole | SearchGameResult): string => {
     // Pour SearchGameResult qui a un champ genre string
     if ('genre' in gameData && typeof gameData.genre === 'string' && gameData.genre) {
       return gameData.genre
     }
     // Pour GameWithConsole qui a une relation genre
     if ('genre' in gameData && gameData.genre && typeof gameData.genre === 'object' && 'name' in gameData.genre) {
-      return gameData.genre.name
+      return (gameData.genre as { name: string }).name
     }
     // Pour les genres multiples
-    if ('genres' in gameData && gameData.genres && gameData.genres.length > 0) {
-      const firstGenre = gameData.genres[0]
-      return typeof firstGenre === 'string' ? firstGenre : ('genreName' in firstGenre ? firstGenre.genreName : '') || ''
+    if ('genres' in gameData && gameData.genres && Array.isArray(gameData.genres) && gameData.genres.length > 0) {
+      const firstGenre = gameData.genres[0] as { genreName?: string; name?: string }
+      return firstGenre?.genreName || firstGenre?.name || ''
     }
     return ''
   }

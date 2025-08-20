@@ -495,7 +495,7 @@ export async function syncGenresAction(
     // Synchroniser chaque genre
     for (const genreData of genresArray) {
       // Gérer différentes structures de données possibles
-      const genreInfo = genreData.genre || genreData
+      const genreInfo = (genreData as { genre?: unknown }).genre || genreData
       
       if (!genreInfo || !genreInfo.id || !genreInfo.nom_fr) {
         continue

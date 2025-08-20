@@ -33,8 +33,8 @@ export async function updateGameAction(
     // Récupération des données du formulaire
     const title = formData.get('title') as string
     const description = formData.get('description') as string
-    const developer = formData.get('developer') as string
-    const publisher = formData.get('publisher') as string
+    // const developer = formData.get('developer') as string // Deprecated - now using corporationDev relation
+    // const publisher = formData.get('publisher') as string // Deprecated - now using corporationPub relation
     // const genre = formData.get('genre') as string // Deprecated field
     const releaseYear = formData.get('releaseYear') as string
     const playerCount = formData.get('playerCount') as string
@@ -85,8 +85,8 @@ export async function updateGameAction(
       data: {
         title: title.trim(),
         description: description.trim() || null,
-        developer: developer.trim() || null,
-        publisher: publisher.trim() || null,
+        // developer: removed from schema - use corporationDev relation
+        // publisher: removed from schema - use corporationPub relation
         // genre: deprecated field - now using genreId relation
         releaseYear: releaseYear ? parseInt(releaseYear) : null,
         playerCount: playerCount.trim() || null,

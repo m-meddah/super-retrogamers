@@ -160,7 +160,7 @@ export async function getConsoleReleaseDate(consoleId: string, preferredRegion: 
 /**
  * Get the best game release date for a given region preference
  */
-export async function getGameReleaseDate(gameId: string, preferredRegion: Region): Promise<Date | null> {
+export async function getGameReleaseDate(gameId: string): Promise<Date | null> {
   try {
     const game = await prisma.game.findUnique({
       where: { id: gameId }
@@ -170,26 +170,27 @@ export async function getGameReleaseDate(gameId: string, preferredRegion: Region
       return null
     }
 
-    // Get the regional release date based on preference
-    const dateFieldMap: Record<Region, keyof typeof game> = {
-      FR: 'releaseDateFR',
-      EU: 'releaseDateEU', 
-      WOR: 'releaseDateWOR',
-      US: 'releaseDateUS',
-      JP: 'releaseDateJP',
-      ASI: 'releaseDateUS' // Fallback to US for ASI
-    }
+    // TODO: Re-implement regional dates with new schema structure
+    // const dateFieldMap: Record<Region, keyof typeof game> = {
+    //   FR: 'releaseDateFR',
+    //   EU: 'releaseDateEU', 
+    //   WOR: 'releaseDateWOR',
+    //   US: 'releaseDateUS',
+    //   JP: 'releaseDateJP',
+    //   ASI: 'releaseDateUS' // Fallback to US for ASI
+    // }
 
     // Get priority order for preferred region
-    const priorityOrder = REGION_PRIORITY[preferredRegion] || REGION_PRIORITY.FR
+    // const priorityOrder = REGION_PRIORITY[preferredRegion] || REGION_PRIORITY.FR
 
+    // TODO: Regional dates temporarily disabled due to schema changes
     // Find the best regional release date based on priority
-    for (const region of priorityOrder) {
-      const fieldName = dateFieldMap[region]
-      if (fieldName && game[fieldName]) {
-        return game[fieldName] as Date
-      }
-    }
+    // for (const region of priorityOrder) {
+    //   const fieldName = dateFieldMap[region]
+    //   if (fieldName && game[fieldName]) {
+    //     return game[fieldName] as Date
+    //   }
+    // }
 
     // Final fallback to constructed date from release year
     return game.releaseYear ? new Date(game.releaseYear, 0, 1) : null

@@ -298,7 +298,7 @@ export async function getScrapingStatusAction() {
         prisma.console.count(),
         prisma.game.count(),
         prisma.console.count({ where: { ssConsoleId: { not: null } } }),
-        prisma.game.count({ where: { ssConsoleId: { not: null } } }),
+        prisma.game.count({ where: { ssGameId: { not: null } } }),
       ])
 
     // Get games by console
@@ -338,10 +338,10 @@ export async function getScrapingStatusAction() {
     })
 
     const recentGames = await prisma.game.findMany({
-      where: { ssConsoleId: { not: null } },
+      where: { ssGameId: { not: null } },
       select: {
         title: true,
-        ssConsoleId: true,
+        ssGameId: true,
         createdAt: true,
         console: {
           select: { name: true }
