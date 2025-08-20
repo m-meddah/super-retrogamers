@@ -35,8 +35,7 @@ const CONSOLE_REGION_MAPPINGS: Record<string, Region[]> = {
   
   // Autres
   'atari-2600': ['US', 'EU'],
-  'neo-geo': ['JP', 'US', 'EU'],
-}
+  'neo-geo': ['JP', 'US', 'EU']}
 
 export async function createConsoleVariants(consoleSlug: string) {
   try {

@@ -1,21 +1,24 @@
 import type { ConsoleWithMedias, GameWithConsole } from '@/lib/data-prisma'
 import { selectBestConsoleMedia } from '@/lib/regional-preferences'
+import { getCachedMediaUrl } from '@/lib/media-url-cache'
 
 /**
- * Génère l'URL du favicon pour une console en utilisant le dossier minicon
+ * Génère l'URL du favicon pour une console en utilisant le système de cache média
  */
-export function getConsoleFaviconUrl(console: ConsoleWithMedias, preferredRegion: string = 'fr'): string | null {
+export async function getConsoleFaviconUrl(console: ConsoleWithMedias, preferredRegion: string = 'WOR'): Promise<string | null> {
   // 1. D'abord essayer de trouver un média de type "minicon" dans la base
   const miniconMedia = selectBestConsoleMedia(console.medias, 'minicon', preferredRegion)
   if (miniconMedia && miniconMedia.localPath) {
     return miniconMedia.localPath
   }
   
-  // 2. Essayer le chemin direct vers le dossier minicon basé sur la structure observée
-  // Utiliser le screenscrapeId au lieu de l'id interne
+  // 2. Essayer de récupérer le minicon via le système de cache média
+  // Note: minicon n'a pas de région, on utilise 'WOR' par défaut
   if (console.ssConsoleId) {
-    const miniconPath = `/consoles/${console.slug}/minicon/unknown/${console.ssConsoleId}_minicon_undefined.png`
-    return miniconPath
+    const miniconUrl = await getCachedMediaUrl('console', console.id, 'minicon', 'WOR')
+    if (miniconUrl) {
+      return miniconUrl
+    }
   }
   
   // 3. Fallback : utiliser d'autres types de médias dans l'ordre de priorité pour favicon
@@ -35,7 +38,7 @@ export function getConsoleFaviconUrl(console: ConsoleWithMedias, preferredRegion
 /**
  * Génère l'URL du favicon pour un jeu en utilisant ses médias ou l'icône de la console
  */
-export function getGameFaviconUrl(game: GameWithConsole): string | null {
+export async function getGameFaviconUrl(game: GameWithConsole, region: string = 'WOR'): Promise<string | null> {
   // 1. D'abord essayer avec les médias du jeu s'ils existent
   if (game.medias && game.medias.length > 0) {
     const gameImageTypes = ['wheel', 'box-2D', 'sstitle', 'ss']
@@ -50,7 +53,7 @@ export function getGameFaviconUrl(game: GameWithConsole): string | null {
   
   // 2. Fallback : construire le chemin vers le minicon de la console parente
   if (game.console) {
-    return getConsoleFaviconUrlFromConsole(game.console)
+    return await getConsoleFaviconUrlFromConsole(game.console, region)
   }
   
   return null
@@ -59,10 +62,14 @@ export function getGameFaviconUrl(game: GameWithConsole): string | null {
 /**
  * Génère l'URL du favicon pour une console à partir de données minimales
  */
-export function getConsoleFaviconUrlFromConsole(console: { id: string; slug: string; screenscrapeId?: number | null }): string | null {
-  // Construire le chemin vers le minicon de la console en utilisant screenscrapeId
+export async function getConsoleFaviconUrlFromConsole(console: { id: string; slug: string; ssConsoleId?: number | null }): Promise<string | null> {
+  // Utiliser le système de cache média pour récupérer le minicon
+  // Note: minicon n'a pas de région, on utilise 'WOR' par défaut
   if (console.ssConsoleId) {
-    return `/consoles/${console.slug}/minicon/unknown/${console.ssConsoleId}_minicon_undefined.png`
+    const miniconUrl = await getCachedMediaUrl('console', console.id, 'minicon', 'WOR')
+    if (miniconUrl) {
+      return miniconUrl
+    }
   }
   return null
 }
@@ -72,8 +79,7 @@ export function getConsoleFaviconUrlFromConsole(console: { id: string; slug: str
  */
 export function generateFaviconMetadata(faviconUrl: string | null, fallbackTitle: string) {
   const baseMetadata = {
-    title: fallbackTitle,
-  }
+    title: fallbackTitle}
   
   if (faviconUrl) {
     return {
@@ -90,8 +96,7 @@ export function generateFaviconMetadata(faviconUrl: string | null, fallbackTitle
   return {
     ...baseMetadata,
     icons: {
-      icon: '/favicon.ico',
-    }
+      icon: '/favicon.ico'}
   }
 }
 

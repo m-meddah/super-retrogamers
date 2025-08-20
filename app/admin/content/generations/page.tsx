@@ -9,8 +9,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  TableRow} from "@/components/ui/table"
 import { getAllGenerations } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"
@@ -25,7 +24,6 @@ async function GenerationsManagementContent() {
   const formatDate = (date: Date) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: fr })
   }
-
 
   return (
     <div className="space-y-6">

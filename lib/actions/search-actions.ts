@@ -29,11 +29,6 @@ export interface SearchResult {
       name: string
       slug: string
     } | null
-    medias: Array<{
-      mediaType: string
-      region: string
-      localPath: string | null
-    }>
   }>
   totalCount: number
   consoles: Array<{ name: string; slug: string }>
@@ -153,17 +148,6 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
             name: true
           }
         },
-        medias: {
-          select: {
-            mediaType: true,
-            region: true,
-            localPath: true
-          },
-          orderBy: [
-            { mediaType: 'asc' },
-            { region: 'asc' }
-          ]
-        },
         corporationDev: {
           select: { name: true }
         },
@@ -189,8 +173,7 @@ export async function searchGamesAction(filters: SearchFilters): Promise<SearchR
       genre: game.genre?.name || null,
       playerCount: game.playerCount,
       topStaff: game.topStaff,
-      console: game.console,
-      medias: game.medias
+      console: game.console
     }))
 
     return {
@@ -496,7 +479,6 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult): Se
     console: ssGame.systeme ? {
       name: ssGame.systeme.nom || 'Console inconnue',
       slug: `system-${ssGame.systeme.id}`
-    } : null,
-    medias: [] // Pas de médias dans l'API de recherche
+    } : null
   }
 }

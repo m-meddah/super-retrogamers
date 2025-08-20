@@ -103,8 +103,7 @@ function AdminNavigation() {
 }
 
 export default function AdminLayout({
-  children,
-}: {
+  children}: {
   children: React.ReactNode
 }) {
   return (

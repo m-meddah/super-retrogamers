@@ -49,7 +49,7 @@ export default async function JeuxStreamingPage({
             Catalogue de Jeux (Streaming)
           </h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Chargement optimisé au scroll avec cache d'URLs externes
+            Chargement optimisé au scroll avec cache d&apos;URLs externes
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default async function JeuxStreamingPage({
 }
 
 // Composant pour les filtres de recherche
-function SearchFilters({ currentParams }: { currentParams: any }) {
+function SearchFilters({ currentParams }: { currentParams: Record<string, string | undefined> }) {
   return (
     <div className="flex flex-wrap gap-4">
       <div className="flex items-center gap-2">

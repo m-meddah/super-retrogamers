@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
-import { getConsoleWithMediasBySlug, getGamesByConsoleWithConsoleInfo, getPopularGamesByConsoleSlug } from "@/lib/data-prisma"
+import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo, getPopularGamesByConsoleSlug } from "@/lib/data-prisma"
 import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
@@ -19,7 +19,7 @@ interface ConsolePageProps {
 // Génération des métadonnées dynamiques avec favicon personnalisé
 export async function generateMetadata({ params }: ConsolePageProps): Promise<Metadata> {
   const { slug } = await params
-  const console = await getConsoleWithMediasBySlug(slug)
+  const console = await getConsoleBySlug(slug)
 
   if (!console) {
     return {
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: ConsolePageProps): Promise<Me
   }
 
   // Récupérer le favicon de la console
-  const faviconUrl = getConsoleFaviconUrl(console)
+  const faviconUrl = await getConsoleFaviconUrl(console)
   const absoluteFaviconUrl = faviconUrl ? getAbsoluteFaviconUrl(faviconUrl) : null
 
   // Générer les métadonnées avec favicon personnalisé
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: ConsolePageProps): Promise<Me
 
 export default async function ConsolePage({ params }: ConsolePageProps) {
   const { slug } = await params
-  const console = await getConsoleWithMediasBySlug(slug)
+  const console = await getConsoleBySlug(slug)
 
   if (!console) {
     notFound()

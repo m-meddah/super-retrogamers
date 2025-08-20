@@ -47,8 +47,7 @@ export async function addConsoleToCollectionAction(
 
     const result = await CollectionService.addConsoleToCollection({
       ...data,
-      userId,
-    })
+      userId})
 
     revalidatePath('/collection')
     return { success: true, data: result }
@@ -102,8 +101,7 @@ export async function addGameToCollectionAction(
 
     const result = await CollectionService.addGameToCollection({
       ...data,
-      userId,
-    })
+      userId})
 
     revalidatePath('/collection')
     return { success: true, data: result }

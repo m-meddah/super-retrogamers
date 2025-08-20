@@ -27,25 +27,21 @@ export const metadata: Metadata = {
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180" }
-    ],
-  },
+    ]},
   openGraph: {
     title: "Super Retrogamers - スーパーレトロゲーマー",
     description: "Découvrez l'histoire des consoles rétro et leurs jeux légendaires",
     type: "website",
     locale: "fr_FR",
-    siteName: "Super Retrogamers",
-  },
+    siteName: "Super Retrogamers"},
   twitter: {
     card: "summary_large_image",
     title: "Super Retrogamers - スーパーレトロゲーマー",
-    description: "Découvrez l'histoire des consoles rétro et leurs jeux légendaires",
-  }
+    description: "Découvrez l'histoire des consoles rétro et leurs jeux légendaires"}
 }
 
 export default function RootLayout({
-  children,
-}: {
+  children}: {
   children: React.ReactNode
 }) {
   return (

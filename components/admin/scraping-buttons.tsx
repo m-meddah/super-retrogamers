@@ -22,24 +22,21 @@ export function ScrapingButtons() {
         if (result.success) {
           toast({
             title: "Scraping terminé",
-            description: result.message,
-          })
+            description: result.message})
           // Recharger la page pour voir les nouvelles données
           window.location.reload()
         } else {
           toast({
             title: "Erreur",
             description: result.error || "Erreur lors du scraping",
-            variant: "destructive",
-          })
+            variant: "destructive"})
         }
       } catch (error) {
         console.error('Erreur scraping:', error)
         toast({
           title: "Erreur",
           description: "Erreur inattendue lors du scraping",
-          variant: "destructive",
-        })
+          variant: "destructive"})
       } finally {
         setIsScrapingConsoles(false)
       }

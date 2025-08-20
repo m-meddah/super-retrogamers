@@ -5,8 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
+    provider: "postgresql"}),
   
   // Email & Password Authentication
   emailAndPassword: {
@@ -30,21 +29,16 @@ export const auth = betterAuth({
         type: "string",
         defaultValue: "user",
         input: false,
-        returned: true,
-      },
+        returned: true},
       preferredRegion: {
         type: "string",
         input: true,
-        returned: true,
-      },
-    },
-  },
+        returned: true}}},
   
   // Plugins
   plugins: [
     nextCookies() // Pour le support des Server Actions
-  ],
-})
+  ]})
 
 // Export des types pour TypeScript
 export type Session = typeof auth.$Infer.Session

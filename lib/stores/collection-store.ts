@@ -73,15 +73,12 @@ const initialState: CollectionState = {
     consoles: false,
     games: false,
     wishlist: false,
-    stats: false,
-  },
+    stats: false},
   errors: {
     consoles: null,
     games: null,
     wishlist: null,
-    stats: null,
-  },
-}
+    stats: null}}
 
 export const useCollectionStore = create<CollectionStore>()(
   devtools(
@@ -122,8 +119,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            consoles: [...state.consoles, console],
-          }),
+            consoles: [...state.consoles, console]}),
           false,
           'collection/addConsole'
         ),
@@ -132,8 +128,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            games: [...state.games, game],
-          }),
+            games: [...state.games, game]}),
           false,
           'collection/addGame'
         ),
@@ -142,8 +137,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            wishlist: [...state.wishlist, item],
-          }),
+            wishlist: [...state.wishlist, item]}),
           false,
           'collection/addToWishlist'
         ),
@@ -153,8 +147,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            consoles: state.consoles.filter((c) => c.id !== consoleId),
-          }),
+            consoles: state.consoles.filter((c) => c.id !== consoleId)}),
           false,
           'collection/removeConsole'
         ),
@@ -163,8 +156,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            games: state.games.filter((g) => g.id !== gameId),
-          }),
+            games: state.games.filter((g) => g.id !== gameId)}),
           false,
           'collection/removeGame'
         ),
@@ -173,8 +165,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            wishlist: state.wishlist.filter((w) => w.id !== itemId),
-          }),
+            wishlist: state.wishlist.filter((w) => w.id !== itemId)}),
           false,
           'collection/removeFromWishlist'
         ),
@@ -186,8 +177,7 @@ export const useCollectionStore = create<CollectionStore>()(
             ...state,
             consoles: state.consoles.map((c) =>
               c.id === consoleId ? { ...c, ...updates } : c
-            ),
-          }),
+            )}),
           false,
           'collection/updateConsole'
         ),
@@ -198,8 +188,7 @@ export const useCollectionStore = create<CollectionStore>()(
             ...state,
             games: state.games.map((g) =>
               g.id === gameId ? { ...g, ...updates } : g
-            ),
-          }),
+            )}),
           false,
           'collection/updateGame'
         ),
@@ -209,8 +198,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            loading: { ...state.loading, [key]: loading },
-          }),
+            loading: { ...state.loading, [key]: loading }}),
           false,
           `collection/setLoading/${key}`
         ),
@@ -220,8 +208,7 @@ export const useCollectionStore = create<CollectionStore>()(
         set(
           (state) => ({
             ...state,
-            errors: { ...state.errors, [key]: error },
-          }),
+            errors: { ...state.errors, [key]: error }}),
           false,
           `collection/setError/${key}`
         ),
@@ -232,11 +219,9 @@ export const useCollectionStore = create<CollectionStore>()(
           initialState,
           false,
           'collection/clearCollection'
-        ),
-    }),
+        )}),
     {
-      name: 'collection-store',
-    }
+      name: 'collection-store'}
   )
 )
 

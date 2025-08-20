@@ -1,20 +1,20 @@
 'use client'
 
 import Image from "next/image"
-import { selectBestGameImage } from "@/lib/regional-preferences"
-import type { Game, GameMedia, GameVariant, Console } from "@prisma/client"
+import { getCachedMediaUrl } from '@/lib/media-url-cache'
+import type { Game, GameVariant, Console } from "@prisma/client"
+import { useEffect, useState } from 'react'
 
-interface GameWithMedias extends Game {
-  medias?: GameMedia[]
+interface GameWithConsole extends Game {
   console: Console
 }
 
 interface GameVariantExtended extends GameVariant {
-  game: GameWithMedias
+  game: GameWithConsole
 }
 
 interface GameImageByRegionProps {
-  game?: GameWithMedias
+  game?: GameWithConsole
   variant?: GameVariantExtended
   className?: string
   alt?: string
@@ -29,6 +29,37 @@ export default function GameImageByRegion({
   // Utiliser le variant si disponible, sinon le jeu direct
   const targetGame = variant?.game || gameData
   const targetRegion = variant?.region || 'FR' // Region du variant ou défaut
+  const [imageUrl, setImageUrl] = useState<string>("/placeholder.svg")
+  const [isLoading, setIsLoading] = useState(true)
+  
+  useEffect(() => {
+    async function loadImage() {
+      if (!targetGame) {
+        setIsLoading(false)
+        return
+      }
+      
+      setIsLoading(true)
+      try {
+        // Priorité des types de médias pour les jeux
+        const mediaTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
+        
+        for (const mediaType of mediaTypes) {
+          const url = await getCachedMediaUrl('game', targetGame.id, mediaType, targetRegion)
+          if (url) {
+            setImageUrl(url)
+            break
+          }
+        }
+      } catch (error) {
+        console.error(`Erreur chargement image jeu ${targetGame.slug}:`, error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadImage()
+  }, [targetGame?.id, targetGame, targetRegion])
   
   if (!targetGame) {
     return (
@@ -41,42 +72,12 @@ export default function GameImageByRegion({
     )
   }
   
-  // Transformer en format RegionalGameData
-  const regionalGame = {
-    id: targetGame.id,
-    title: targetGame.title,
-    slug: targetGame.slug,
-    consoleId: targetGame.console?.slug || '',
-    releaseYear: targetGame.releaseYear,
-    description: targetGame.description,
-    image: null, // Image column removed, using regional media only
-    medias: (targetGame.medias || []).map(media => ({
-      id: `${media.mediaType}-${media.region}`,
-      mediaType: media.mediaType,
-      region: media.region,
-      url: media.localPath || '',
-      localPath: media.localPath,
-      fileName: media.localPath ? media.localPath.split('/').pop() || '' : ''
-    })),
-    // Dates régionales (à implémenter si nécessaire)
-    releaseDateEU: null,
-    releaseDateFR: null,
-    releaseDateJP: null,
-    releaseDateUS: null,
-    releaseDateWOR: null
-  }
-  
-  // Utiliser la région spécifique du variant (pas les préférences utilisateur)
-  const imageUrl = selectBestGameImage(regionalGame, targetRegion.toLowerCase()) || "/placeholder.svg"
-  
-  console.log(`[GameImageByRegion] Game ${targetGame.slug} - VariantRegion: ${targetRegion}, ImageURL: ${imageUrl}`)
-  
   return (
     <Image
       src={imageUrl}
       alt={alt || targetGame.title}
       fill
-      className={className || "object-cover"}
+      className={`${className || "object-cover"} ${isLoading ? 'opacity-50' : 'opacity-100'}`}
     />
   )
 }

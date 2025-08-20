@@ -9,8 +9,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  SelectValue} from "@/components/ui/select"
 
 interface SettingsFormProps {
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>
@@ -240,7 +239,6 @@ export function SettingsForm({ action, user, type }: SettingsFormProps) {
       { code: 'ASI', label: 'Asie' },
       { code: 'US', label: 'États-Unis' }
     ]
-
 
     const handleFormSubmit = (formData: FormData) => {
       // Ajouter la région sélectionnée au FormData

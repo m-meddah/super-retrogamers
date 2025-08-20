@@ -3,21 +3,16 @@
 import { Suspense } from 'react'
 import { useCurrentRegion } from '@/lib/hooks/use-regional-preferences'
 import ConsoleCardWrapper from './console-card-wrapper'
-import type { Console, ConsoleMedia } from "@prisma/client"
-
-interface ConsoleWithMedias extends Console {
-  medias?: ConsoleMedia[]
-}
+import type { Console } from "@prisma/client"
 
 interface ConsoleCardRegionalWrapperProps {
-  console: ConsoleWithMedias
+  console: Console
 }
 
 function ConsoleCardWithRegion({ console: consoleData }: ConsoleCardRegionalWrapperProps) {
   const currentRegion = useCurrentRegion()
   const preferredRegionLowercase = currentRegion.toLowerCase()
-  
-  
+
   return <ConsoleCardWrapper console={consoleData} preferredRegion={preferredRegionLowercase} />
 }
 

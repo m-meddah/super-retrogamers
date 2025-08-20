@@ -30,7 +30,7 @@ export async function loadGamesStream(
     const safeLimit = Math.min(limit, MAX_GAMES_PER_REQUEST)
     
     // Construction des conditions de filtrage
-    const whereConditions: any = {}
+    const whereConditions: Record<string, unknown> = {}
     
     if (filters?.consoleSlug) {
       whereConditions.console = {
@@ -45,7 +45,6 @@ export async function loadGamesStream(
     }
     
     if (filters?.searchQuery) {
-      const searchTerms = filters.searchQuery.toLowerCase().split(' ')
       whereConditions.OR = [
         {
           title: {
@@ -73,7 +72,7 @@ export async function loadGamesStream(
     }
 
     // Construction du tri
-    const orderBy: any = {}
+    const orderBy: Record<string, unknown> = {}
     if (filters?.sortBy) {
       orderBy[filters.sortBy] = filters.sortOrder || 'desc'
     } else {
@@ -169,7 +168,7 @@ export async function countGamesStream(filters?: {
   searchQuery?: string
 }): Promise<number> {
   try {
-    const whereConditions: any = {}
+    const whereConditions: Record<string, unknown> = {}
     
     if (filters?.consoleSlug) {
       whereConditions.console = {
@@ -247,7 +246,7 @@ export async function preloadGameImages(
                 await getCachedMediaUrl('game', gameId, mediaType, region)
                 // Rate limiting léger entre les appels
                 await new Promise(resolve => setTimeout(resolve, 100))
-              } catch (error) {
+              } catch {
                 // Ignore les erreurs individuelles
               }
             }
@@ -272,7 +271,7 @@ export async function getStreamingStats(): Promise<{
   totalGames: number
   totalConsoles: number
   averageGamesPerConsole: number
-  cacheStats: any
+  cacheStats: Record<string, number>
 }> {
   try {
     const [totalGames, totalConsoles, cacheStats] = await Promise.all([

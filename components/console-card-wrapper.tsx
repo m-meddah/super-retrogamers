@@ -1,55 +1,54 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
-import type { Console, ConsoleMedia } from "@prisma/client"
-import { selectBestConsoleImage } from "@/lib/regional-preferences"
+import type { Console } from "@prisma/client"
+import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
 import { useRegionalConsoleName, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
-
-interface ConsoleWithMedias extends Console {
-  medias?: ConsoleMedia[]
-}
+import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
 
 interface ConsoleCardWrapperProps {
-  console: ConsoleWithMedias
+  console: Console
   preferredRegion?: string
 }
 
-export default function ConsoleCardWrapper({ console: consoleData, preferredRegion = 'fr' }: ConsoleCardWrapperProps) {
+export default function ConsoleCardWrapper({ console: consoleData }: ConsoleCardWrapperProps) {
   // Use regional hooks for name and release date
   const { name: regionalName, loading: nameLoading } = useRegionalConsoleName(consoleData.id)
   const { releaseDate: regionalReleaseDate, loading: dateLoading } = useRegionalReleaseDate(consoleData.id, 'console')
-
-  // Transformer la console en format RegionalConsoleData pour la fonction selectBestConsoleImage
-  const regionalConsole = {
-    id: consoleData.id,
-    name: consoleData.name,
-    slug: consoleData.slug,
-    manufacturer: consoleData.manufacturer,
-    releaseYear: consoleData.releaseYear,
-    description: consoleData.description || '',
-    image: null, // Image column removed, using regional media only
-    medias: (consoleData.medias || []).map(media => ({
-      id: media.id,
-      type: media.type,
-      region: media.region,
-      url: media.url,
-      localPath: media.localPath,
-      format: media.format,
-      fileName: media.fileName
-    }))
-  }
+  const currentRegion = useCurrentRegion()
+  const [imageUrl, setImageUrl] = useState<string>("/placeholder.svg")
+  const [isLoading, setIsLoading] = useState(true)
   
-  const imageUrl = selectBestConsoleImage(regionalConsole, preferredRegion) || "/placeholder.svg"
+  useEffect(() => {
+    async function loadImage() {
+      setIsLoading(true)
+      try {
+        // Utilisation de la fonction optimisée
+        const mediaTypes = ['wheel', 'logo-svg', 'photo', 'illustration']
+        const regionPriority = [currentRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
+        
+        const url = await getBestCachedMediaUrl('console', consoleData.id, mediaTypes, regionPriority)
+        if (url) {
+          setImageUrl(url)
+        }
+      } catch (error) {
+        console.error(`Erreur chargement image console ${consoleData.slug}:`, error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadImage()
+  }, [consoleData.id, consoleData.slug, currentRegion])
   
   // Use regional name if available, otherwise fallback to default
   const displayName = regionalName || consoleData.name
   
   // Use regional release date year if available
   const displayYear = regionalReleaseDate?.getFullYear() || consoleData.releaseYear
-  
-  
+
   return (
     <Suspense fallback={
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
@@ -69,7 +68,7 @@ export default function ConsoleCardWrapper({ console: consoleData, preferredRegi
               alt={displayName}
               width={400}
               height={300}
-              className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+              className={`h-full w-full object-contain transition-transform duration-200 group-hover:scale-105 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
             />
           </div>
           

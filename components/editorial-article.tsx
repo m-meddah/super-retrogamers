@@ -116,8 +116,7 @@ export function EditorialArticle({ console }: EditorialArticleProps) {
               >
                 {children}
               </a>
-            ),
-          }}
+            )}}
         >
           {console.editorialContent}
         </ReactMarkdown>

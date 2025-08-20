@@ -163,7 +163,7 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">
-                    Tous les genres ({initialGames.length})
+                    Tous les genres ({genres.length})
                   </SelectItem>
                   {genres.map((genre) => (
                     <SelectItem key={genre.genreName} value={genre.genreName}>

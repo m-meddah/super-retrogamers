@@ -10,8 +10,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  TableRow} from "@/components/ui/table"
 import { getUserManagementData } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
 import { redirect } from "next/navigation"

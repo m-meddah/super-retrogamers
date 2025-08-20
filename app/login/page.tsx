@@ -26,8 +26,7 @@ export default function LoginPage() {
       
       const result = await signIn.email({
         email,
-        password,
-      })
+        password})
       
       console.log("✅ Résultat de connexion:", result)
       

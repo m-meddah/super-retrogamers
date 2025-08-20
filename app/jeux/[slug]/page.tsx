@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: GamePageProps): Promise<Metad
   }
 
   // Récupérer le favicon du jeu ou de sa console
-  const faviconUrl = getGameFaviconUrl(game)
+  const faviconUrl = await getGameFaviconUrl(game)
   const absoluteFaviconUrl = faviconUrl ? getAbsoluteFaviconUrl(faviconUrl) : null
 
   // Générer les métadonnées avec favicon personnalisé

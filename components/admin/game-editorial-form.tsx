@@ -7,9 +7,12 @@ import { updateGameAction } from '@/lib/actions/game-actions'
 import { useActionState } from 'react'
 
 interface GameEditorialFormProps {
-  game: Game & { console: Console }
+  game: Game & { 
+    console: Console
+    corporationDev?: { name: string } | null
+    corporationPub?: { name: string } | null
+  }
 }
-
 
 export function GameEditorialForm({ game }: GameEditorialFormProps) {
   const [isPending, startTransition] = useTransition()
@@ -33,8 +36,7 @@ export function GameEditorialForm({ game }: GameEditorialFormProps) {
     gameplayAnalysis: game.gameplayAnalysis || '',
     historicalSignificance: game.historicalSignificance || '',
     developmentStory: game.developmentStory || '',
-    legacyImpact: game.legacyImpact || '',
-  })
+    legacyImpact: game.legacyImpact || ''})
 
   const handleSubmit = async (formData: FormData) => {
     // Ajouter les screenshots à FormData

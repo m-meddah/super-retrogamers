@@ -16,8 +16,7 @@ export function EditorialForm({ console }: EditorialFormProps) {
   const [formData, setFormData] = useState({
     editorialTitle: console.editorialTitle || '',
     editorialAuthor: console.editorialAuthor || '',
-    editorialContent: console.editorialContent || '',
-  })
+    editorialContent: console.editorialContent || ''})
   
   const [editorialState, editorialAction] = useActionState(updateConsoleEditorialAction, { success: false })
 
@@ -48,8 +47,7 @@ export function EditorialForm({ console }: EditorialFormProps) {
   const previewConsole = {
     ...console,
     ...formData,
-    editorialPublishedAt: new Date(),
-  }
+    editorialPublishedAt: new Date()}
 
   return (
     <div className="space-y-6">

@@ -9,8 +9,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  TableRow} from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getContentManagementData, generateGameCompositeSlug, getAllCorporations, getAllFamilies, getAllGenerations } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"

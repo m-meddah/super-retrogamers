@@ -49,13 +49,8 @@ export function OptimizedGameImage({
 
         if (bestImageUrl) {
           setImageSrc(bestImageUrl)
-        } else {
-          // Fallback vers les médias locaux s'il y en a
-          const localMedia = getBestLocalGameImage(game)
-          if (localMedia) {
-            setImageSrc(localMedia)
-          }
         }
+        // Plus de fallback vers médias locaux - utilisation du placeholder uniquement
       } catch (error) {
         console.error('Erreur lors du chargement de l\'image:', error)
         setHasError(true)
@@ -135,23 +130,7 @@ export function OptimizedGameImage({
   )
 }
 
-/**
- * Fallback vers les médias locaux (pour compatibilité)
- */
-function getBestLocalGameImage(game: GameWithConsole): string | null {
-  if (!game.medias || game.medias.length === 0) return null
-
-  const priorities = ['box-2D', 'wheel', 'sstitle', 'ss']
-  
-  for (const type of priorities) {
-    const media = game.medias.find(m => m.mediaType === type && m.localPath)
-    if (media?.localPath) {
-      return media.localPath
-    }
-  }
-  
-  return null
-}
+// getBestLocalGameImage supprimée - plus de médias locaux avec le cache d'URLs
 
 /**
  * Hook pour précharger les images importantes
@@ -165,7 +144,7 @@ export function usePreloadGameImages(games: GameWithConsole[], count: number = 5
         try {
           // Précharge l'URL pour les premiers jeux
           await getCachedMediaUrl('game', game.id, 'box-2D', 'FR')
-        } catch (error) {
+        } catch {
           // Ignore silently
         }
       }

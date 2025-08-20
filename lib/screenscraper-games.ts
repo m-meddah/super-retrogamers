@@ -6,7 +6,7 @@ import path from 'path'
 
 // Function to create or get corporation from Screenscraper data
 async function createOrGetCorporation(
-  corporationData: any, 
+  corporationData: unknown, 
   role: 'developer' | 'publisher'
 ): Promise<string | null> {
   if (!corporationData) return null
@@ -523,6 +523,7 @@ function extractRegionReleaseDate(dates: ScreenscraperGame['dates'] | undefined,
 /**
  * Extract the main genre from genre information
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function extractMainGenre(genres?: ScreenscraperGame['genres']): string | null {
   if (!genres) return null
   
@@ -563,7 +564,7 @@ export async function scrapeRegionalTitlesForExistingGames(): Promise<{ success:
     // Récupérer tous les jeux avec un screenscrapeId
     const existingGames = await prisma.game.findMany({
       where: {
-        ssConsoleId: {
+        ssGameId: {
           not: null
         }
       },
@@ -827,7 +828,7 @@ export async function createGameFromScreenscraper(
       slug: finalSlug,
       title: gameTitle,
       consoleId: gameConsole.id,
-      ssConsoleId: typeof gameDetails.id === 'number' ? gameDetails.id : parseInt(String(gameDetails.id)),
+      ssGameId: typeof gameDetails.id === 'number' ? gameDetails.id : parseInt(String(gameDetails.id)),
       
       // Basic info
       releaseYear,
@@ -898,33 +899,18 @@ export async function createGameFromScreenscraper(
       console.log(`📅 Dates régionales ajoutées: ${regionalDates.map(d => `${d.region}: ${d.date!.toLocaleDateString('fr-FR')}`).join(', ')}`)
     }
     
-    // Process genres if available (commented until Genre table exists)
+    // Process genres if available
     if (gameDetails.genres) {
-      // await processGameGenres(createdGame.id, gameDetails.genres)
-      console.log(`📋 ${gameDetails.genres.length} genres trouvés (table Genre pas encore créée)`)
+      await processGameGenres(createdGame.id, gameDetails.genres)
+      console.log(`📋 ${gameDetails.genres.length} genres traités`)
     }
     
     // Process media files
     if (gameDetails.medias) {
-      await processGameMedias(createdGame.id, gameDetails.medias, finalSlug, gameConsole.slug)
+      await processGameMedias(createdGame.id, gameDetails.medias)
       
-      // Mettre à jour l'image principale du jeu après traitement des médias
-      const bestMedia = await prisma.gameMedia.findFirst({
-        where: {
-          gameId: createdGame.id,
-          localPath: { not: null },
-          mediaType: { in: ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss'] }
-        },
-        orderBy: [
-          { mediaType: 'asc' }, // Ordre de priorité: box-2D d'abord
-          { region: 'asc' }
-        ]
-      })
-      
-      // Image column removed - images now handled through regional media selection
-      if (bestMedia?.localPath) {
-        console.log(`📸 Best media available: ${bestMedia.localPath} (image column removed)`)
-      }
+      // Images now handled dynamically through URL cache system
+      console.log(`📸 Médias disponibles via le cache d'URLs pour ${createdGame.title}`)
     }
     
     return createdGame
@@ -940,9 +926,7 @@ export async function createGameFromScreenscraper(
  */
 async function processGameMedias(
   gameId: string, 
-  mediasData: ScreenscraperGameMedia,
-  gameSlug: string,
-  consoleSlug: string
+  mediasData: ScreenscraperGameMedia
 ) {
   try {
     if (!mediasData || !Array.isArray(mediasData) || mediasData.length === 0) {
@@ -1003,16 +987,14 @@ async function processGameMedias(
         let downloadError: string | null = null
         
         try {
-          localPath = await downloadGameMedia(media.url, fileName, gameSlug, mediaType, mediaRegion, consoleSlug)
-          if (localPath) {
-            console.log(`   ✅ ${media.type} (${media.region}) téléchargé`)
-          } else {
-            downloadError = 'Échec téléchargement'
-            console.log(`   ❌ ${media.type} (${media.region}) échec téléchargement`)
-          }
+          // Store URL in cache instead of downloading
+          const { setCachedMediaUrl } = await import('@/lib/media-url-cache')
+          await setCachedMediaUrl('game', gameId, mediaType, mediaRegion, media.url)
+          localPath = media.url // Store the URL directly
+          console.log(`   ✅ ${media.type} (${media.region}) - URL stockée dans le cache`)
         } catch (error) {
           downloadError = error instanceof Error ? error.message : 'Erreur inconnue'
-          console.log(`   ❌ ${media.type} (${media.region}) erreur: ${downloadError}`)
+          console.log(`   ❌ ${media.type} (${media.region}) erreur cache: ${downloadError}`)
         }
         
         // Parse file size
@@ -1056,7 +1038,7 @@ async function processGameMedias(
 
     // Save all processed media to database with enhanced metadata
     if (processedMedias.length > 0) {
-      const mediaData = processedMedias.map(media => ({
+      processedMedias.map(media => ({
         gameId,
         mediaType: media.mediaType,
         region: media.region || 'unknown',
@@ -1089,12 +1071,8 @@ async function processGameMedias(
         downloadError: media.downloadError || undefined
       }))
 
-      await prisma.gameMedia.createMany({
-        data: mediaData,
-        skipDuplicates: true
-      })
-
-      console.log(`📁 ${processedMedias.length} médias sauvegardés en base pour ${gameSlug}`)
+      // Plus de sauvegarde en base locale - les URLs sont déjà dans le cache
+      console.log(`📁 ${processedMedias.length} URLs de médias stockées dans le cache pour ${gameSlug}`)
     } else {
       console.log(`⚠️  Aucun média traité pour ${gameSlug}`)
     }
@@ -1145,7 +1123,7 @@ function shouldSkipMedia(media: ScreenscraperGameMediaItem): boolean {
     'flyer',         // Flyers
     
     // Médias spécialisés
-    'video',         // Vidéos (gourmandes en espace)
+    //'video',         // Vidéos (gourmandes en espace)
     'music',         // Musiques
     'voice',         // Voix/dialogues
     
@@ -1209,6 +1187,7 @@ function shouldSkipMedia(media: ScreenscraperGameMediaItem): boolean {
 /**
  * Download game media with proper directory structure: public/games/[game-slug]-[console-slug]/[mediaType]/[region]/
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function downloadGameMedia(
   url: string, 
   fileName: string, 
@@ -1356,7 +1335,7 @@ export async function rescrapGameMedias(gameId: string): Promise<{ success: bool
     console.log(`Re-scraping médias pour ${game.title} (ID: ${game.ssGameId})`)
     
     // Récupérer les détails du jeu avec ses médias
-    const systemId = game.console?.ssGenreId || undefined
+    const systemId = game.console?.ssConsoleId || undefined
     const gameDetails = await getGameDetailsWithMedias(game.ssGameId, systemId)
     
     if (!gameDetails?.medias || !Array.isArray(gameDetails.medias) || gameDetails.medias.length === 0) {
@@ -1369,18 +1348,24 @@ export async function rescrapGameMedias(gameId: string): Promise<{ success: bool
     
     console.log(`${gameDetails.medias.length} médias trouvés sur Screenscraper`)
     
-    // Supprimer les anciens médias
-    await prisma.gameMedia.deleteMany({
-      where: { gameId: game.id }
+    // Supprimer les anciennes URLs du cache
+    await prisma.mediaUrlCache.deleteMany({
+      where: { 
+        entityType: 'game',
+        entityId: game.id 
+      }
     })
-    console.log('Anciens médias supprimés')
+    console.log('Anciens URLs du cache supprimés')
     
     // Traiter les nouveaux médias
-    await processGameMedias(game.id, gameDetails.medias, game.slug, game.console?.slug || 'unknown')
+    await processGameMedias(game.id, gameDetails.medias)
     
-    // Compter les médias créés
-    const mediaCount = await prisma.gameMedia.count({
-      where: { gameId: game.id }
+    // Compter les URLs en cache créées
+    const mediaCount = await prisma.mediaUrlCache.count({
+      where: { 
+        entityType: 'game',
+        entityId: game.id 
+      }
     })
     
     // Image column removed - images now handled through regional media selection
@@ -1491,6 +1476,51 @@ export async function scrapeGamesForConsole(consoleId: string, systemId: number,
     
   } catch (error) {
     console.error('Erreur lors du scraping des jeux:', error)
+    throw error
+  }
+}
+
+/**
+ * Process game genres from Screenscraper data
+ * Simplified version: only sets the main genre, no many-to-many relations
+ */
+async function processGameGenres(gameId: string, genresData: unknown[]) {
+  try {
+    if (!genresData || !Array.isArray(genresData) || genresData.length === 0) {
+      console.log('⚠️  Aucune donnée de genre disponible')
+      return
+    }
+
+    // Prendre le premier genre comme genre principal
+    const firstGenre = genresData[0]
+    const genreId = typeof firstGenre === 'object' ? firstGenre.id : firstGenre
+    const genreSSId = parseInt(genreId)
+
+    if (!genreSSId || isNaN(genreSSId)) {
+      console.log(`⚠️  ID de genre invalide: ${genreId}`)
+      return
+    }
+
+    // Trouver le genre dans notre base de données par ssGenreId
+    const genre = await prisma.genre.findUnique({
+      where: { ssGenreId: genreSSId }
+    })
+
+    if (!genre) {
+      console.log(`⚠️  Genre Screenscraper ID ${genreSSId} non trouvé dans la base`)
+      return
+    }
+
+    // Mettre à jour le genre principal du jeu (utiliser l'ID Screenscraper qui est un Int)
+    await prisma.game.update({
+      where: { id: gameId },
+      data: { genreId: genreSSId }
+    })
+    
+    console.log(`🏷️  Genre principal défini: ${genre.name} (ID: ${genreSSId})`)
+
+  } catch (error) {
+    console.error('❌ Erreur lors du traitement des genres:', error)
     throw error
   }
 }

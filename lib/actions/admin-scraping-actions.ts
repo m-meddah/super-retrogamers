@@ -157,8 +157,7 @@ export async function addConsoleManuallyAction(
         slug,
         description: description || '',
         manufacturer: '',
-        releaseYear: new Date().getFullYear(),
-      }
+        releaseYear: new Date().getFullYear()}
     })
 
     return {
@@ -387,8 +386,7 @@ export async function updateConsoleEditorialAction(
         editorialAuthor: editorialAuthor || null,
         editorialContent: editorialContent || null,
         editorialPublishedAt: editorialPublishedAt ? new Date(editorialPublishedAt) : null,
-        updatedAt: new Date(),
-      }
+        updatedAt: new Date()}
     })
 
     return {
@@ -479,7 +477,7 @@ export async function syncGenresAction(
     }
     
     // Vérifier si genres est un objet ou un tableau
-    let genresArray: any[]
+    let genresArray: unknown[]
     if (Array.isArray(data.response.genres)) {
       genresArray = data.response.genres
     } else if (typeof data.response.genres === 'object') {

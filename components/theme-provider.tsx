@@ -17,8 +17,7 @@ type ThemeProviderState = {
 
 const initialState: ThemeProviderState = {
   theme: "system",
-  setTheme: () => null,
-}
+  setTheme: () => null}
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
@@ -67,8 +66,7 @@ export function ThemeProvider({
         localStorage.setItem(storageKey, theme)
       }
       setTheme(theme)
-    },
-  }
+    }}
 
   if (!mounted) {
     return <>{children}</>

@@ -50,8 +50,7 @@ export function EnhancedGameEditorialForm({
     familyId: game.familyId || '',
     sizeMB: game.sizeMB || '',
     onlinePlay: game.onlinePlay || false,
-    cloneOf: game.cloneOf || '',
-  })
+    cloneOf: game.cloneOf || ''})
 
   const handleSubmit = async (formData: FormData) => {
     // Ajouter les screenshots à FormData
@@ -322,7 +321,6 @@ export function EnhancedGameEditorialForm({
                   </p>
                 )}
               </div>
-
 
               {/* Famille */}
               <div>

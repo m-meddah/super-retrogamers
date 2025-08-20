@@ -32,8 +32,7 @@ function getManufacturer(compagnie?: string): string {
     'SNK': 'SNK',
     'NEC': 'NEC',
     'Commodore': 'Commodore',
-    'Microsoft': 'Microsoft',
-  }
+    'Microsoft': 'Microsoft'}
   
   for (const [key, value] of Object.entries(manufacturers)) {
     if (compagnie.toLowerCase().includes(key.toLowerCase())) {
@@ -58,6 +57,8 @@ interface ScreenscraperSystem {
   }>
 }
 
+// Interface pour les médias traités (utilisée pour typage interne)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface ProcessedMedia {
   type: string
   region: string
@@ -100,7 +101,7 @@ export class ScreenscraperService {
     
     // Vérifier si la console existe déjà
     const existingConsole = await prisma.console.findUnique({
-      where: { screenscrapeId: system.id }
+      where: { ssConsoleId: system.id }
     })
     
     if (existingConsole) {
@@ -117,28 +118,7 @@ export class ScreenscraperService {
       ? parseInt(system.datedebut) 
       : null
     
-    // Traiter les médias AVANT de créer la console
-    console.log(`Traitement des médias pour ${mainName}...`)
-    const processedMedias = await this.processSystemMedias(system, slug)
-    
-    // Sélectionner l'image principale parmi les médias traités
-    let mainImagePath: string | null = null
-    if (processedMedias.length > 0) {
-      const priorityOrder = ['logo-svg', 'wheel', 'photo', 'illustration']
-      for (const priority of priorityOrder) {
-        const media = processedMedias.find(m => m.type === priority)
-        if (media) {
-          mainImagePath = media.localPath
-          break
-        }
-      }
-      
-      if (!mainImagePath && processedMedias.length > 0) {
-        mainImagePath = processedMedias[0].localPath
-      }
-    }
-    
-    // Créer la console avec l'image principale
+    // Créer la console
     const createdConsole = await prisma.console.create({
       data: {
         name: mainName,
@@ -146,32 +126,18 @@ export class ScreenscraperService {
         description: `Console ${mainName} développée par ${manufacturer}. Type: ${system.type || 'Console'}.`,
         manufacturer,
         releaseYear,
-        screenscrapeId: system.id,
-      }
+        ssConsoleId: system.id}
     })
     
-    // Sauvegarder tous les médias en base de données
-    if (processedMedias.length > 0) {
-      const mediaData = processedMedias.map(media => ({
-        consoleId: createdConsole.id,
-        type: media.type,
-        region: media.region,
-        url: media.url,
-        localPath: media.localPath,
-        format: media.format,
-        fileName: media.fileName
-      }))
-      
-      await prisma.consoleMedia.createMany({
-        data: mediaData
-      })
-      
-      console.log(`✅ ${processedMedias.length} médias sauvegardés pour ${mainName}`)
-    }
+    // Traiter les médias avec le système de cache d'URLs
+    console.log(`Traitement des médias pour ${mainName}...`)
+    const mediaCount = await this.processSystemMedias(system, createdConsole.id)
+    
+    console.log(`✅ ${mediaCount} médias mis en cache pour ${mainName}`)
     
     return { 
       name: mainName, 
-      mediaCount: processedMedias.length
+      mediaCount: mediaCount
     }
   }
 
@@ -188,7 +154,7 @@ export class ScreenscraperService {
     // Si un consoleId est fourni, vérifier qu'elle existe dans notre base
     if (consoleId) {
       gameConsole = await prisma.console.findUnique({
-        where: { screenscrapeId: consoleId }
+        where: { ssConsoleId: consoleId }
       })
       
       if (!gameConsole) {
@@ -217,7 +183,7 @@ export class ScreenscraperService {
     // Si aucune console spécifiée, essayer de trouver/créer la console du jeu
     if (!gameConsole && game.systeme?.id) {
       gameConsole = await prisma.console.findUnique({
-        where: { screenscrapeId: parseInt(game.systeme.id) }
+        where: { ssConsoleId: parseInt(game.systeme.id) }
       })
       
       // Si la console n'existe pas dans notre base, on ne peut pas créer le jeu
@@ -233,7 +199,7 @@ export class ScreenscraperService {
     // Vérifier si le jeu existe déjà pour cette console
     const existingGame = await prisma.game.findFirst({
       where: { 
-        screenscrapeId: gameId,
+        ssGameId: gameId,
         consoleId: gameConsole.id
       }
     })
@@ -261,16 +227,17 @@ export class ScreenscraperService {
     }
   }
 
-  // Méthodes pour traiter les médias
-  async processSystemMedias(system: ScreenscraperSystem, slug: string): Promise<ProcessedMedia[]> {
+  // Méthodes pour traiter les médias avec cache d'URLs
+  async processSystemMedias(system: ScreenscraperSystem, consoleId: string): Promise<number> {
     if (!system?.medias) {
       console.log(`Aucun média trouvé pour le système ${system.id}`)
-      return []
+      return 0
     }
     
-    const processedMedias: ProcessedMedia[] = []
+    console.log(`Traitement de ${system.medias.length} médias pour la console ${consoleId}`)
     
-    console.log(`Traitement de ${system.medias.length} médias pour ${slug}`)
+    const { setCachedMediaUrl } = await import('@/lib/media-url-cache')
+    let mediaCount = 0
     
     for (const media of system.medias) {
       if (this.shouldExcludeMedia(media)) {
@@ -279,28 +246,19 @@ export class ScreenscraperService {
       }
       
       try {
-        const extension = media.format || 'png'
-        const fileName = `${system.id}_${media.type}_${media.region}.${extension}`
-        const localPath = await this.downloadMediaWithStructure(media.url, fileName, slug, media.type, media.region)
+        const safeRegion = media.region && media.region.trim() ? media.region.trim() : 'unknown'
         
-        if (localPath) {
-          const safeRegion = media.region && media.region.trim() ? media.region.trim() : 'unknown'
-          processedMedias.push({
-            type: media.type,
-            region: safeRegion,
-            url: media.url,
-            format: extension,
-            fileName,
-            localPath
-          })
-          console.log(`Média téléchargé: ${media.type} (${safeRegion})`)
-        }
+        // Sauvegarder l'URL dans le cache au lieu de télécharger
+        await setCachedMediaUrl('console', consoleId, media.type, safeRegion, media.url)
+        
+        console.log(`Cache HIT: console/${consoleId}/${media.type}/${safeRegion} -> ${media.url}`)
+        mediaCount++
       } catch (error) {
-        console.error(`Erreur lors du téléchargement du média ${media.type}:`, error)
+        console.error(`Erreur lors de la mise en cache du média ${media.type}:`, error)
       }
     }
     
-    return processedMedias
+    return mediaCount
   }
 
   shouldExcludeMedia(media: { type: string; url: string; region: string; format: string }): boolean {
@@ -345,61 +303,14 @@ export class ScreenscraperService {
     return false
   }
 
+  // Cette fonction n'est plus utilisée avec le système de cache d'URLs
+  // Elle est conservée temporairement pour la compatibilité
   async downloadMediaWithStructure(
-    url: string, 
-    fileName: string, 
-    slug: string, 
-    mediaType: string, 
-    region: string
+    url: string
   ): Promise<string | null> {
-    try {
-      const fs = await import('fs/promises')
-      const path = await import('path')
-      
-      // Gérer les régions undefined ou vides
-      const safeRegion = region && region.trim() ? region.trim() : 'unknown'
-      
-      // Créer la structure de dossiers : public/consoles/[slug]/[mediaType]/[region]/
-      const consolesDir = path.join(process.cwd(), 'public', 'consoles')
-      const consoleDir = path.join(consolesDir, slug)
-      const mediaTypeDir = path.join(consoleDir, mediaType)
-      const regionDir = path.join(mediaTypeDir, safeRegion)
-      
-      // Créer tous les dossiers nécessaires
-      await fs.mkdir(regionDir, { recursive: true })
-      
-      const filePath = path.join(regionDir, fileName)
-      
-      // Vérifier si le fichier existe déjà
-      try {
-        await fs.access(filePath)
-        console.log(`📁 Media jeu déjà présent: ${filePath}`)
-        // Retourner le chemin relatif existant
-        return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
-      } catch {
-        // Fichier n'existe pas, on continue le téléchargement
-      }
-      
-      console.log(`⬇️ Téléchargement jeu: ${url} -> ${filePath}`)
-      const response = await rateLimitedFetch(url)
-      if (!response.ok) {
-        console.error(`Erreur lors du téléchargement de l'image ${url}: ${response.status}`)
-        return null
-      }
-      
-      const arrayBuffer = await response.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
-      
-      await fs.writeFile(filePath, buffer)
-      console.log(`✅ Media jeu téléchargé: ${filePath}`)
-      
-      // Retourner le chemin relatif depuis public/
-      return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
-      
-    } catch (error) {
-      console.error(`Erreur lors du téléchargement de l'image ${url}:`, error)
-      return null
-    }
+    console.warn('downloadMediaWithStructure est obsolète, utilisation du cache d\'URLs')
+    // Retourner directement l'URL Screenscraper
+    return url
   }
 }
 

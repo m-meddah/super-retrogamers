@@ -58,8 +58,7 @@ const initialState: AppState = {
   globalLoading: false,
   searchQuery: '',
   searchResults: [],
-  searchLoading: false,
-}
+  searchLoading: false}
 
 export const useAppStore = create<AppStore>()(
   devtools(
@@ -98,8 +97,7 @@ export const useAppStore = create<AppStore>()(
           set(
             (state) => ({
               ...state,
-              notifications: [...state.notifications, newNotification],
-            }),
+              notifications: [...state.notifications, newNotification]}),
             false,
             'app/addNotification'
           )
@@ -117,8 +115,7 @@ export const useAppStore = create<AppStore>()(
           set(
             (state) => ({
               ...state,
-              notifications: state.notifications.filter((n) => n.id !== id),
-            }),
+              notifications: state.notifications.filter((n) => n.id !== id)}),
             false,
             'app/removeNotification'
           ),
@@ -166,23 +163,18 @@ export const useAppStore = create<AppStore>()(
               ...state,
               searchQuery: '',
               searchResults: [],
-              searchLoading: false,
-            }),
+              searchLoading: false}),
             false,
             'app/clearSearch'
-          ),
-      }),
+          )}),
       {
         name: 'app-storage',
         partialize: (state) => ({
           theme: state.theme,
-          sidebarOpen: state.sidebarOpen,
-        }),
-      }
+          sidebarOpen: state.sidebarOpen})}
     ),
     {
-      name: 'app-store',
-    }
+      name: 'app-store'}
   )
 )
 

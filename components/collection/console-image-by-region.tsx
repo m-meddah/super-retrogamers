@@ -1,19 +1,16 @@
 'use client'
 
 import Image from "next/image"
-import { selectBestConsoleImage } from "@/lib/regional-preferences"
-import type { Console, ConsoleMedia, ConsoleVariant } from "@prisma/client"
-
-interface ConsoleWithMedias extends Console {
-  medias?: ConsoleMedia[]
-}
+import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
+import type { Console, ConsoleVariant } from "@prisma/client"
+import { useEffect, useState } from 'react'
 
 interface ConsoleVariantExtended extends ConsoleVariant {
-  console: ConsoleWithMedias
+  console: Console
 }
 
 interface ConsoleImageByRegionProps {
-  console?: ConsoleWithMedias
+  console?: Console
   variant?: ConsoleVariantExtended
   className?: string
   alt?: string
@@ -28,6 +25,35 @@ export default function ConsoleImageByRegion({
   // Utiliser le variant si disponible, sinon la console directe
   const targetConsole = variant?.console || consoleData
   const targetRegion = variant?.region || 'FR' // Region du variant ou défaut
+  const [imageUrl, setImageUrl] = useState<string>("/placeholder.svg")
+  const [isLoading, setIsLoading] = useState(true)
+  
+  useEffect(() => {
+    async function loadImage() {
+      if (!targetConsole) {
+        setIsLoading(false)
+        return
+      }
+      
+      setIsLoading(true)
+      try {
+        // Utilisation de la fonction optimisée
+        const mediaTypes = ['wheel', 'logo-svg', 'photo', 'illustration']
+        const regionPriority = [targetRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
+        
+        const url = await getBestCachedMediaUrl('console', targetConsole.id, mediaTypes, regionPriority)
+        if (url) {
+          setImageUrl(url)
+        }
+      } catch (error) {
+        console.error(`Erreur chargement image console ${targetConsole.slug}:`, error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadImage()
+  }, [targetConsole?.id, targetConsole, targetRegion])
   
   if (!targetConsole) {
     return (
@@ -40,37 +66,12 @@ export default function ConsoleImageByRegion({
     )
   }
   
-  // Transformer en format RegionalConsoleData
-  const regionalConsole = {
-    id: targetConsole.id,
-    name: targetConsole.name,
-    slug: targetConsole.slug,
-    manufacturer: targetConsole.manufacturer,
-    releaseYear: targetConsole.releaseYear,
-    description: targetConsole.description || '',
-    image: null, // Image column removed, using regional media only
-    medias: (targetConsole.medias || []).map(media => ({
-      id: media.id,
-      type: media.type,
-      region: media.region,
-      url: media.url,
-      localPath: media.localPath,
-      format: media.format,
-      fileName: media.fileName
-    }))
-  }
-  
-  // Utiliser la région spécifique du variant (pas les préférences utilisateur)
-  const imageUrl = selectBestConsoleImage(regionalConsole, targetRegion.toLowerCase()) || "/placeholder.svg"
-  
-  console.log(`[ConsoleImageByRegion] Console ${targetConsole.slug} - VariantRegion: ${targetRegion}, ImageURL: ${imageUrl}`)
-  
   return (
     <Image
       src={imageUrl}
       alt={alt || targetConsole.name}
       fill
-      className={className || "object-cover"}
+      className={`${className || "object-cover"} ${isLoading ? 'opacity-50' : 'opacity-100'}`}
     />
   )
 }

@@ -273,6 +273,5 @@ export function useCollection(session?: Session | null) {
     addGameToCollection,
     removeGameFromCollection,
     addToWishlist,
-    removeFromWishlist,
-  }
+    removeFromWishlist}
 }

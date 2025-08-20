@@ -11,8 +11,7 @@ const regionSchema = {
     const validRegions: Region[] = ['FR', 'EU', 'WOR', 'JP', 'ASI', 'US']
     return validRegions.includes(value as Region) ? (value as Region) : 'FR'
   },
-  serialize: (value: Region): string => value,
-}
+  serialize: (value: Region): string => value}
 
 export function useRegionalPreferences() {
   const [region, setRegion] = useQueryState('region', {

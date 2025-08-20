@@ -100,7 +100,6 @@ model Console {
   audioChip             String?
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
-  medias                ConsoleMedia[]
   regionalNames         ConsoleRegionalName[]
   regionalDates         ConsoleRegionalDate[]
   variants              ConsoleVariant[]
@@ -114,21 +113,6 @@ model Console {
   @@map("consoles")
 }
 
-model ConsoleMedia {
-  id        String   @id @default(cuid())
-  consoleId String
-  type      String
-  region    String
-  url       String
-  localPath String
-  format    String
-  fileName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  console   Console  @relation(fields: [consoleId], references: [id], onDelete: Cascade)
-
-  @@map("console_medias")
-}
 
 model ConsoleRegionalName {
   id        String   @id @default(cuid())
@@ -204,7 +188,6 @@ model Game {
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
   genres                 GameGenre[]
-  medias                 GameMedia[]
   regionalTitles         GameRegionalTitle[]
   regionalDates          GameRegionalDate[]
   reviews                GameReview[]
@@ -299,37 +282,6 @@ model GameGenre {
   @@map("game_genres")
 }
 
-model GameMedia {
-  id                String   @id @default(cuid())
-  gameId            String
-  mediaType         String
-  region            String
-  format            String
-  url               String
-  localPath         String?
-  fileName          String
-  parent            String?
-  crc               String?
-  md5               String?
-  sha1              String?
-  size              String?
-  width             Int?
-  height            Int?
-  fileSize          Int?
-  isTexture         Boolean  @default(false)
-  is2D              Boolean  @default(true)
-  supportNumber     Int?
-  pageNumber        Int?
-  downloadAttempted Boolean  @default(false)
-  downloadSuccess   Boolean  @default(false)
-  downloadError     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  game              Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  @@unique([gameId, mediaType, region, supportNumber, pageNumber])
-  @@map("game_medias")
-}
 
 model GameRegionalTitle {
   id        String   @id @default(cuid())

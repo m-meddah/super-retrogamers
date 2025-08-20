@@ -125,7 +125,7 @@ export async function updateConsoleEnhancedAction(
     }
 
     // Préparation de l'objet de mise à jour avec les relations optionnelles
-    const finalUpdateData: any = { ...updateData }
+    const finalUpdateData: Record<string, unknown> = { ...updateData }
     
     // Ajout des nouvelles relations si spécifiées
     if (generationId) {

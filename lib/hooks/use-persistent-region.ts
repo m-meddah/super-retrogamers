@@ -12,8 +12,7 @@ const regionSchema = {
     const validRegions: Region[] = ['FR', 'EU', 'WOR', 'JP', 'ASI', 'US']
     return validRegions.includes(value as Region) ? (value as Region) : 'FR'
   },
-  serialize: (value: Region): string => value,
-}
+  serialize: (value: Region): string => value}
 
 // Helper functions pour gérer les cookies manuellement
 const getCookie = (name: string): string | null => {

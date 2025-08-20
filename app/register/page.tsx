@@ -38,8 +38,7 @@ export default function RegisterPage() {
         email,
         password,
         name,
-        preferredRegion: "FR",
-      })
+        preferredRegion: "FR"})
       setSuccess(true)
       setTimeout(() => {
         router.push("/login")

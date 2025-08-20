@@ -126,12 +126,13 @@ export function InfiniteGameList({
 }
 
 // Hook pour la gestion des dépendances
-export function useInfiniteGameList(deps: any[]) {
+export function useInfiniteGameList(deps: unknown[]) {
   const [key, setKey] = useState(0)
+  const serializedDeps = JSON.stringify(deps)
   
   useEffect(() => {
     setKey(prev => prev + 1)
-  }, deps)
+  }, [serializedDeps])
   
   return key
 }

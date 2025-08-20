@@ -119,8 +119,7 @@ export default function RomManagement() {
   if (addRomState.success && addRomState.message) {
     toast({
       title: "ROM ajoutée",
-      description: addRomState.message,
-    })
+      description: addRomState.message})
     addRomState.success = false
     // Recharger les ROMs après ajout
     if (selectedGame) {
@@ -132,16 +131,14 @@ export default function RomManagement() {
     toast({
       title: "Erreur",
       description: addRomState.error,
-      variant: "destructive",
-    })
+      variant: "destructive"})
     addRomState.error = undefined
   }
 
   if (deleteRomState.success && deleteRomState.message) {
     toast({
       title: "ROM supprimée",
-      description: deleteRomState.message,
-    })
+      description: deleteRomState.message})
     deleteRomState.success = false
     // Recharger les ROMs après suppression
     if (selectedGame) {
@@ -153,8 +150,7 @@ export default function RomManagement() {
     toast({
       title: "Erreur",
       description: deleteRomState.error,
-      variant: "destructive",
-    })
+      variant: "destructive"})
     deleteRomState.error = undefined
   }
 

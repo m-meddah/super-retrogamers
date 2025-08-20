@@ -3,17 +3,16 @@
 import { Suspense } from 'react'
 import RegionalLink from "@/components/regional-link"
 import { Star, Award, Users } from "lucide-react"
-import type { Game, GameMedia } from "@prisma/client"
+import type { Game } from "@prisma/client"
 import { useRegionalGameTitle, useRegionalReleaseDate } from "@/lib/hooks/use-regional-names"
 import AdaptiveGameImage from "@/components/adaptive-game-image"
-import GameWheelLogo from "@/components/game-wheel-logo"
+// GameWheelLogo supprimé - plus de composant wheel logo
 
 interface GameWithConsole extends Game {
   console?: {
     name: string
     slug: string
   }
-  medias?: GameMedia[]
 }
 
 // Type pour les résultats de recherche
@@ -30,7 +29,6 @@ interface SearchGameResult {
     name: string
     slug: string
   } | null
-  medias: GameMedia[]
 }
 
 interface GameCardWrapperProps {
@@ -38,7 +36,6 @@ interface GameCardWrapperProps {
   showConsole?: boolean
   preferredRegion?: string
 }
-
 
 export default function GameCardWrapper({ game, showConsole = true }: GameCardWrapperProps) {
   // Use regional hooks for title and release date (only for non-Screenscraper results)
@@ -49,18 +46,17 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
   // Créer un objet compatible avec AdaptiveGameImage
   const gameForImage = {
     ...game,
-    medias: game.medias || [],
     console: game.console ? {
       ...game.console,
       id: '', manufacturer: '', releaseYear: null, description: '',
-      cpu: null, memory: null, graphics: null, screenscrapeId: null,
+      cpu: null, memory: null, graphics: null, ssConsoleId: null,
       aiEnhancedDescription: null, historicalContext: null, technicalAnalysis: null,
       culturalImpact: null, editorialContent: null, editorialTitle: null,
       editorialAuthor: null, editorialPublishedAt: null, generationId: null,
       unitsSold: null, bestSellingGameId: null, dimensions: null, media: null,
       coProcessor: null, audioChip: null, createdAt: new Date(), updatedAt: new Date()
     } : null
-  } as GameWithConsole | SearchGameResult
+  } as GameWithConsole
   
   // Helper function to get genre
   const getGameGenre = (gameData: GameWithConsole | SearchGameResult): string => {
@@ -100,15 +96,6 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
           className="transition-transform duration-200 group-hover:scale-105"
           priority={false}
         />
-        
-        {/* Logo wheel en overlay si disponible */}
-        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <GameWheelLogo 
-            game={gameForImage}
-            size="sm"
-            className="drop-shadow-lg"
-          />
-        </div>
       </div>
       
       {/* Content */}

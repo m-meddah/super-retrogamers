@@ -14,8 +14,7 @@ export function RegionalPreferencesProvider({ children }: { children: ReactNode 
   const [preferredRegion, setPreferredRegion] = useQueryState('region', {
     defaultValue: 'fr',
     parse: (value) => value || 'fr',
-    serialize: (value) => value,
-  })
+    serialize: (value) => value})
 
   return (
     <RegionalPreferencesContext.Provider value={{ preferredRegion, setPreferredRegion }}>

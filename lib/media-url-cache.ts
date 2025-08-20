@@ -9,6 +9,8 @@ import { prisma } from '@/lib/prisma'
  * - Invalidation automatique après expiration
  */
 
+// Interface pour le cache des URLs de médias (utilisée pour typage interne)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface MediaUrlCache {
   id: string
   entityType: 'game' | 'console'
@@ -27,6 +29,73 @@ const CACHE_DURATION_HOURS = 24
 const CACHE_DURATION_MS = CACHE_DURATION_HOURS * 60 * 60 * 1000
 
 /**
+ * Récupère la meilleure URL média disponible en optimisant les appels
+ */
+export async function getBestCachedMediaUrl(
+  entityType: 'game' | 'console',
+  entityId: string,
+  mediaTypes: string[],
+  regionPriority: string[]
+): Promise<string | null> {
+  try {
+    // D'abord chercher tous les médias en cache
+    const normalizedRegions = regionPriority.map(r => r.toLowerCase())
+    
+    const cached = await prisma.mediaUrlCache.findMany({
+      where: {
+        entityType,
+        entityId,
+        mediaType: { in: mediaTypes },
+        region: { in: normalizedRegions },
+        expiresAt: { gte: new Date() }
+      },
+      orderBy: [
+        { mediaType: 'asc' },
+        { region: 'asc' }
+      ]
+    })
+    
+    // Trouver le meilleur match selon les priorités (région d'abord pour fallback correct)
+    for (const mediaType of mediaTypes) {
+      for (const region of regionPriority) {
+        const normalizedRegion = region.toLowerCase()
+        const found = cached.find(c => c.mediaType === mediaType && c.region === normalizedRegion && c.isValid)
+        if (found && found.url !== '') {
+          console.log(`📋 Batch Cache HIT: ${mediaType}(${region.toUpperCase()}) pour ${entityType}:${entityId}`)
+          return found.url
+        }
+      }
+    }
+    
+    // Si rien en cache, faire des appels individuels seulement pour ce qui n'est pas en cache
+    console.log(`🔄 Batch Cache MISS: Cherche ${mediaTypes.join(',')} pour ${entityType}:${entityId}`)
+    
+    for (const mediaType of mediaTypes) {
+      for (const region of regionPriority) {
+        // Vérifier si déjà en cache comme échec
+        const normalizedRegion = region.toLowerCase()
+        const cachedFailure = cached.find(c => c.mediaType === mediaType && c.region === normalizedRegion && !c.isValid)
+        
+        if (cachedFailure) {
+          console.log(`⏭️  Skip ${mediaType}(${region}) - échec déjà en cache`)
+          continue
+        }
+        
+        const url = await getCachedMediaUrl(entityType, entityId, mediaType, region)
+        if (url) {
+          return url
+        }
+      }
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Erreur lors de la récupération optimisée:', error)
+    return null
+  }
+}
+
+/**
  * Récupère l'URL en cache ou la fetch depuis Screenscraper
  */
 export async function getCachedMediaUrl(
@@ -36,13 +105,16 @@ export async function getCachedMediaUrl(
   region: string = 'WOR'
 ): Promise<string | null> {
   try {
+    // Normalize region to lowercase for consistent storage
+    const normalizedRegion = region.toLowerCase()
+    
     // Chercher en cache d'abord
     const cached = await prisma.mediaUrlCache.findFirst({
       where: {
         entityType,
         entityId,
         mediaType,
-        region,
+        region: normalizedRegion,
         expiresAt: {
           gte: new Date()
         }
@@ -51,7 +123,8 @@ export async function getCachedMediaUrl(
 
     if (cached) {
       console.log(`📋 Cache HIT: ${mediaType} pour ${entityType}:${entityId}`)
-      return cached.url
+      // Si c'est un échec mis en cache (url vide), retourner null
+      return cached.url === '' ? null : cached.url
     }
 
     // Cache MISS - fetch depuis Screenscraper
@@ -59,39 +132,40 @@ export async function getCachedMediaUrl(
     
     const url = await fetchMediaFromScreenscraper(entityType, entityId, mediaType, region)
     
-    if (url) {
-      // Sauvegarder en cache
-      const expiresAt = new Date(Date.now() + CACHE_DURATION_MS)
-      
-      await prisma.mediaUrlCache.upsert({
-        where: {
-          entityType_entityId_mediaType_region: {
-            entityType,
-            entityId,
-            mediaType,
-            region
-          }
-        },
-        create: {
+    // Sauvegarder en cache (même si null pour éviter les appels répétés)
+    const expiresAt = new Date(Date.now() + CACHE_DURATION_MS)
+    
+    await prisma.mediaUrlCache.upsert({
+      where: {
+        entityType_entityId_mediaType_region: {
           entityType,
           entityId,
           mediaType,
-          region,
-          url,
-          screenscrapeId: 0, // Sera rempli si disponible
-          cachedAt: new Date(),
-          expiresAt,
-          isValid: true
-        },
-        update: {
-          url,
-          cachedAt: new Date(),
-          expiresAt,
-          isValid: true
+          region: normalizedRegion
         }
-      })
-      
+      },
+      create: {
+        entityType,
+        entityId,
+        mediaType,
+        region: normalizedRegion,
+        url: url || '', // Stocker chaîne vide si pas trouvé
+        cachedAt: new Date(),
+        expiresAt,
+        isValid: url !== null
+      },
+      update: {
+        url: url || '',
+        cachedAt: new Date(),
+        expiresAt,
+        isValid: url !== null
+      }
+    })
+    
+    if (url) {
       console.log(`💾 URL mise en cache jusqu'au ${expiresAt.toLocaleString('fr-FR')}`)
+    } else {
+      console.log(`💾 Échec mis en cache (évite les appels futurs)`)
     }
     
     return url
@@ -111,12 +185,97 @@ async function fetchMediaFromScreenscraper(
   mediaType: string,
   region: string
 ): Promise<string | null> {
-  // Implémentation Screenscraper avec rate limiting 1.2s
-  await new Promise(resolve => setTimeout(resolve, 1200))
+  try {
+    // Rate limiting 1.2s
+    await new Promise(resolve => setTimeout(resolve, 1200))
+    
+    if (entityType === 'console') {
+      // Pour les consoles, on doit d'abord trouver le ssConsoleId
+      const gameConsole = await prisma.console.findUnique({
+        where: { id: entityId },
+        select: { ssConsoleId: true }
+      })
+      
+      if (!gameConsole?.ssConsoleId) {
+        console.log(`❌ Console ${entityId} sans ssConsoleId`)
+        return null
+      }
+      
+      const devId = process.env.SCREENSCRAPER_DEV_ID
+      const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
+      
+      if (!devId || !devPassword) {
+        console.error('❌ Identifiants Screenscraper manquants')
+        return null
+      }
+      
+      // Construire l'URL de l'API Screenscraper pour un média spécifique
+      // Note: minicon n'utilise pas de région
+      const mediaParam = mediaType === 'minicon' ? mediaType : `${mediaType}(${region})`
+      const url = `https://api.screenscraper.fr/api2/mediaSysteme.php?devid=${devId}&devpassword=${devPassword}&softname=&ssid=&sspassword=&systemeid=${gameConsole.ssConsoleId}&media=${mediaParam}`
+      
+      console.log(`🔄 Fetching depuis Screenscraper: ${mediaParam} pour système ${gameConsole.ssConsoleId}`)
+      
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        console.error(`❌ Erreur API Screenscraper: ${response.status}`)
+        return null
+      }
+      
+      // L'API retourne directement l'image, donc l'URL de la requête est l'URL de l'image
+      if (response.headers.get('content-type')?.startsWith('image/')) {
+        console.log(`✅ URL média trouvée: ${mediaParam}`)
+        return url
+      } else {
+        console.log(`❌ Pas d'image trouvée pour ${mediaParam}`)
+        return null
+      }
+    }
+    
+    // TODO: Implémenter pour les jeux si nécessaire
+    return null
+    
+  } catch (error) {
+    console.error('❌ Erreur lors du fetch Screenscraper:', error)
+    return null
+  }
+}
+
+/**
+ * Précharge les médias pour une liste d'entités (pour optimiser l'affichage des pages)
+ */
+export async function preloadBatchMediaUrls(
+  items: Array<{
+    entityType: 'game' | 'console'
+    entityId: string
+    mediaTypes?: string[]
+    regions?: string[]
+  }>
+): Promise<void> {
+  console.log(`🚀 Préchargement batch de ${items.length} entités`)
   
-  // TODO: Implémenter l'appel réel à l'API Screenscraper
-  // Pour l'instant, retourne null
-  return null
+  const defaultConsoleMediaTypes = ['wheel', 'logo-svg', 'photo', 'illustration']
+  const defaultGameMediaTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
+  const defaultRegions = ['wor', 'eu', 'us', 'jp', 'fr', 'asi']
+  
+  // Traitement en parallèle mais avec rate limiting
+  const promises = items.map(async (item, index) => {
+    // Décalage pour le rate limiting
+    await new Promise(resolve => setTimeout(resolve, index * 200))
+    
+    const mediaTypes = item.mediaTypes || (item.entityType === 'console' ? defaultConsoleMediaTypes : defaultGameMediaTypes)
+    const regions = item.regions || defaultRegions
+    
+    try {
+      await getBestCachedMediaUrl(item.entityType, item.entityId, mediaTypes, regions)
+    } catch (error) {
+      console.error(`Erreur préchargement pour ${item.entityType}:${item.entityId}`, error)
+    }
+  })
+  
+  await Promise.all(promises)
+  console.log(`✅ Préchargement batch terminé`)
 }
 
 /**
@@ -206,5 +365,72 @@ export async function getCacheStats(): Promise<{
       return acc
     }, {} as Record<string, number>),
     oldestEntry: oldestEntry?.cachedAt || null
+  }
+}
+
+/**
+ * Stocke directement une URL dans le cache (utilisé lors du scraping)
+ */
+export async function setCachedMediaUrl(
+  entityType: 'game' | 'console',
+  entityId: string,
+  mediaType: string,
+  region: string,
+  url: string
+): Promise<void> {
+  try {
+    // Normalize region to lowercase for consistent storage
+    const normalizedRegion = region.toLowerCase()
+    const expiresAt = new Date(Date.now() + CACHE_DURATION_MS)
+    
+    await prisma.mediaUrlCache.upsert({
+      where: {
+        entityType_entityId_mediaType_region: {
+          entityType,
+          entityId,
+          mediaType,
+          region: normalizedRegion
+        }
+      },
+      create: {
+        entityType,
+        entityId,
+        mediaType,
+        region: normalizedRegion,
+        url,
+        cachedAt: new Date(),
+        expiresAt,
+        isValid: true
+      },
+      update: {
+        url,
+        cachedAt: new Date(),
+        expiresAt,
+        isValid: true
+      }
+    })
+  } catch (error) {
+    console.error('Erreur lors de la mise en cache de l\'URL:', error)
+    throw error
+  }
+}
+
+/**
+ * Supprime toutes les URLs en cache pour une entité
+ */
+export async function clearCachedMediaUrls(
+  entityType: 'game' | 'console',
+  entityId: string
+): Promise<void> {
+  try {
+    await prisma.mediaUrlCache.deleteMany({
+      where: {
+        entityType,
+        entityId
+      }
+    })
+  } catch (error) {
+    console.error('Erreur lors de la suppression du cache:', error)
+    throw error
   }
 }

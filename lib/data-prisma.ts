@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, ConsoleMedia, GameMedia, GameGenre, Genre, GameRegionalDate, Corporation } from "@prisma/client"
+import type { Console, Game, GameGenre, Genre, GameRegionalDate, Corporation } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -9,14 +9,11 @@ export type ConsoleWithGames = Console & {
   }
 }
 
-export type ConsoleWithMedias = Console & {
-  medias: ConsoleMedia[]
-}
+// ConsoleWithMedias supprimé - plus besoin avec le cache d'URLs
 
 export type GameWithConsole = Game & {
   console: Console
   genre?: Genre | null
-  medias?: GameMedia[]
   genres?: GameGenre[]
   regionalDates?: GameRegionalDate[]
   corporationDev?: Corporation | null
@@ -24,11 +21,8 @@ export type GameWithConsole = Game & {
 }
 
 // Fonctions pour récupérer les consoles
-export async function getAllConsoles(): Promise<ConsoleWithMedias[]> {
+export async function getAllConsoles(): Promise<Console[]> {
   return await prisma.console.findMany({
-    include: {
-      medias: true
-    },
     orderBy: {
       releaseYear: 'asc'
     }
@@ -41,25 +35,9 @@ export async function getConsoleBySlug(slug: string): Promise<Console | null> {
   })
 }
 
-export async function getConsoleWithMediasBySlug(slug: string): Promise<ConsoleWithMedias | null> {
-  return await prisma.console.findUnique({
-    where: { slug },
-    include: {
-      medias: true
-    }
-  })
-}
+// getConsoleWithMediasBySlug supprimée - plus besoin avec le cache d'URLs
 
-export async function getAllConsolesWithMedias(): Promise<ConsoleWithMedias[]> {
-  return await prisma.console.findMany({
-    include: {
-      medias: true
-    },
-    orderBy: {
-      releaseYear: 'asc'
-    }
-  })
-}
+// getAllConsolesWithMedias supprimée - plus besoin avec le cache d'URLs
 
 export async function getConsoleWithGames(slug: string): Promise<ConsoleWithGames | null> {
   return await prisma.console.findUnique({
@@ -106,12 +84,6 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
         },
         include: {
           console: true,
-          medias: {
-            orderBy: [
-              { mediaType: 'asc' },
-              { region: 'asc' }
-            ]
-          },
           genres: {
             orderBy: { isPrimary: 'desc' }
           },
@@ -130,12 +102,6 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
     where: { slug },
     include: {
       console: true,
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       genres: {
         orderBy: { isPrimary: 'desc' }
       },
@@ -171,12 +137,6 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
     include: {
       console: true,
       genre: true, // Inclure le genre principal normalisé
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       genres: {
         orderBy: { isPrimary: 'desc' }
       },
@@ -264,12 +224,6 @@ export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?:
     include: {
       console: true,
       genre: true, // Inclure le genre principal
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       genres: {
         orderBy: { isPrimary: 'desc' }
       },
@@ -304,12 +258,6 @@ export async function getPopularGamesByConsoleSlug(consoleSlug: string): Promise
     },
     include: {
       console: true,
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       regionalDates: {
         orderBy: { region: 'asc' }
       }
@@ -333,7 +281,6 @@ export async function getGamesByConsoleId(consoleId: string): Promise<Game[]> {
     }
   })
 }
-
 
 // Fonctions pour les statistiques
 export async function getConsoleCount(): Promise<number> {
@@ -393,8 +340,8 @@ export async function getFeaturedConsoles(limit: number = 3): Promise<ConsoleWit
 }
 
 // Fonction pour récupérer des consoles spécifiques pour la homepage
-export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]> {
-  const featuredConsoles: ConsoleWithMedias[] = []
+export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
+  const featuredConsoles: Console[] = []
   
   // Rechercher les consoles spécifiques par critères précis
   const consoleQueries = await Promise.all([
@@ -407,9 +354,6 @@ export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]
           { name: { contains: 'Neo Geo', mode: 'insensitive' } },
           { name: { contains: 'NeoGeo', mode: 'insensitive' } }
         ]
-      },
-      include: {
-        medias: true
       }
     }),
     
@@ -422,9 +366,6 @@ export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]
           { slug: { contains: 'snes', mode: 'insensitive' } },
           { slug: { contains: 'super-nintendo', mode: 'insensitive' } }
         ]
-      },
-      include: {
-        medias: true
       }
     }),
     
@@ -445,9 +386,6 @@ export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]
             }
           }
         ]
-      },
-      include: {
-        medias: true
       }
     })
   ])
@@ -462,37 +400,8 @@ export async function getHomepageFeaturedConsoles(): Promise<ConsoleWithMedias[]
   return featuredConsoles
 }
 
-// Fonctions utilitaires pour les médias
-export function getConsoleMediaByType(console: ConsoleWithMedias, mediaType: string, region?: string): ConsoleMedia | null {
-  if (!console.medias) return null
-  
-  return console.medias.find(media => {
-    const typeMatch = media.type === mediaType
-    const regionMatch = region ? media.region === region : true
-    return typeMatch && regionMatch
-  }) || null
-}
-
-export function getConsoleMainImage(console: ConsoleWithMedias): string | null {
-  // Priorité pour l'image principale : logo-svg > wheel > photo > illustration
-  const priorityOrder = ['logo-svg', 'wheel', 'photo', 'illustration']
-  
-  for (const type of priorityOrder) {
-    const media = getConsoleMediaByType(console, type)
-    if (media) {
-      return media.localPath
-    }
-  }
-  
-  // No fallback to image column since it's been removed
-  return null
-}
-
-export function getConsoleMediasByRegion(console: ConsoleWithMedias, region: string): ConsoleMedia[] {
-  if (!console.medias) return []
-  
-  return console.medias.filter(media => media.region === region)
-}
+// Fonctions utilitaires pour les médias - SUPPRIMÉES
+// Ces fonctions ne sont plus nécessaires avec le système de cache d'URLs
 
 // Fonction utilitaire pour générer le slug composé d'un jeu
 export function generateGameCompositeSlug(game: Game & { console?: { slug: string } | Console }): string {
@@ -507,12 +416,6 @@ export async function getAllGamesWithCompositeSlug(): Promise<(GameWithConsole &
   const games = await prisma.game.findMany({
     include: {
       console: true,
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       regionalDates: {
         orderBy: { region: 'asc' }
       }
@@ -528,12 +431,7 @@ export async function getAllGamesWithCompositeSlug(): Promise<(GameWithConsole &
   }))
 }
 
-export function getAvailableRegions(console: ConsoleWithMedias): string[] {
-  if (!console.medias) return []
-  
-  const regions = console.medias.map(media => media.region)
-  return Array.from(new Set(regions)).sort()
-}
+// getAvailableRegions supprimée - plus nécessaire avec le cache d'URLs
 
 // Fonction utilitaire pour récupérer une date de sortie régionale spécifique
 export function getGameRegionalDate(game: GameWithConsole, region: string): Date | null {
@@ -573,12 +471,6 @@ export async function getTopRatedGames(limit: number = 6): Promise<GameWithConso
     },
     include: {
       console: true,
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       regionalDates: {
         orderBy: { region: 'asc' }
       },
@@ -596,12 +488,6 @@ export async function getRecentlyAddedGames(limit: number = 6): Promise<GameWith
     take: limit,
     include: {
       console: true,
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       regionalDates: {
         orderBy: { region: 'asc' }
       },
@@ -862,7 +748,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
 
   // Statistiques système
   const [mediaFilesCount, lastScrapingConsole] = await Promise.all([
-    prisma.consoleMedia.count(),
+    prisma.mediaUrlCache.count(), // Utilise le cache d'URLs au lieu des médias locaux
     prisma.console.findFirst({
       orderBy: {
         updatedAt: 'desc'
@@ -1254,7 +1140,6 @@ export async function getCorporationByName(name: string) {
   })
 }
 
-
 // Fonctions pour les Générations
 export async function getAllGenerations() {
   return await prisma.generation.findMany({
@@ -1341,12 +1226,6 @@ export async function getGameWithAllRelations(slug: string) {
         include: {
           console: true,
           genre: true,
-          medias: {
-            orderBy: [
-              { mediaType: 'asc' },
-              { region: 'asc' }
-            ]
-          },
           genres: {
             orderBy: { isPrimary: 'desc' }
           },
@@ -1368,12 +1247,6 @@ export async function getGameWithAllRelations(slug: string) {
     include: {
       console: true,
       genre: true,
-      medias: {
-        orderBy: [
-          { mediaType: 'asc' },
-          { region: 'asc' }
-        ]
-      },
       genres: {
         orderBy: { isPrimary: 'desc' }
       },
@@ -1394,7 +1267,6 @@ export async function getConsoleWithAllRelations(slug: string) {
   return await prisma.console.findUnique({
     where: { slug },
     include: {
-      medias: true,
       regionalNames: true,
       regionalDates: true,
       variants: true,

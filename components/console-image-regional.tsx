@@ -2,53 +2,49 @@
 
 import Image from "next/image"
 import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
-import { selectBestConsoleImage } from "@/lib/regional-preferences"
-import type { Console, ConsoleMedia } from "@prisma/client"
-
-interface ConsoleWithMedias extends Console {
-  medias?: ConsoleMedia[]
-}
+import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
+import type { Console } from "@prisma/client"
+import { useEffect, useState } from 'react'
 
 interface ConsoleImageRegionalProps {
-  console: ConsoleWithMedias
+  console: Console
   className?: string
   alt?: string
 }
 
 export default function ConsoleImageRegional({ console: consoleData, className, alt }: ConsoleImageRegionalProps) {
   const currentRegion = useCurrentRegion()
-  const preferredRegionLowercase = currentRegion.toLowerCase()
+  const [imageUrl, setImageUrl] = useState<string>("/placeholder.svg")
+  const [isLoading, setIsLoading] = useState(true)
   
-  // Transformer la console en format RegionalConsoleData
-  const regionalConsole = {
-    id: consoleData.id,
-    name: consoleData.name,
-    slug: consoleData.slug,
-    manufacturer: consoleData.manufacturer,
-    releaseYear: consoleData.releaseYear,
-    description: consoleData.description || '',
-    image: null, // Image column removed, using regional media only
-    medias: (consoleData.medias || []).map(media => ({
-      id: media.id,
-      type: media.type,
-      region: media.region,
-      url: media.url,
-      localPath: media.localPath,
-      format: media.format,
-      fileName: media.fileName
-    }))
-  }
-  
-  const imageUrl = selectBestConsoleImage(regionalConsole, preferredRegionLowercase) || "/placeholder.svg"
-  
-  console.log(`[ConsoleImageRegional] Console ${consoleData.slug} - Region: ${currentRegion}, ImageURL: ${imageUrl}`)
+  useEffect(() => {
+    async function loadImage() {
+      setIsLoading(true)
+      try {
+        // Utilisation de la fonction optimisée
+        const mediaTypes = ['wheel', 'logo-svg', 'photo', 'illustration']
+        const regionPriority = [currentRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
+        
+        const url = await getBestCachedMediaUrl('console', consoleData.id, mediaTypes, regionPriority)
+        if (url) {
+          setImageUrl(url)
+        }
+      } catch (error) {
+        console.error(`Erreur chargement image console ${consoleData.slug}:`, error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadImage()
+  }, [consoleData.id, consoleData.slug, currentRegion])
   
   return (
     <Image
       src={imageUrl}
       alt={alt || consoleData.name}
       fill
-      className={className || "object-contain p-8 transition-transform duration-300 hover:scale-105"}
+      className={`${className || "object-contain p-8 transition-transform duration-300 hover:scale-105"} ${isLoading ? 'opacity-50' : 'opacity-100'}`}
     />
   )
 }

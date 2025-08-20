@@ -47,8 +47,7 @@ export function EnhancedConsoleEditorialForm({
     dimensions: consoleData.dimensions || '',
     media: consoleData.media || '',
     coProcessor: consoleData.coProcessor || '',
-    audioChip: consoleData.audioChip || '',
-  })
+    audioChip: consoleData.audioChip || ''})
 
   const handleSubmit = async (formDataSubmit: FormData) => {
     formDataSubmit.append('consoleId', consoleData.id)

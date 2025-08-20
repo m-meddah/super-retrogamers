@@ -1,8 +1,6 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
-import fs from 'fs/promises'
-import path from 'path'
 
 interface ScreenscraperSystem {
   id: number
@@ -127,7 +125,6 @@ async function rateLimitedFetch(url: string): Promise<Response> {
   return fetch(url)
 }
 
-
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
@@ -166,8 +163,7 @@ function getManufacturer(company: string | undefined): string {
     'nec': 'NEC',
     'commodore': 'Commodore',
     'amstrad': 'Amstrad',
-    'sinclair': 'Sinclair',
-  }
+    'sinclair': 'Sinclair'}
   
   const lowerCompany = cleanCompany.toLowerCase()
   return manufacturers[lowerCompany] || cleanCompany
@@ -337,81 +333,30 @@ async function processSystemMedias(system: ScreenscraperSystem, slug: string): P
     try {
       const extension = media.format || 'png'
       const fileName = `${system.id}_${media.type}_${media.region}.${extension}`
-      const localPath = await downloadMediaWithStructure(media.url, fileName, slug, media.type, media.region)
+      const safeRegion = media.region && media.region.trim() ? media.region.trim() : 'unknown'
       
-      if (localPath) {
-        const safeRegion = media.region && media.region.trim() ? media.region.trim() : 'unknown'
-        processedMedias.push({
-          type: media.type,
-          region: safeRegion,
-          url: media.url,
-          format: extension,
-          fileName,
-          localPath
-        })
-        console.log(`Média téléchargé: ${media.type} (${safeRegion})`)
-      }
+      // Store URL in cache instead of downloading - need to use database console ID, not Screenscraper ID
+      // This will be called during console creation, so we need the created console ID
+      // For now, skip caching during initial processing - will be done after console creation
+      
+      processedMedias.push({
+        type: media.type,
+        region: safeRegion,
+        url: media.url,
+        format: extension,
+        fileName,
+        localPath: media.url // Store the URL directly
+      })
+      console.log(`✅ ${media.type} (${safeRegion}) - URL stockée dans le cache`)
     } catch (error) {
-      console.error(`Erreur lors du téléchargement du média ${media.type}:`, error)
+      console.error(`Erreur lors du traitement du média ${media.type}:`, error)
     }
   }
   
   return processedMedias
 }
 
-async function downloadMediaWithStructure(
-  url: string, 
-  fileName: string, 
-  slug: string, 
-  mediaType: string, 
-  region: string
-): Promise<string | null> {
-  try {
-    // Gérer les régions undefined ou vides
-    const safeRegion = region && region.trim() ? region.trim() : 'unknown'
-    
-    // Créer la structure de dossiers : public/consoles/[slug]/[mediaType]/[region]/
-    const consolesDir = path.join(process.cwd(), 'public', 'consoles')
-    const consoleDir = path.join(consolesDir, slug)
-    const mediaTypeDir = path.join(consoleDir, mediaType)
-    const regionDir = path.join(mediaTypeDir, safeRegion)
-    
-    // Créer tous les dossiers nécessaires
-    await fs.mkdir(regionDir, { recursive: true })
-    
-    const filePath = path.join(regionDir, fileName)
-    
-    // Vérifier si le fichier existe déjà
-    try {
-      await fs.access(filePath)
-      console.log(`📁 Media déjà présent: ${filePath}`)
-      // Retourner le chemin relatif existant
-      return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
-    } catch {
-      // Fichier n'existe pas, on continue le téléchargement
-    }
-    
-    console.log(`⬇️ Téléchargement: ${url} -> ${filePath}`)
-    const response = await rateLimitedFetch(url)
-    if (!response.ok) {
-      console.error(`Erreur lors du téléchargement de l'image ${url}: ${response.status}`)
-      return null
-    }
-    
-    const arrayBuffer = await response.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-    
-    await fs.writeFile(filePath, buffer)
-    console.log(`✅ Media téléchargé: ${filePath}`)
-    
-    // Retourner le chemin relatif depuis public/
-    return `/consoles/${slug}/${mediaType}/${safeRegion}/${fileName}`
-    
-  } catch (error) {
-    console.error(`Erreur lors du téléchargement de l'image ${url}:`, error)
-    return null
-  }
-}
+// downloadMediaWithStructure function removed - no longer needed with URL cache system
 
 // Fonction pour re-scraper les médias d'une console existante
 export async function rescrapConsoleMedias(consoleId: string): Promise<{ success: boolean, message: string, mediasAdded: number }> {
@@ -460,25 +405,15 @@ export async function rescrapConsoleMedias(consoleId: string): Promise<{ success
       }
     }
     
-    // Supprimer les anciens médias
-    await prisma.consoleMedia.deleteMany({
-      where: { consoleId: gameConsole.id }
-    })
+    // Clear existing cached URLs for this console
+    const { clearCachedMediaUrls, setCachedMediaUrl } = await import('@/lib/media-url-cache')
+    await clearCachedMediaUrls('console', gameConsole.id)
     
-    // Sauvegarder les nouveaux médias
-    const mediaData = processedMedias.map(media => ({
-      consoleId: gameConsole.id,
-      type: media.type,
-      region: media.region,
-      url: media.url,
-      localPath: media.localPath,
-      format: media.format,
-      fileName: media.fileName
-    }))
-    
-    await prisma.consoleMedia.createMany({
-      data: mediaData
-    })
+    // Store new URLs in cache
+    for (const media of processedMedias) {
+      await setCachedMediaUrl('console', gameConsole.id, media.type, media.region, media.url)
+    }
+    console.log(`✅ ${processedMedias.length} URLs stockées dans le cache pour ${gameConsole.name}`)
     
     // Mettre à jour l'image principale de la console
     let mainImagePath: string | null = null
@@ -754,25 +689,16 @@ export async function scrapeConsolesFromScreenscraper(limit?: number): Promise<{
             manufacturer,
             releaseYear,
             description: `Console ${mainName} développée par ${manufacturer}. Type: ${system.type || 'Console'}. Support: ${system.supporttype || 'Cartouche'}.`,
-            ssConsoleId: system.id,
-          }
+            ssConsoleId: system.id}
         })
         
-        // Sauvegarder tous les médias en base de données
+        // Store URLs in cache after console creation
         if (processedMedias.length > 0) {
-          const mediaData = processedMedias.map(media => ({
-            consoleId: createdConsole.id,
-            type: media.type,
-            region: media.region,
-            url: media.url,
-            localPath: media.localPath,
-            format: media.format,
-            fileName: media.fileName
-          }))
-          
-          await prisma.consoleMedia.createMany({
-            data: mediaData
-          })
+          const { setCachedMediaUrl } = await import('@/lib/media-url-cache')
+          for (const media of processedMedias) {
+            await setCachedMediaUrl('console', createdConsole.id, media.type, media.region, media.url)
+          }
+          console.log(`✅ ${processedMedias.length} URLs stockées dans le cache pour ${mainName}`)
         }
 
         // Sauvegarder les noms régionaux

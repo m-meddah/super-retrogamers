@@ -102,22 +102,19 @@ export default function ScrapingManagement() {
       if (result.success) {
         toast({
           title: "Scraping des jeux terminé",
-          description: result.message,
-        })
+          description: result.message})
       } else {
         toast({
           title: "Erreur",
           description: result.error || "Erreur lors du scraping des jeux",
-          variant: "destructive",
-        })
+          variant: "destructive"})
       }
       
     } catch {
       toast({
         title: "Erreur",
         description: "Erreur lors du scraping des jeux",
-        variant: "destructive",
-      })
+        variant: "destructive"})
     } finally {
       setIsScrapingGames(false)
     }
@@ -128,14 +125,13 @@ export default function ScrapingManagement() {
     
     try {
       // D'abord récupérer le slug de la console
-      const consoleSlug = await getConsoleSlugByScreenscraperId(screenscrapeId)
+      const consoleSlug = await getConsoleSlugByScreenscraperId(ssConsoleId)
       
       if (!consoleSlug) {
         toast({
           title: "Erreur",
-          description: `Console avec l'ID Screenscraper ${screenscrapeId} non trouvée. Veuillez d'abord scraper cette console.`,
-          variant: "destructive",
-        })
+          description: `Console avec l'ID Screenscraper ${ssConsoleId} non trouvée. Veuillez d'abord scraper cette console.`,
+          variant: "destructive"})
         return
       }
       
@@ -145,22 +141,19 @@ export default function ScrapingManagement() {
       if (result.success) {
         toast({
           title: "Scraping des jeux terminé",
-          description: result.message,
-        })
+          description: result.message})
       } else {
         toast({
           title: "Erreur",
           description: result.error || "Erreur lors du scraping des jeux",
-          variant: "destructive",
-        })
+          variant: "destructive"})
       }
       
     } catch {
       toast({
         title: "Erreur",
         description: "Erreur lors du scraping des jeux",
-        variant: "destructive",
-      })
+        variant: "destructive"})
     } finally {
       setIsScrapingGames(false)
     }
@@ -170,8 +163,7 @@ export default function ScrapingManagement() {
   if (consoleScrapingState.success && consoleScrapingState.message) {
     toast({
       title: "Scraping terminé",
-      description: consoleScrapingState.message,
-    })
+      description: consoleScrapingState.message})
     consoleScrapingState.success = false
   }
   
@@ -179,16 +171,14 @@ export default function ScrapingManagement() {
     toast({
       title: "Erreur",
       description: consoleScrapingState.error,
-      variant: "destructive",
-    })
+      variant: "destructive"})
     consoleScrapingState.error = undefined
   }
   
   if (gameScrapingState.success && gameScrapingState.message) {
     toast({
       title: "Scraping terminé",
-      description: gameScrapingState.message,
-    })
+      description: gameScrapingState.message})
     gameScrapingState.success = false
   }
   
@@ -196,16 +186,14 @@ export default function ScrapingManagement() {
     toast({
       title: "Erreur",
       description: gameScrapingState.error,
-      variant: "destructive",
-    })
+      variant: "destructive"})
     gameScrapingState.error = undefined
   }
   
   if (addConsoleState.success && addConsoleState.message) {
     toast({
       title: "Console ajoutée",
-      description: addConsoleState.message,
-    })
+      description: addConsoleState.message})
     addConsoleState.success = false
   }
   
@@ -213,16 +201,14 @@ export default function ScrapingManagement() {
     toast({
       title: "Erreur",
       description: addConsoleState.error,
-      variant: "destructive",
-    })
+      variant: "destructive"})
     addConsoleState.error = undefined
   }
   
   if (syncGenresState.success && syncGenresState.message) {
     toast({
       title: "Synchronisation des genres terminée",
-      description: syncGenresState.message,
-    })
+      description: syncGenresState.message})
     syncGenresState.success = false
   }
   
@@ -230,8 +216,7 @@ export default function ScrapingManagement() {
     toast({
       title: "Erreur",
       description: syncGenresState.error,
-      variant: "destructive",
-    })
+      variant: "destructive"})
     syncGenresState.error = undefined
   }
   
@@ -242,21 +227,18 @@ export default function ScrapingManagement() {
       if (result.success && result.message) {
         toast({
           title: "Scraping terminé",
-          description: result.message,
-        })
+          description: result.message})
       } else if (result.error) {
         toast({
           title: "Erreur",
           description: result.error,
-          variant: "destructive",
-        })
+          variant: "destructive"})
       }
     } catch {
       toast({
         title: "Erreur",
         description: "Erreur inattendue lors du scraping",
-        variant: "destructive",
-      })
+        variant: "destructive"})
     } finally {
       setIsScrapingAll(false)
     }
@@ -269,26 +251,22 @@ export default function ScrapingManagement() {
       if (result.success && result.message) {
         toast({
           title: "Scraping terminé",
-          description: result.message,
-        })
+          description: result.message})
       } else if (result.error) {
         toast({
           title: "Erreur",
           description: result.error,
-          variant: "destructive",
-        })
+          variant: "destructive"})
       }
     } catch {
       toast({
         title: "Erreur",
         description: "Erreur inattendue lors du scraping",
-        variant: "destructive",
-      })
+        variant: "destructive"})
     } finally {
       setIsScrapingLimited(false)
     }
   }
-
 
   const getStatusIcon = (status: ScrapingStats['status']) => {
     switch (status) {
@@ -674,7 +652,7 @@ export default function ScrapingManagement() {
                   <SelectContent>
                     {availableConsoles.map((console) => (
                       <SelectItem key={console.id} value={console.slug}>
-                        {console.name} {console.ssGenreId ? `(ID: ${console.ssGenreId})` : '(Pas d\'ID)'}
+                        {console.name} {console.ssConsoleId ? `(ID: ${console.ssConsoleId})` : '(Pas d\'ID)'}
                       </SelectItem>
                     ))}
                   </SelectContent>

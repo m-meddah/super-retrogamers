@@ -60,12 +60,10 @@ export class CollectionService {
         hasManual: data.hasManual || false,
         hasCables: data.hasCables || false,
         hasControllers: data.hasControllers || false,
-        controllersCount: data.controllersCount || 0,
-      },
+        controllersCount: data.controllersCount || 0},
       include: {
         console: true,
-        variant: true,
-      }
+        variant: true}
     })
 
     // Update user collection stats
@@ -83,14 +81,12 @@ export class CollectionService {
         include: {
           console: {
             include: {
-              medias: true
             }
           },
           variant: {
             include: {
               console: {
                 include: {
-                  medias: true
                 }
               }
             }
@@ -98,8 +94,7 @@ export class CollectionService {
         },
         orderBy: { addedAt: 'desc' },
         skip,
-        take: limit,
-      }),
+        take: limit}),
       prisma.userConsoleCollection.count({
         where: { userId }
       })
@@ -147,8 +142,7 @@ export class CollectionService {
         hasMap: data.hasMap || false,
         isCompleted: data.isCompleted || false,
         hoursPlayed: data.hoursPlayed,
-        lastPlayed: data.lastPlayed,
-      },
+        lastPlayed: data.lastPlayed},
       include: {
         game: {
           include: {
@@ -182,16 +176,14 @@ export class CollectionService {
         include: {
           game: {
             include: {
-              console: true,
-              medias: true
+              console: true
             }
           },
           variant: {
             include: {
               game: {
                 include: {
-                  console: true,
-                  medias: true
+                  console: true
                 }
               }
             }
@@ -199,8 +191,7 @@ export class CollectionService {
         },
         orderBy: { addedAt: 'desc' },
         skip,
-        take: limit,
-      }),
+        take: limit}),
       prisma.userGameCollection.count({
         where: { userId }
       })
@@ -301,8 +292,7 @@ export class CollectionService {
         completedGames,
         rareGames,
         totalItems: totalConsoles + totalGames,
-        totalValue: totalConsoleValue + totalGameValue,
-      }
+        totalValue: totalConsoleValue + totalGameValue}
     })
   }
 
