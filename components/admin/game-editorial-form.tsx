@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from 'react'
 import { Save, Eye, EyeOff, Plus, Trash2, ExternalLink } from 'lucide-react'
-import type { Game, Console } from '@prisma/client'
+import type { Game, Console, Genre } from '@prisma/client'
 import { updateGameAction } from '@/lib/actions/game-actions'
 import { useActionState } from 'react'
 
 interface GameEditorialFormProps {
   game: Game & { 
     console: Console
+    genre?: Genre | null
     corporationDev?: { name: string } | null
     corporationPub?: { name: string } | null
   }
@@ -25,7 +26,7 @@ export function GameEditorialForm({ game }: GameEditorialFormProps) {
     description: game.description || '',
     developer: game.corporationDev?.name || '',
     publisher: game.corporationPub?.name || '',
-    genre: '', // Deprecated field - genre now managed via genreId relation
+    genreId: game.genreId || null, // Current genre ID
     releaseYear: game.releaseYear || '',
     playerCount: game.playerCount || '',
     resolution: game.resolution || '',
@@ -105,7 +106,7 @@ export function GameEditorialForm({ game }: GameEditorialFormProps) {
               <div><strong>Console:</strong> {game.console.name}</div>
               <div><strong>Développeur:</strong> {formData.developer}</div>
               <div><strong>Éditeur:</strong> {formData.publisher}</div>
-              <div><strong>Genre:</strong> {formData.genre}</div>
+              <div><strong>Genre:</strong> {game.genre?.name || 'Aucun'}</div>
               <div><strong>Année:</strong> {formData.releaseYear}</div>
               <div><strong>Note:</strong> {formData.rating}/20</div>
             </div>
@@ -172,19 +173,7 @@ export function GameEditorialForm({ game }: GameEditorialFormProps) {
                 />
               </div>
 
-              <div>
-                <label htmlFor="genre" className="block text-sm font-medium text-gray-900 dark:text-white">
-                  Genre
-                </label>
-                <input
-                  type="text"
-                  id="genre"
-                  name="genre"
-                  value={formData.genre}
-                  onChange={(e) => handleChange('genre', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
-                />
-              </div>
+              {/* Genre now managed through normalized Genre relation - no longer editable as text */}
 
               <div>
                 <label htmlFor="releaseYear" className="block text-sm font-medium text-gray-900 dark:text-white">

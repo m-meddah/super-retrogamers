@@ -525,18 +525,18 @@ export async function syncGenresAction(
       }
       
       const existingGenre = await prisma.genre.findUnique({
-        where: { ssGenreId: parseInt(genreInfo.id) }
+        where: { ssGenreId: parseInt(String(genreInfo.id)) }
       })
       
       if (existingGenre) {
         // Mettre à jour le genre existant
         await prisma.genre.update({
-          where: { ssGenreId: parseInt(genreInfo.id) },
+          where: { ssGenreId: parseInt(String(genreInfo.id)) },
           data: {
             name: genreInfo.nom_fr,
-            parentId: genreInfo.parentid ? parseInt(genreInfo.parentid) : null,
+            parentId: genreInfo.parentid ? parseInt(String(genreInfo.parentid)) : null,
             isMainGenre: !genreInfo.parentid || genreInfo.parentid === '0',
-            color: colors[parseInt(genreInfo.id)] || null
+            color: colors[parseInt(String(genreInfo.id))] || null
           }
         })
         genresUpdated++
@@ -544,11 +544,11 @@ export async function syncGenresAction(
         // Créer un nouveau genre
         await prisma.genre.create({
           data: {
-            ssGenreId: parseInt(genreInfo.id),
+            ssGenreId: parseInt(String(genreInfo.id)),
             name: genreInfo.nom_fr,
-            parentId: genreInfo.parentid ? parseInt(genreInfo.parentid) : null,
+            parentId: genreInfo.parentid ? parseInt(String(genreInfo.parentid)) : null,
             isMainGenre: !genreInfo.parentid || genreInfo.parentid === '0',
-            color: colors[parseInt(genreInfo.id)] || null
+            color: colors[parseInt(String(genreInfo.id))] || null
           }
         })
         genresCreated++

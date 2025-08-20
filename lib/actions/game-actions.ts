@@ -146,9 +146,7 @@ export async function updateGameEnhancedAction(
     // Récupération des données du formulaire - champs de base
     const title = formData.get('title') as string
     const description = formData.get('description') as string
-    const developer = formData.get('developer') as string
-    const publisher = formData.get('publisher') as string
-    // const genre = formData.get('genre') as string // Deprecated field
+    // developer/publisher deprecated - now using corporationDevId/corporationPubId relations
     const releaseYear = formData.get('releaseYear') as string
     const playerCount = formData.get('playerCount') as string
     const resolution = formData.get('resolution') as string
@@ -206,8 +204,7 @@ export async function updateGameEnhancedAction(
     const updateData: {
       title: string
       description: string | null
-      developer: string | null
-      publisher: string | null
+      // developer/publisher deprecated - now using corporation relations
       releaseYear: number | null
       playerCount: string | null
       resolution: string | null
@@ -230,8 +227,7 @@ export async function updateGameEnhancedAction(
     } = {
       title: title.trim(),
       description: description.trim() || null,
-      developer: developer.trim() || null,
-      publisher: publisher.trim() || null,
+      // developer/publisher removed - now using corporationDevId/corporationPubId relations
       releaseYear: releaseYear ? parseInt(releaseYear) : null,
       playerCount: playerCount.trim() || null,
       resolution: resolution.trim() || null,
