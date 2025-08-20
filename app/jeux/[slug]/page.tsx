@@ -100,8 +100,6 @@ export default async function GamePage({ params }: GamePageProps) {
               <div className="mb-4">
                 <GameWheelLogo 
                   game={game}
-                  size="lg"
-                  showTitle={false}
                   className="mb-2"
                 />
               </div>
@@ -245,8 +243,6 @@ export default async function GamePage({ params }: GamePageProps) {
                 <div className="mt-3">
                   <GameWheelLogo 
                     game={game}
-                    size="md"
-                    showTitle={false}
                     className="opacity-70"
                   />
                 </div>

@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Link from "next/link"
-import { ArrowLeft, Gamepad2, Filter, X, SortAsc, SortDesc, Hash, Search } from "lucide-react"
+import { ArrowLeft, Filter, X, Search, Loader2 } from "lucide-react"
 import { Console } from "@prisma/client"
 import { GameWithConsole } from "@/lib/data-prisma"
-import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
+import { ConsoleGamesFilters, loadConsoleGamesStream, countConsoleGamesStream } from "@/lib/actions/console-games-streaming-actions"
+import { InfiniteConsoleGamesList, useConsoleGamesFilters, ConsoleGamesStats } from "@/components/console-games/infinite-console-games-list"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -17,72 +18,72 @@ interface ConsoleGamesClientProps {
   genres: Array<{genreName: string, count: number}>
 }
 
-export default function ConsoleGamesClient({ console, initialGames, genres }: ConsoleGamesClientProps) {
-  const [selectedGenre, setSelectedGenre] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<"title" | "rating" | "releaseYear">("title")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
-  const [searchQuery, setSearchQuery] = useState<string>("")
+export default function ConsoleGamesClient({ console: gameConsole, initialGames, genres }: ConsoleGamesClientProps) {
+  const { filters, updateFilter, clearFilters } = useConsoleGamesFilters()
+  const [currentGames, setCurrentGames] = useState<GameWithConsole[]>(initialGames)
+  const [totalCount, setTotalCount] = useState(initialGames.length)
+  const [loading, setLoading] = useState(false)
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
 
-  // Filter and sort games based on selected criteria
-  const filteredAndSortedGames = useMemo(() => {
-    let filtered = initialGames
+  // Derived state for UI
+  const hasActiveFilters = useMemo(() => 
+    Object.values(filters).some(value => value && value !== 'all' && value.trim() !== ''),
+    [filters]
+  )
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim()
-      filtered = filtered.filter(game => 
-        game.title.toLowerCase().includes(query) ||
-        game.corporationDev?.name?.toLowerCase().includes(query) ||
-        game.corporationPub?.name?.toLowerCase().includes(query) ||
-        game.genre?.name?.toLowerCase().includes(query) ||
-        game.genres?.some(g => g.genreName.toLowerCase().includes(query))
-      )
-    }
-
-    // Filter by genre
-    if (selectedGenre !== "all") {
-      filtered = filtered.filter(game => 
-        game.genre?.name === selectedGenre ||
-        game.genres?.some(g => g.genreName === selectedGenre)
-      )
-    }
-
-    // Sort games
-    const sorted = [...filtered].sort((a, b) => {
-      let comparison = 0
+  // Refresh games when filters change
+  const refreshGames = useCallback(async (newFilters: Omit<ConsoleGamesFilters, 'consoleSlug'>) => {
+    setLoading(true)
+    try {
+      const [newGames, newTotalCount] = await Promise.all([
+        loadConsoleGamesStream(0, 20, {
+          consoleSlug: gameConsole.slug,
+          ...newFilters
+        }),
+        countConsoleGamesStream({
+          consoleSlug: gameConsole.slug,
+          ...newFilters
+        })
+      ])
       
-      switch (sortBy) {
-        case "title":
-          comparison = a.title.localeCompare(b.title)
-          break
-        case "rating":
-          const ratingA = a.rating || 0
-          const ratingB = b.rating || 0
-          comparison = ratingA - ratingB
-          break
-        case "releaseYear":
-          const yearA = a.releaseYear || 0
-          const yearB = b.releaseYear || 0
-          comparison = yearA - yearB
-          break
-        default:
-          comparison = 0
+      setCurrentGames(newGames)
+      setTotalCount(newTotalCount)
+    } catch (err) {
+      console.error('Error refreshing games:', err)
+      setCurrentGames([])
+      setTotalCount(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [gameConsole])
+
+  // Handle filter changes with debouncing for search
+  useEffect(() => {
+    if (filters.searchQuery !== undefined) {
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout)
       }
-      
-      return sortOrder === "asc" ? comparison : -comparison
-    })
 
-    return sorted
-  }, [initialGames, selectedGenre, sortBy, sortOrder, searchQuery])
+      // Set new timeout for search
+      const timeout = setTimeout(() => {
+        refreshGames(filters)
+      }, 300)
 
-  const resetFilters = () => {
-    setSelectedGenre("all")
-    setSortBy("title")
-    setSortOrder("asc")
-    setSearchQuery("")
+      setSearchTimeout(timeout)
+
+      return () => clearTimeout(timeout)
+    } else {
+      // Non-search filters trigger immediate refresh
+      refreshGames(filters)
+    }
+  }, [filters, refreshGames, searchTimeout])
+
+  const handleResetFilters = () => {
+    clearFilters()
+    setCurrentGames(initialGames)
+    setTotalCount(initialGames.length)
   }
-
-  const hasActiveFilters = selectedGenre !== "all" || sortBy !== "title" || sortOrder !== "asc" || searchQuery.trim() !== ""
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -90,21 +91,21 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
         {/* Breadcrumb */}
         <div className="mb-8">
           <Link
-            href={`/consoles/${console.slug}`}
+            href={`/consoles/${gameConsole.slug}`}
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour à {console.name}
+            Retour à {gameConsole.name}
           </Link>
         </div>
 
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
-            Jeux {console.name}
+            Jeux {gameConsole.name}
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-            Découvrez tous les jeux disponibles pour cette console légendaire.
+            Découvrez tous les jeux disponibles pour cette console légendaire avec chargement optimisé.
           </p>
         </div>
 
@@ -117,12 +118,15 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
               <Badge variant="outline" className="ml-2">
                 {genres.length} genres disponibles
               </Badge>
+              {loading && (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              )}
             </div>
             {hasActiveFilters && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={resetFilters}
+                onClick={handleResetFilters}
                 className="flex items-center gap-1"
               >
                 <X className="h-3 w-3" />
@@ -136,14 +140,14 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
               type="text"
-              placeholder="Rechercher un jeu, développeur, éditeur..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher un jeu, développeur, éditeur... (streaming)"
+              value={filters.searchQuery || ''}
+              onChange={(e) => updateFilter('searchQuery', e.target.value || undefined)}
               className="pl-10"
             />
-            {searchQuery && (
+            {filters.searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => updateFilter('searchQuery', undefined)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-4 w-4" />
@@ -157,7 +161,10 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Genre
               </label>
-              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+              <Select 
+                value={filters.genreName || 'all'} 
+                onValueChange={(value) => updateFilter('genreName', value === 'all' ? undefined : value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les genres" />
                 </SelectTrigger>
@@ -179,7 +186,10 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Trier par
               </label>
-              <Select value={sortBy} onValueChange={(value: "title" | "rating" | "releaseYear") => setSortBy(value)}>
+              <Select 
+                value={filters.sortBy || 'title'} 
+                onValueChange={(value: "title" | "rating" | "releaseYear" | "createdAt") => updateFilter('sortBy', value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -187,6 +197,7 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
                   <SelectItem value="title">Titre</SelectItem>
                   <SelectItem value="rating">Note</SelectItem>
                   <SelectItem value="releaseYear">Année de sortie</SelectItem>
+                  <SelectItem value="createdAt">Date d&apos;ajout</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -196,16 +207,19 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Ordre
               </label>
-              <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => setSortOrder(value)}>
+              <Select 
+                value={filters.sortOrder || 'asc'} 
+                onValueChange={(value: "asc" | "desc") => updateFilter('sortOrder', value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="asc">
-                    {sortBy === "title" ? "A → Z" : "Croissant"}
+                    {filters.sortBy === "title" ? "A → Z" : "Croissant"}
                   </SelectItem>
                   <SelectItem value="desc">
-                    {sortBy === "title" ? "Z → A" : "Décroissant"}
+                    {filters.sortBy === "title" ? "Z → A" : "Décroissant"}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -216,36 +230,36 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
               <span className="text-sm text-gray-500 dark:text-gray-400">Filtres actifs :</span>
-              {searchQuery.trim() && (
+              {filters.searchQuery && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Recherche: &quot;{searchQuery}&quot;
+                  Recherche: &quot;{filters.searchQuery}&quot;
                   <button
-                    onClick={() => setSearchQuery("")}
+                    onClick={() => updateFilter('searchQuery', undefined)}
                     className="ml-1 hover:text-red-500"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
               )}
-              {selectedGenre !== "all" && (
+              {filters.genreName && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Genre: {selectedGenre}
+                  Genre: {filters.genreName}
                   <button
-                    onClick={() => setSelectedGenre("all")}
+                    onClick={() => updateFilter('genreName', undefined)}
                     className="ml-1 hover:text-red-500"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
               )}
-              {(sortBy !== "title" || sortOrder !== "asc") && (
+              {(filters.sortBy && filters.sortBy !== "title") || (filters.sortOrder && filters.sortOrder !== "asc") && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Tri: {sortBy === "title" ? "Titre" : sortBy === "rating" ? "Note" : "Année"} 
-                  ({sortOrder === "asc" ? "croissant" : "décroissant"})
+                  Tri: {filters.sortBy === "title" ? "Titre" : filters.sortBy === "rating" ? "Note" : filters.sortBy === "releaseYear" ? "Année" : "Date d&apos;ajout"} 
+                  (croissant)
                   <button
                     onClick={() => {
-                      setSortBy("title")
-                      setSortOrder("asc")
+                      updateFilter('sortBy', 'title')
+                      updateFilter('sortOrder', 'asc')
                     }}
                     className="ml-1 hover:text-red-500"
                   >
@@ -258,68 +272,18 @@ export default function ConsoleGamesClient({ console, initialGames, genres }: Co
         </div>
 
         {/* Stats */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Hash className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {filteredAndSortedGames.length} jeu{filteredAndSortedGames.length > 1 ? 'x' : ''}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  sur {initialGames.length} total
-                </span>
-              </div>
-              {selectedGenre !== "all" && (
-                <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  {selectedGenre}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
-              <span>
-                Trié par {sortBy === "title" ? "titre" : sortBy === "rating" ? "note" : "année"}
-              </span>
-            </div>
-          </div>
-        </div>
+        <ConsoleGamesStats 
+          totalGames={genres.reduce((sum, genre) => sum + genre.count, 0)}
+          filteredCount={totalCount}
+          loading={loading}
+        />
 
-        {/* Games Grid */}
-        {filteredAndSortedGames.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredAndSortedGames.map((game) => (
-              <GameCardRegionalWrapper key={game.id} game={game} showConsole={false} />
-            ))}
-          </div>
-        ) : (
-          <div className="py-16 text-center">
-            <Gamepad2 className="mx-auto mb-4 h-16 w-16 text-gray-400" />
-            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
-              {searchQuery.trim() ? 
-                `Aucun jeu trouvé pour &quot;${searchQuery}&quot;` :
-                selectedGenre !== "all" ? 
-                  `Aucun jeu trouvé pour le genre &quot;${selectedGenre}&quot;` : 
-                  "Aucun jeu disponible"
-              }
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              {searchQuery.trim() || selectedGenre !== "all" ? 
-                "Essayez de modifier vos critères de recherche ou de réinitialiser les filtres." :
-                "Les jeux pour cette console seront bientôt ajoutés."
-              }
-            </p>
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                onClick={resetFilters}
-                className="mt-4"
-              >
-                Réinitialiser les filtres
-              </Button>
-            )}
-          </div>
-        )}
+        {/* Infinite Scroll Games List */}
+        <InfiniteConsoleGamesList 
+          initialGames={currentGames}
+          consoleSlug={gameConsole.slug}
+          filters={filters}
+        />
       </div>
     </div>
   )

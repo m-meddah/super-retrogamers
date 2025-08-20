@@ -340,7 +340,7 @@ async function ContentManagementContent() {
                       
                       <TableCell>
                         <div className="text-sm">
-                          {game.developer || 'N/A'}
+                          {'N/A'}
                         </div>
                       </TableCell>
                       

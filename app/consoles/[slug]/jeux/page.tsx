@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
-import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo, getGenresByConsoleSlug } from "@/lib/data-prisma"
+import { getConsoleBySlug, getGenresByConsoleSlug } from "@/lib/data-prisma"
+import { loadConsoleGamesStream } from "@/lib/actions/console-games-streaming-actions"
 import ConsoleGamesClient from "./client"
 
 interface ConsoleGamesPageProps {
@@ -16,15 +17,20 @@ export default async function ConsoleGamesPage({ params }: ConsoleGamesPageProps
     notFound()
   }
 
-  const [games, genres] = await Promise.all([
-    getGamesByConsoleWithConsoleInfo(console.slug),
+  // Load only initial games for faster page load - streaming will handle the rest
+  const [initialGames, genres] = await Promise.all([
+    loadConsoleGamesStream(0, 20, {
+      consoleSlug: console.slug,
+      sortBy: 'title',
+      sortOrder: 'asc'
+    }),
     getGenresByConsoleSlug(console.slug)
   ])
 
   return (
     <ConsoleGamesClient 
       console={console}
-      initialGames={games}
+      initialGames={initialGames}
       genres={genres}
     />
   )
