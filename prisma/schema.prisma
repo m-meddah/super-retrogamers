@@ -187,7 +187,7 @@ model Game {
   cloneOf                String?              // ID du jeu original si c'est un clone
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
-  genres                 GameGenre[]
+  // genres many-to-many removed - now using direct genreId relation
   regionalTitles         GameRegionalTitle[]
   regionalDates          GameRegionalDate[]
   reviews                GameReview[]
@@ -264,23 +264,7 @@ model GameVariant {
   @@map("game_variants")
 }
 
-model GameGenre {
-  id            String   @id @default(cuid())
-  gameId        String
-  genreId       Int      // ID Screenscraper du genre
-  genreName     String
-  genreNameEn   String?
-  isPrimary     Boolean  @default(false)
-  parentGenreId Int?
-  createdAt     DateTime @default(now())
-  
-  // Relations
-  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  genre         Genre?   @relation("GenreRelation", fields: [genreId], references: [ssGenreId])
-
-  @@unique([gameId, genreId])
-  @@map("game_genres")
-}
+// GameGenre model removed - replaced by direct genreId relation in Game model
 
 
 model GameRegionalTitle {
@@ -467,7 +451,6 @@ model Genre {
   updatedAt        DateTime @updatedAt
   
   // Relations
-  gameGenres       GameGenre[] @relation("GenreRelation")
   gamesAsPrimary   Game[]      @relation("PrimaryGenre")
   
   @@index([ssGenreId])

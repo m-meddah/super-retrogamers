@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useActionState } from "react"
+import { useState, useActionState, useEffect } from "react"
 import { Plus, Heart, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
@@ -79,6 +79,29 @@ export function ConsoleCollectionActions({ console }: ConsoleCollectionActionsPr
   const [selectedCondition, setSelectedCondition] = useState<string>("")
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false)
   const [wishlistDialogOpen, setWishlistDialogOpen] = useState(false)
+  
+  // Prevent hydration mismatch by only rendering after client-side mount
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  // Show loading state during hydration to prevent mismatch
+  if (!isClient) {
+    return (
+      <div className="flex flex-col sm:flex-row gap-3 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200 dark:from-blue-950/20 dark:to-purple-950/20 dark:border-blue-800/30">
+        <div className="flex-1">
+          <div className="h-6 bg-gray-200 rounded animate-pulse mb-1"></div>
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3"></div>
+        </div>
+        <div className="flex gap-2">
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    )
+  }
 
   if (!session?.user) {
     return (

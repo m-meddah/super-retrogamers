@@ -161,7 +161,7 @@ export function useRegionalReleaseDate(
         
         const releaseDate = itemType === 'console' 
           ? await getConsoleReleaseDate(itemId, currentRegion)
-          : await getGameReleaseDate(itemId, currentRegion)
+          : await getGameReleaseDate(itemId)
         
         setResult({
           releaseDate,

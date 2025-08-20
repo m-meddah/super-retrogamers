@@ -492,10 +492,18 @@ export async function syncGenresAction(
     let genresUpdated = 0
     let genresCreated = 0
     
+    // Interface temporaire pour le typage des genres
+    interface GenreData {
+      id: string | number
+      nom_fr: string
+      parentid?: string | number
+    }
+    
     // Synchroniser chaque genre
     for (const genreData of genresArray) {
       // Gérer différentes structures de données possibles
-      const genreInfo = (genreData as { genre?: unknown }).genre || genreData
+      const rawGenreInfo = (genreData as { genre?: unknown }).genre || genreData
+      const genreInfo = rawGenreInfo as GenreData
       
       if (!genreInfo || !genreInfo.id || !genreInfo.nom_fr) {
         continue

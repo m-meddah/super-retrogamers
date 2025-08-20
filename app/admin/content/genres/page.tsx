@@ -23,7 +23,7 @@ async function getAllGenres() {
     include: {
       _count: {
         select: {
-          gameGenres: true
+          gamesAsPrimary: true // Count games using this genre as primary genre
         }
       }
     },
@@ -132,7 +132,7 @@ async function GenresManagementContent() {
                     </h3>
                     <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                       <Tag className="h-3 w-3" />
-                      {genre._count?.gameGenres || 0} jeux
+                      {genre._count?.gamesAsPrimary || 0} jeux
                     </div>
                     {genre.color && (
                       <div className="mt-2 flex items-center gap-2">
@@ -226,7 +226,7 @@ async function GenresManagementContent() {
                     <div className="flex items-center space-x-1">
                       <Tag className="h-3 w-3 text-muted-foreground" />
                       <Badge variant="outline">
-                        {genre._count?.gameGenres || 0}
+                        {genre._count?.gamesAsPrimary || 0}
                       </Badge>
                     </div>
                   </TableCell>

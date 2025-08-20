@@ -122,10 +122,10 @@ export default async function GamePage({ params }: GamePageProps) {
                         {game.playerCount} joueur{game.playerCount.includes('-') || parseInt(game.playerCount) > 1 ? 's' : ''}
                       </span>
                     )}
-                    {(game.genre || (game.genres && game.genres.length > 0)) && (
+                    {game.genre && (
                       <span className="flex items-center gap-1">
                         <Gamepad2 className="h-4 w-4" />
-                        {game.genre?.name || game.genres?.[0]?.genreName}
+                        {game.genre.name}
                       </span>
                     )}
                     {game.topStaff && (
@@ -151,9 +151,9 @@ export default async function GamePage({ params }: GamePageProps) {
                 <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                   {game.console?.name}
                 </span>
-                {(game.genre || (game.genres && game.genres.length > 0)) && (
+                {game.genre && (
                   <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                    {game.genre?.name || game.genres?.[0]?.genreName}
+                    {game.genre.name}
                   </span>
                 )}
                 

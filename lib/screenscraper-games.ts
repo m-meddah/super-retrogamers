@@ -901,7 +901,7 @@ export async function createGameFromScreenscraper(
     
     // Process genres if available
     if (gameDetails.genres) {
-      await processGameGenres(createdGame.id, gameDetails.genres)
+      await processGameMainGenre(createdGame.id, gameDetails.genres)
       console.log(`📋 ${gameDetails.genres.length} genres traités`)
     }
     
@@ -1481,10 +1481,10 @@ export async function scrapeGamesForConsole(consoleId: string, systemId: number,
 }
 
 /**
- * Process game genres from Screenscraper data
- * Simplified version: only sets the main genre, no many-to-many relations
+ * Process game main genre from Screenscraper data
+ * Sets the primary genre using direct genreId relation
  */
-async function processGameGenres(gameId: string, genresData: unknown[]) {
+async function processGameMainGenre(gameId: string, genresData: unknown[]) {
   try {
     if (!genresData || !Array.isArray(genresData) || genresData.length === 0) {
       console.log('⚠️  Aucune donnée de genre disponible')
@@ -1494,7 +1494,7 @@ async function processGameGenres(gameId: string, genresData: unknown[]) {
     // Prendre le premier genre comme genre principal
     const firstGenre = genresData[0]
     const genreId = typeof firstGenre === 'object' && firstGenre && 'id' in firstGenre ? (firstGenre as { id: unknown }).id : firstGenre
-    const genreSSId = parseInt(genreId)
+    const genreSSId = parseInt(String(genreId))
 
     if (!genreSSId || isNaN(genreSSId)) {
       console.log(`⚠️  ID de genre invalide: ${genreId}`)

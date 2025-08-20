@@ -146,81 +146,13 @@ export async function scrapeGenresFromScreenscraper(): Promise<{ success: boolea
   }
 }
 
-// Fonction pour synchroniser les genres des jeux existants avec la table Genre
+// Fonction obsolète - les genres sont maintenant gérés par relation directe genreId
+// Cette fonction peut être supprimée dans une future version
 export async function syncGameGenresToNormalizedStructure(): Promise<{ success: boolean, count: number, message: string }> {
-  try {
-    console.log('🔄 Début de la synchronisation des genres des jeux...')
-    
-    // Récupérer tous les jeux qui ont un genre (string) mais pas de GameGenre associé
-    const gamesWithStringGenres = await prisma.game.findMany({
-      where: {
-        genreId: {
-          not: null
-        }
-      },
-      include: {
-        genres: true
-      }
-    })
-    
-    console.log(`📊 ${gamesWithStringGenres.length} jeux trouvés avec des genres en format string`)
-    
-    let processedCount = 0
-    
-    for (const game of gamesWithStringGenres) {
-      if (!game.genreId) continue
-      
-      // Chercher le genre correspondant dans la table Genre
-      const matchingGenre = await prisma.genre.findFirst({
-        where: {
-          ssGenreId: game.genreId
-        }
-      })
-      
-      if (matchingGenre) {
-        // Vérifier si la relation GameGenre existe déjà
-        const existingGameGenre = await prisma.gameGenre.findUnique({
-          where: {
-            gameId_genreId: {
-              gameId: game.id,
-              genreId: matchingGenre.ssGenreId
-            }
-          }
-        })
-        
-        if (!existingGameGenre) {
-          // Créer la relation GameGenre
-          await prisma.gameGenre.create({
-            data: {
-              gameId: game.id,
-              genreId: matchingGenre.ssGenreId,
-              genreName: matchingGenre.name,
-              isPrimary: true // Premier genre = primaire
-            }
-          })
-          
-          processedCount++
-          console.log(`✅ Genre associé: ${game.title} -> ${matchingGenre.name}`)
-        }
-      } else {
-        console.warn(`⚠️ Genre non trouvé pour l'ID "${game.genreId}" dans le jeu "${game.title}"`)
-      }
-    }
-    
-    console.log(`🎯 Synchronisation terminée: ${processedCount} relations GameGenre créées`)
-    
-    return {
-      success: true,
-      count: processedCount,
-      message: `Synchronisation réussie: ${processedCount} relations créées`
-    }
-    
-  } catch (error) {
-    console.error('❌ Erreur lors de la synchronisation des genres:', error)
-    return {
-      success: false,
-      count: 0,
-      message: `Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
-    }
+  console.log('⚠️ Cette fonction est obsolète - les genres utilisent maintenant une relation directe genreId')
+  return {
+    success: true,
+    count: 0,
+    message: 'Cette fonction n\'est plus nécessaire avec la nouvelle structure normalisée'
   }
 }

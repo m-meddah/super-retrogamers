@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, GameGenre, Genre, GameRegionalDate, Corporation } from "@prisma/client"
+import type { Console, Game, Genre, GameRegionalDate, Corporation } from "@prisma/client"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -14,7 +14,7 @@ export type ConsoleWithGames = Console & {
 export type GameWithConsole = Game & {
   console: Console
   genre?: Genre | null
-  genres?: GameGenre[]
+  // genres many-to-many removed - now using direct genreId relation
   regionalDates?: GameRegionalDate[]
   corporationDev?: Corporation | null
   corporationPub?: Corporation | null
@@ -84,9 +84,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
         },
         include: {
           console: true,
-          genres: {
-            orderBy: { isPrimary: 'desc' }
-          },
+          genre: true, // Single genre relation instead of many-to-many
           regionalDates: {
             orderBy: { region: 'asc' }
           },
@@ -102,9 +100,7 @@ export async function getGameBySlug(slug: string): Promise<GameWithConsole | nul
     where: { slug },
     include: {
       console: true,
-      genres: {
-        orderBy: { isPrimary: 'desc' }
-      },
+      genre: true, // Single genre relation instead of many-to-many
       regionalDates: {
         orderBy: { region: 'asc' }
       },
@@ -136,10 +132,7 @@ export async function getGamesByConsoleWithConsoleInfo(consoleSlug: string): Pro
     },
     include: {
       console: true,
-      genre: true, // Inclure le genre principal normalisé
-      genres: {
-        orderBy: { isPrimary: 'desc' }
-      },
+      genre: true, // Single genre relation instead of many-to-many
       regionalDates: {
         orderBy: { region: 'asc' }
       },
@@ -223,10 +216,7 @@ export async function getGamesByConsoleAndGenre(consoleSlug: string, genreName?:
     where: whereClause,
     include: {
       console: true,
-      genre: true, // Inclure le genre principal
-      genres: {
-        orderBy: { isPrimary: 'desc' }
-      },
+      genre: true, // Single genre relation instead of many-to-many
       regionalDates: {
         orderBy: { region: 'asc' }
       },
@@ -1225,10 +1215,7 @@ export async function getGameWithAllRelations(slug: string) {
         },
         include: {
           console: true,
-          genre: true,
-          genres: {
-            orderBy: { isPrimary: 'desc' }
-          },
+          genre: true, // Single genre relation instead of many-to-many
           regionalDates: {
             orderBy: { region: 'asc' }
           },
@@ -1246,10 +1233,7 @@ export async function getGameWithAllRelations(slug: string) {
     where: { slug },
     include: {
       console: true,
-      genre: true,
-      genres: {
-        orderBy: { isPrimary: 'desc' }
-      },
+      genre: true, // Single genre relation instead of many-to-many
       regionalDates: {
         orderBy: { region: 'asc' }
       },
