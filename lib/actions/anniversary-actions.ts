@@ -27,6 +27,7 @@ export async function getAnniversaryGames(preferredRegion: Region = 'FR') {
       include: {
         console: {
           select: {
+            id: true,
             name: true,
             slug: true
           }
@@ -116,6 +117,7 @@ function getBestRegionalDate(
   // 3. Prendre n'importe quelle date disponible
   return regionalDates.find(rd => rd.releaseDate) || null
 }
+
 
 /**
  * Récupère le nombre de jeux ayant leur anniversaire aujourd'hui
