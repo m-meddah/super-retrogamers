@@ -55,7 +55,7 @@ export async function getBestCachedMediaUrl(
       ]
     })
     
-    // Trouver le meilleur match selon les priorités (région d'abord pour fallback correct)
+    // Trouver le meilleur match selon les priorités (média d'abord, puis région)
     for (const mediaType of mediaTypes) {
       for (const region of regionPriority) {
         const normalizedRegion = region.toLowerCase()
@@ -65,6 +65,22 @@ export async function getBestCachedMediaUrl(
           return found.url
         }
       }
+    }
+    
+    // Fallback : chercher n'importe quel média valide dans le cache (peu importe la région)
+    for (const mediaType of mediaTypes) {
+      const found = cached.find(c => c.mediaType === mediaType && c.isValid && c.url !== '')
+      if (found) {
+        console.log(`📋 Fallback Cache HIT: ${mediaType}(${found.region.toUpperCase()}) pour ${entityType}:${entityId}`)
+        return found.url
+      }
+    }
+    
+    // Fallback final : n'importe quel média valide disponible  
+    const anyValid = cached.find(c => c.isValid && c.url !== '')
+    if (anyValid) {
+      console.log(`📋 Any Cache HIT: ${anyValid.mediaType}(${anyValid.region.toUpperCase()}) pour ${entityType}:${entityId}`)
+      return anyValid.url
     }
     
     // Si rien en cache, faire des appels individuels seulement pour ce qui n'est pas en cache
@@ -132,6 +148,22 @@ export async function getCachedMediaUrl(
     
     const url = await fetchMediaFromScreenscraper(entityType, entityId, mediaType, region)
     
+    // Récupérer le screenscrapeId approprié
+    let screenscrapeId = 0
+    if (entityType === 'console') {
+      const consoleData = await prisma.console.findUnique({
+        where: { id: entityId },
+        select: { ssConsoleId: true }
+      })
+      screenscrapeId = consoleData?.ssConsoleId || 0
+    } else if (entityType === 'game') {
+      const gameData = await prisma.game.findUnique({
+        where: { id: entityId },
+        select: { ssGameId: true }
+      })
+      screenscrapeId = gameData?.ssGameId || 0
+    }
+
     // Sauvegarder en cache (même si null pour éviter les appels répétés)
     const expiresAt = new Date(Date.now() + CACHE_DURATION_MS)
     
@@ -150,12 +182,14 @@ export async function getCachedMediaUrl(
         mediaType,
         region: normalizedRegion,
         url: url || '', // Stocker chaîne vide si pas trouvé
+        screenscrapeId,
         cachedAt: new Date(),
         expiresAt,
         isValid: url !== null
       },
       update: {
         url: url || '',
+        screenscrapeId,
         cachedAt: new Date(),
         expiresAt,
         isValid: url !== null
@@ -178,6 +212,7 @@ export async function getCachedMediaUrl(
 
 /**
  * Fetch une URL média depuis Screenscraper avec rate limiting
+ * Utilise l'API systemesListe pour récupérer les URLs des médias
  */
 async function fetchMediaFromScreenscraper(
   entityType: 'game' | 'console',
@@ -209,12 +244,10 @@ async function fetchMediaFromScreenscraper(
         return null
       }
       
-      // Construire l'URL de l'API Screenscraper pour un média spécifique
-      // Note: minicon n'utilise pas de région
-      const mediaParam = mediaType === 'minicon' ? mediaType : `${mediaType}(${region})`
-      const url = `https://api.screenscraper.fr/api2/mediaSysteme.php?devid=${devId}&devpassword=${devPassword}&softname=&ssid=&sspassword=&systemeid=${gameConsole.ssConsoleId}&media=${mediaParam}`
+      // Utiliser l'API systemesListe pour récupérer les médias disponibles
+      const url = `https://api.screenscraper.fr/api2/systemesListe.php?devid=${devId}&devpassword=${devPassword}&output=json`
       
-      console.log(`🔄 Fetching depuis Screenscraper: ${mediaParam} pour système ${gameConsole.ssConsoleId}`)
+      console.log(`🔄 Fetching media list pour système ${gameConsole.ssConsoleId}`)
       
       const response = await fetch(url)
       
@@ -223,12 +256,45 @@ async function fetchMediaFromScreenscraper(
         return null
       }
       
-      // L'API retourne directement l'image, donc l'URL de la requête est l'URL de l'image
-      if (response.headers.get('content-type')?.startsWith('image/')) {
-        console.log(`✅ URL média trouvée: ${mediaParam}`)
-        return url
+      const data = await response.json()
+      
+      if (!data.response?.systemes) {
+        console.log(`❌ Réponse API invalide`)
+        return null
+      }
+      
+      // Trouver le système correspondant
+      const system = data.response.systemes.find((s: any) => s.id === gameConsole.ssConsoleId)
+      
+      if (!system || !system.medias) {
+        console.log(`❌ Système ${gameConsole.ssConsoleId} non trouvé ou sans médias`)
+        return null
+      }
+      
+      // Chercher le média demandé (priorité exacte puis fallback)
+      const normalizedRegion = region.toLowerCase()
+      
+      // 1. Chercher correspondance exacte type + région
+      let media = system.medias.find((m: any) => 
+        m.type === mediaType && m.region === normalizedRegion
+      )
+      
+      // 2. Fallback: même type, autres régions (ordre: wor, eu, us, jp)
+      if (!media) {
+        const fallbackRegions = ['wor', 'eu', 'us', 'jp', 'asi', 'br']
+        for (const fallbackRegion of fallbackRegions) {
+          media = system.medias.find((m: any) => 
+            m.type === mediaType && m.region === fallbackRegion
+          )
+          if (media) break
+        }
+      }
+      
+      if (media && media.url) {
+        console.log(`✅ URL média trouvée: ${media.type}(${media.region}) pour système ${gameConsole.ssConsoleId}`)
+        return media.url
       } else {
-        console.log(`❌ Pas d'image trouvée pour ${mediaParam}`)
+        console.log(`❌ Média ${mediaType}(${normalizedRegion}) non trouvé pour système ${gameConsole.ssConsoleId}`)
         return null
       }
     }

@@ -1,12 +1,16 @@
 import Link from "next/link"
 import { ArrowRight, Calendar, Trophy, Star, Users, BookOpen, BarChart3, Shield, CheckCircle, Clock, TrendingUp } from "lucide-react"
-import ConsoleCardRegionalWrapper from "@/components/console-card-regional-wrapper"
-import { getHomepageFeaturedConsoles, getStatsForHomepage } from "@/lib/data-prisma"
+import ConsoleCardsHomepageSection from "@/components/console-cards-homepage-section"
+import { getHomepageFeaturedConsolesWithRegionalNames, getStatsForHomepage } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
+import { getServerPreferredRegion } from "@/lib/server-region-detection"
 
 export default async function HomePage() {
-  const [featuredConsoles, stats, session] = await Promise.all([
-    getHomepageFeaturedConsoles(),
+  // Detect user's preferred region server-side
+  const preferredRegion = await getServerPreferredRegion()
+  
+  const [consoleData, stats, session] = await Promise.all([
+    getHomepageFeaturedConsolesWithRegionalNames(preferredRegion),
     getStatsForHomepage(),
     getServerSession()
   ])
@@ -209,11 +213,11 @@ export default async function HomePage() {
             </p>
           </div>
           
-          <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredConsoles.map((console) => (
-              <ConsoleCardRegionalWrapper key={console.id} console={console} />
-            ))}
-          </div>
+          <ConsoleCardsHomepageSection
+            consoles={consoleData.consoles}
+            regionalNames={consoleData.regionalNames}
+            regionalDates={consoleData.regionalDates}
+          />
           
           <div className="text-center">
             <Link

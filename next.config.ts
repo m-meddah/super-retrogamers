@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'neoclone.screenscraper.fr',
+        pathname: '/**'},
+      {
+        protocol: 'https',
+        hostname: 'api.screenscraper.fr',
         pathname: '/**'}
     ],
     // Cache optimisé pour les images externes

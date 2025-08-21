@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
-import { getCachedMediaUrl } from '@/lib/media-url-cache'
+import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
 import type { Game, Console } from "@prisma/client"
 import { useEffect, useState } from 'react'
 
@@ -36,12 +36,9 @@ export default function GameImageRegional({
         // Priorité des types de médias pour les jeux
         const mediaTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
         
-        for (const mediaType of mediaTypes) {
-          const url = await getCachedMediaUrl('game', gameData.id, mediaType, currentRegion)
-          if (url) {
-            setImageUrl(url)
-            break
-          }
+        const url = await getBestCachedMediaUrl('game', gameData.id, mediaTypes, [currentRegion])
+        if (url) {
+          setImageUrl(url)
         }
       } catch (error) {
         console.error(`Erreur chargement image jeu ${gameData.slug}:`, error)

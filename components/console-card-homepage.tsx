@@ -5,16 +5,19 @@ import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
 import type { Console } from "@prisma/client"
 import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
-// Hooks régionaux retirés pour optimiser les performances sur pages avec multiples consoles
 import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
 
-interface ConsoleCardWrapperProps {
+interface ConsoleCardHomepageProps {
   console: Console
-  preferredRegion?: string
+  regionalName?: string
+  regionalReleaseDate?: Date | null
 }
 
-export default function ConsoleCardWrapper({ console: consoleData }: ConsoleCardWrapperProps) {
-  // Utilisation directe des données de base pour éviter les appels multiples
+export default function ConsoleCardHomepage({ 
+  console: consoleData, 
+  regionalName,
+  regionalReleaseDate
+}: ConsoleCardHomepageProps) {
   const currentRegion = useCurrentRegion()
   const [imageUrl, setImageUrl] = useState<string>("/placeholder.svg")
   const [isLoading, setIsLoading] = useState(true)
@@ -23,12 +26,8 @@ export default function ConsoleCardWrapper({ console: consoleData }: ConsoleCard
     async function loadImage() {
       setIsLoading(true)
       try {
-        // Types de médias élargis pour consoles (ordre de priorité)
-        const mediaTypes = [
-          'wheel', 'logo-svg', 'photo', 'illustration', // Types prioritaires
-          'wheel-carbon', 'wheel-steel', 'logo-monochrome', 'icon', 'minicon', // Alternatives
-          'controller', 'screenmarquee', 'BoitierConsole3D' // Fallbacks
-        ]
+        // Utilisation de la fonction optimisée
+        const mediaTypes = ['wheel', 'logo-svg', 'photo', 'illustration']
         const regionPriority = [currentRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
         
         const url = await getBestCachedMediaUrl('console', consoleData.id, mediaTypes, regionPriority)
@@ -45,9 +44,9 @@ export default function ConsoleCardWrapper({ console: consoleData }: ConsoleCard
     loadImage()
   }, [consoleData.id, consoleData.slug, currentRegion])
   
-  // Utilisation directe des données de base pour optimiser les performances
-  const displayName = consoleData.name
-  const displayYear = consoleData.releaseYear
+  // Utilisation des données préchargées ou fallback
+  const displayName = regionalName || consoleData.name
+  const displayYear = regionalReleaseDate?.getFullYear() || consoleData.releaseYear
 
   return (
     <Suspense fallback={

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
-import type { Console, Game, Genre, GameRegionalDate, Corporation } from "@prisma/client"
+import type { Console, Game, Genre, GameRegionalDate, Corporation, Region } from "@prisma/client"
+import { getBatchConsoleNames, getBatchConsoleReleaseDates } from "@/lib/regional-names"
 
 // Types pour les relations complètes
 export type ConsoleWithGames = Console & {
@@ -388,6 +389,31 @@ export async function getHomepageFeaturedConsoles(): Promise<Console[]> {
   })
   
   return featuredConsoles
+}
+
+/**
+ * OPTIMIZED: Homepage consoles with regional names preloaded in batch
+ */
+export async function getHomepageFeaturedConsolesWithRegionalNames(preferredRegion: Region = 'FR'): Promise<{
+  consoles: Console[]
+  regionalNames: Record<string, string>
+  regionalDates: Record<string, Date | null>
+}> {
+  // Get base consoles
+  const consoles = await getHomepageFeaturedConsoles()
+  const consoleIds = consoles.map(c => c.id)
+  
+  // Batch fetch regional data
+  const [regionalNames, regionalDates] = await Promise.all([
+    getBatchConsoleNames(consoleIds, preferredRegion),
+    getBatchConsoleReleaseDates(consoleIds, preferredRegion)
+  ])
+  
+  return {
+    consoles,
+    regionalNames,
+    regionalDates
+  }
 }
 
 // Fonctions utilitaires pour les médias - SUPPRIMÉES

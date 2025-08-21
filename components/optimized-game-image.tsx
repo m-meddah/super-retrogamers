@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { getCachedMediaUrl } from '@/lib/media-url-cache'
+import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
 import type { GameWithConsole } from '@/lib/data-prisma'
 
 interface OptimizedGameImageProps {
@@ -33,19 +33,8 @@ export function OptimizedGameImage({
         const priorityOrder = ['box-2D', 'wheel', 'sstitle', 'ss']
         const regions = ['FR', 'EU', 'WOR', 'US', 'JP']
 
-        let bestImageUrl: string | null = null
-
-        // Essayer de trouver la meilleure image
-        for (const mediaType of priorityOrder) {
-          for (const region of regions) {
-            const url = await getCachedMediaUrl('game', game.id, mediaType, region)
-            if (url) {
-              bestImageUrl = url
-              break
-            }
-          }
-          if (bestImageUrl) break
-        }
+        // Utiliser getBestCachedMediaUrl pour une seule requête optimisée
+        const bestImageUrl = await getBestCachedMediaUrl('game', game.id, priorityOrder, regions)
 
         if (bestImageUrl) {
           setImageSrc(bestImageUrl)
@@ -143,7 +132,7 @@ export function usePreloadGameImages(games: GameWithConsole[], count: number = 5
       for (const game of topGames) {
         try {
           // Précharge l'URL pour les premiers jeux
-          await getCachedMediaUrl('game', game.id, 'box-2D', 'FR')
+          await getBestCachedMediaUrl('game', game.id, ['box-2D'], ['FR'])
         } catch {
           // Ignore silently
         }
