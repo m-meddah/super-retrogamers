@@ -146,22 +146,27 @@ export async function getCachedMediaUrl(
     // Cache MISS - fetch depuis Screenscraper
     console.log(`🔄 Cache MISS: Fetching ${mediaType} pour ${entityType}:${entityId}`)
     
-    const url = await fetchMediaFromScreenscraper(entityType, entityId, mediaType, region)
+    const result = await fetchMediaFromScreenscraper(entityType, entityId, mediaType, region)
+    const url = result?.url || null
     
-    // Récupérer le screenscrapeId approprié
-    let screenscrapeId = 0
-    if (entityType === 'console') {
-      const consoleData = await prisma.console.findUnique({
-        where: { id: entityId },
-        select: { ssConsoleId: true }
-      })
-      screenscrapeId = consoleData?.ssConsoleId || 0
-    } else if (entityType === 'game') {
-      const gameData = await prisma.game.findUnique({
-        where: { id: entityId },
-        select: { ssGameId: true }
-      })
-      screenscrapeId = gameData?.ssGameId || 0
+    // Si on a un résultat, utiliser son screenscrapeId, sinon récupérer depuis la DB
+    let screenscrapeId = result?.screenscrapeId || 0
+    
+    if (!result) {
+      // Récupérer le screenscrapeId depuis la base de données comme fallback
+      if (entityType === 'console') {
+        const consoleData = await prisma.console.findUnique({
+          where: { id: entityId },
+          select: { ssConsoleId: true }
+        })
+        screenscrapeId = consoleData?.ssConsoleId || 0
+      } else if (entityType === 'game') {
+        const gameData = await prisma.game.findUnique({
+          where: { id: entityId },
+          select: { ssGameId: true }
+        })
+        screenscrapeId = gameData?.ssGameId || 0
+      }
     }
 
     // Sauvegarder en cache (même si null pour éviter les appels répétés)
@@ -233,12 +238,12 @@ async function fetchMediaFromScreenscraper(
   entityId: string,
   mediaType: string,
   region: string
-): Promise<string | null> {
+): Promise<{url: string; screenscrapeId: number} | null> {
   try {
     // Vérifications préliminaires pour éviter les appels API inutiles
     
     // 1. Pour les médias console sans région, forcer la région à WOR
-    if (entityType === 'console' && REGIONLESS_MEDIA_TYPES.includes(mediaType) && region !== 'wor') {
+    if (entityType === 'console' && REGIONLESS_MEDIA_TYPES.includes(mediaType) && region.toLowerCase() !== 'wor') {
       console.log(`⚠️  Média ${mediaType} sans région - redirection vers WOR`)
       return null // Laisser le cache retry avec WOR
     }
@@ -317,28 +322,50 @@ async function fetchMediaFromScreenscraper(
         return null
       }
       
-      // Chercher le média demandé (priorité exacte puis fallback)
+      // Chercher le média demandé
       const normalizedRegion = region.toLowerCase()
+      let media
       
-      // 1. Chercher correspondance exacte type + région
-      let media = system.medias.find((m: any) => 
-        m.type === mediaType && m.region === normalizedRegion
-      )
-      
-      // 2. Fallback: même type, autres régions (ordre: wor, eu, us, jp)
-      if (!media) {
-        const fallbackRegions = ['wor', 'eu', 'us', 'jp', 'asi', 'br']
-        for (const fallbackRegion of fallbackRegions) {
-          media = system.medias.find((m: any) => 
-            m.type === mediaType && m.region === fallbackRegion
-          )
-          if (media) break
+      // Pour les médias sans région (minicon, icon, video, etc.), chercher sans région
+      if (REGIONLESS_MEDIA_TYPES.includes(mediaType)) {
+        media = system.medias.find((m: any) => 
+          m.type === mediaType && !m.region
+        )
+        
+        // Si pas trouvé sans région, essayer avec des régions (fallback)
+        if (!media) {
+          const fallbackRegions = ['wor', 'eu', 'us', 'jp', 'asi', 'br']
+          for (const fallbackRegion of fallbackRegions) {
+            media = system.medias.find((m: any) => 
+              m.type === mediaType && m.region === fallbackRegion
+            )
+            if (media) break
+          }
+        }
+      } else {
+        // Pour les médias avec région, logique normale
+        
+        // 1. Chercher correspondance exacte type + région
+        media = system.medias.find((m: any) => 
+          m.type === mediaType && m.region === normalizedRegion
+        )
+        
+        // 2. Fallback: même type, autres régions (ordre: wor, eu, us, jp)
+        if (!media) {
+          const fallbackRegions = ['wor', 'eu', 'us', 'jp', 'asi', 'br']
+          for (const fallbackRegion of fallbackRegions) {
+            media = system.medias.find((m: any) => 
+              m.type === mediaType && m.region === fallbackRegion
+            )
+            if (media) break
+          }
         }
       }
       
       if (media && media.url) {
-        console.log(`✅ URL média trouvée: ${media.type}(${media.region}) pour système ${gameConsole.ssConsoleId}`)
-        return media.url
+        const regionInfo = media.region ? `(${media.region})` : '(sans région)'
+        console.log(`✅ URL média trouvée: ${media.type}${regionInfo} pour système ${gameConsole.ssConsoleId}`)
+        return { url: media.url, screenscrapeId: gameConsole.ssConsoleId }
       } else {
         console.log(`❌ Média ${mediaType}(${normalizedRegion}) non trouvé pour système ${gameConsole.ssConsoleId}`)
         return null
