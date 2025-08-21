@@ -211,6 +211,20 @@ export async function getCachedMediaUrl(
 }
 
 /**
+ * Médias console qui n'ont pas de région (toujours WOR/global)
+ */
+const REGIONLESS_MEDIA_TYPES = ['minicon', 'icon', 'video', 'video-normalized']
+
+/**
+ * Consoles qui ne supportent pas certaines régions
+ * Mapping console ID -> régions non supportées
+ */
+const CONSOLE_REGION_EXCLUSIONS: Record<string, string[]> = {
+  // SuperGrafx n'a pas de région FR
+  'pc-engine-supergrafx': ['fr']
+}
+
+/**
  * Fetch une URL média depuis Screenscraper avec rate limiting
  * Utilise l'API systemesListe pour récupérer les URLs des médias
  */
@@ -221,6 +235,38 @@ async function fetchMediaFromScreenscraper(
   region: string
 ): Promise<string | null> {
   try {
+    // Vérifications préliminaires pour éviter les appels API inutiles
+    
+    // 1. Pour les médias console sans région, forcer la région à WOR
+    if (entityType === 'console' && REGIONLESS_MEDIA_TYPES.includes(mediaType) && region !== 'wor') {
+      console.log(`⚠️  Média ${mediaType} sans région - redirection vers WOR`)
+      return null // Laisser le cache retry avec WOR
+    }
+    
+    // 2. Vérifier les exclusions de région par console
+    if (entityType === 'console' || entityType === 'game') {
+      let consoleSlug = ''
+      
+      if (entityType === 'console') {
+        const consoleData = await prisma.console.findUnique({
+          where: { id: entityId },
+          select: { slug: true }
+        })
+        consoleSlug = consoleData?.slug || ''
+      } else {
+        const gameData = await prisma.game.findUnique({
+          where: { id: entityId },
+          select: { console: { select: { slug: true } } }
+        })
+        consoleSlug = gameData?.console?.slug || ''
+      }
+      
+      if (consoleSlug && CONSOLE_REGION_EXCLUSIONS[consoleSlug]?.includes(region.toLowerCase())) {
+        console.log(`⚠️  Console ${consoleSlug} ne supporte pas la région ${region.toUpperCase()}`)
+        return null // Éviter l'appel API
+      }
+    }
+
     // Rate limiting 1.2s
     await new Promise(resolve => setTimeout(resolve, 1200))
     
