@@ -11,6 +11,46 @@ interface AnniversaryGamesFeaturedProps {
   preferredRegion?: Region
 }
 
+/**
+ * Détermine l'aspect ratio des boîtes de jeu selon la console
+ */
+function getBoxAspectRatio(consoleSlug?: string): string {
+  if (!consoleSlug) return 'aspect-[3/4]' // Default portrait
+  
+  // Consoles avec boîtes carrées
+  const squareBoxConsoles = [
+    'pc-engine-supergrafx', 'pc-engine', 'pc-engine-cd',
+    'dreamcast', 'saturn', 'neo-geo-cd'
+  ]
+  
+  // Consoles avec boîtes horizontales (paysage)
+  const landscapeBoxConsoles = [
+    'nintendo-ds', 'nintendo-3ds', 'game-boy-advance',
+    'psp', 'ps-vita'
+  ]
+  
+  // Consoles avec boîtes très hautes (format DVD)
+  const tallBoxConsoles = [
+    'playstation-2', 'xbox', 'xbox-360', 'playstation-3',
+    'nintendo-gamecube'
+  ]
+  
+  if (squareBoxConsoles.includes(consoleSlug)) {
+    return 'aspect-square'
+  }
+  
+  if (landscapeBoxConsoles.includes(consoleSlug)) {
+    return 'aspect-[4/3]'
+  }
+  
+  if (tallBoxConsoles.includes(consoleSlug)) {
+    return 'aspect-[3/5]' // Plus haut que le standard
+  }
+  
+  // Format standard portrait pour la plupart des consoles
+  return 'aspect-[3/4]'
+}
+
 export default async function AnniversaryGamesFeatured({ 
   preferredRegion 
 }: AnniversaryGamesFeaturedProps = {}) {
@@ -120,8 +160,8 @@ export default async function AnniversaryGamesFeatured({
                   className="group block"
                 >
                   <article className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700">
-                    {/* Image */}
-                    <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-800">
+                    {/* Image avec aspect ratio adapté selon la console */}
+                    <div className={`relative overflow-hidden bg-gray-100 dark:bg-gray-800 ${getBoxAspectRatio(game.console?.slug)}`}>
                       {game.imageUrl ? (
                         <Image
                           src={game.imageUrl}
