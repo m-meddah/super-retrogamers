@@ -84,6 +84,7 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
           alt={displayTitle}
           className="transition-transform duration-200 group-hover:scale-105"
           priority={false}
+          cacheOnly={true}
         />
       </div>
       

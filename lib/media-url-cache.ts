@@ -29,6 +29,64 @@ const CACHE_DURATION_HOURS = 24
 const CACHE_DURATION_MS = CACHE_DURATION_HOURS * 60 * 60 * 1000
 
 /**
+ * Récupère uniquement depuis le cache existant, sans faire d'appels API
+ */
+export async function getBestCachedMediaUrlOnly(
+  entityType: 'game' | 'console',
+  entityId: string,
+  mediaTypes: string[],
+  regionPriority: string[]
+): Promise<string | null> {
+  try {
+    // Chercher tous les médias en cache (même expirés si valides)
+    const normalizedRegions = regionPriority.map(r => r.toLowerCase())
+    
+    const cached = await prisma.mediaUrlCache.findMany({
+      where: {
+        entityType,
+        entityId,
+        mediaType: { in: mediaTypes },
+        region: { in: normalizedRegions },
+        isValid: true,
+        url: { not: '' }
+        // Pas de condition expiresAt pour utiliser les images expirées
+      },
+      orderBy: [
+        { mediaType: 'asc' },
+        { region: 'asc' }
+      ]
+    })
+    
+    // Trouver le meilleur match selon les priorités (média d'abord, puis région)
+    for (const mediaType of mediaTypes) {
+      for (const region of regionPriority) {
+        const normalizedRegion = region.toLowerCase()
+        const found = cached.find(c => c.mediaType === mediaType && c.region === normalizedRegion)
+        if (found) {
+          return found.url
+        }
+      }
+    }
+    
+    // Fallback : chercher n'importe quel média valide dans le cache (peu importe la région)
+    for (const mediaType of mediaTypes) {
+      const found = cached.find(c => c.mediaType === mediaType)
+      if (found) {
+        return found.url
+      }
+    }
+    
+    // Fallback final : n'importe quel média valide disponible  
+    const anyValid = cached.find(c => c.url !== '')
+    return anyValid?.url || null
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération cache only:', error)
+    return null
+  }
+}
+
+/**
  * Récupère la meilleure URL média disponible en optimisant les appels
  */
 export async function getBestCachedMediaUrl(
