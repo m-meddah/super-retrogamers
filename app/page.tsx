@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Calendar, Trophy, Star, Users, BookOpen, BarChart3, Shield, CheckCircle, Clock, TrendingUp } from "lucide-react"
 import ConsoleCardsHomepageSection from "@/components/console-cards-homepage-section"
+import AnniversaryGamesServer from "@/components/anniversary-games-server"
 import { getHomepageFeaturedConsolesWithRegionalNames, getStatsForHomepage } from "@/lib/data-prisma"
 import { getServerSession } from "@/lib/auth-server"
 import { getServerPreferredRegion } from "@/lib/server-region-detection"
@@ -195,6 +196,13 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Anniversary Games Section */}
+      <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <AnniversaryGamesServer preferredRegion={preferredRegion} />
         </div>
       </section>
 
