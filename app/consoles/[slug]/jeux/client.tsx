@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import Link from "next/link"
 import { ArrowLeft, Filter, X, Search, Loader2 } from "lucide-react"
 import { Console } from "@prisma/client"
@@ -23,7 +23,7 @@ export default function ConsoleGamesClient({ console: gameConsole, initialGames,
   const [currentGames, setCurrentGames] = useState<GameWithConsole[]>(initialGames)
   const [totalCount, setTotalCount] = useState(initialGames.length)
   const [loading, setLoading] = useState(false)
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Derived state for UI
   const hasActiveFilters = useMemo(() => 
@@ -57,27 +57,57 @@ export default function ConsoleGamesClient({ console: gameConsole, initialGames,
     }
   }, [gameConsole])
 
-  // Handle filter changes with debouncing for search
+  // Handle filter changes with debouncing for search only
   useEffect(() => {
-    if (filters.searchQuery !== undefined) {
-      // Clear existing timeout
-      if (searchTimeout) {
-        clearTimeout(searchTimeout)
-      }
-
-      // Set new timeout for search
-      const timeout = setTimeout(() => {
-        refreshGames(filters)
-      }, 300)
-
-      setSearchTimeout(timeout)
-
-      return () => clearTimeout(timeout)
-    } else {
-      // Non-search filters trigger immediate refresh
-      refreshGames(filters)
+    // Clear any existing timeout first
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+      searchTimeoutRef.current = null
     }
-  }, [filters, refreshGames, searchTimeout])
+
+    const executeRefresh = async () => {
+      setLoading(true)
+      try {
+        const [newGames, newTotalCount] = await Promise.all([
+          loadConsoleGamesStream(0, 20, {
+            consoleSlug: gameConsole.slug,
+            ...filters
+          }),
+          countConsoleGamesStream({
+            consoleSlug: gameConsole.slug,
+            ...filters
+          })
+        ])
+        
+        setCurrentGames(newGames)
+        setTotalCount(newTotalCount)
+      } catch (err) {
+        console.error('Error refreshing games:', err)
+        setCurrentGames([])
+        setTotalCount(0)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (filters.searchQuery !== undefined && filters.searchQuery.trim() !== '') {
+      // Debounce search queries
+      searchTimeoutRef.current = setTimeout(() => {
+        executeRefresh()
+      }, 300)
+    } else {
+      // Immediate refresh for non-search changes or empty search
+      executeRefresh()
+    }
+
+    // Cleanup function
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+        searchTimeoutRef.current = null
+      }
+    }
+  }, [filters, gameConsole.slug])
 
   const handleResetFilters = () => {
     clearFilters()
