@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
-import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
+import { getBestCachedMediaUrl, getBestCachedMediaUrlOnly } from '@/lib/media-url-cache'
 import type { Game, Console } from "@prisma/client"
 
 interface GameWithConsole extends Game {
@@ -15,13 +15,15 @@ interface GameWheelLogoProps {
   className?: string
   alt?: string
   priority?: boolean
+  cacheOnly?: boolean // Si true, ne fait aucun appel API
 }
 
 export default function GameWheelLogo({ 
   game: gameData, 
   className, 
   alt,
-  priority = false
+  priority = false,
+  cacheOnly = false
 }: GameWheelLogoProps) {
   const currentRegion = useCurrentRegion()
   const [logoUrl, setLogoUrl] = useState<string>("/placeholder.svg")
@@ -37,7 +39,11 @@ export default function GameWheelLogo({
         const mediaTypes = ['wheel', 'wheel-carbon', 'wheel-steel', 'screenmarquee', 'logo-svg']
         const regionPriority = [currentRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
         
-        const url = await getBestCachedMediaUrl('game', gameData.id, mediaTypes, regionPriority)
+        // Utiliser cache-only si demandé, sinon utiliser la fonction normale
+        const url = cacheOnly 
+          ? await getBestCachedMediaUrlOnly('game', gameData.id, mediaTypes, regionPriority)
+          : await getBestCachedMediaUrl('game', gameData.id, mediaTypes, regionPriority)
+        
         if (url) {
           setLogoUrl(url)
         }
@@ -50,7 +56,7 @@ export default function GameWheelLogo({
     }
     
     loadLogo()
-  }, [gameData.id, gameData.slug, currentRegion])
+  }, [gameData.id, gameData.slug, currentRegion, cacheOnly])
 
   const handleLogoError = () => {
     setLogoError(true)

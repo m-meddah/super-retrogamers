@@ -101,6 +101,7 @@ export default async function GamePage({ params }: GamePageProps) {
                 <GameWheelLogo 
                   game={game}
                   className="mb-2"
+                  cacheOnly={true}
                 />
               </div>
               
@@ -230,6 +231,7 @@ export default async function GamePage({ params }: GamePageProps) {
                     alt={game.title}
                     className="w-full"
                     priority={true}
+                    cacheOnly={true}
                   />
                 </Suspense>
               </div>
@@ -244,6 +246,7 @@ export default async function GamePage({ params }: GamePageProps) {
                   <GameWheelLogo 
                     game={game}
                     className="opacity-70"
+                    cacheOnly={true}
                   />
                 </div>
               </div>
