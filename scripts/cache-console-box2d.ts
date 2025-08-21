@@ -57,7 +57,9 @@ async function cacheConsoleBox2D(consoleSlug: string) {
           mediaType: 'box-2D',
           region: 'jp',
           url: box2DUrl,
+          screenscrapeId: game.ssGameId,
           isValid: true,
+          cachedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
         }
       })
