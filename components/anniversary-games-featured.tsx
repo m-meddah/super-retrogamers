@@ -26,10 +26,10 @@ export default async function AnniversaryGamesFeatured({
       // Ordre de priorité des régions
       const regionPriority = [region.toLowerCase(), 'wor', 'jp', 'eu', 'us', 'asi']
       
-      // Types de médias par ordre de priorité (inclure variantes)
+      // Types de médias par ordre de priorité (box-2D en premier comme demandé)
       const mediaTypePriority = [
-        'box-2D', 'box-2D-back', 'box-2D-side', 'screenmarquee', 
-        'wheel-carbon', 'wheel-steel', 'support-2D', 'mixrbv2'
+        'box-2D', 'box-2D-back', 'box-2D-side', 'wheel-carbon', 
+        'wheel-steel', 'screenmarquee', 'support-2D', 'mixrbv2'
       ]
       
       // Chercher la meilleure image en cache (même expirée mais valide)
@@ -57,8 +57,6 @@ export default async function AnniversaryGamesFeatured({
         
         if (imageUrl) break
       }
-      
-      // Si aucune image trouvée, utiliser une image par défaut ou laisser null pour placeholder
       
       return { ...game, imageUrl }
     })
