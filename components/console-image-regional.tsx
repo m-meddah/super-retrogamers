@@ -1,7 +1,7 @@
 'use client'
 
 import Image from "next/image"
-import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
+import { useCurrentRegion } from '@/lib/hooks/use-regional-preferences'
 import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
 import type { Console } from "@prisma/client"
 import { useEffect, useState } from 'react'

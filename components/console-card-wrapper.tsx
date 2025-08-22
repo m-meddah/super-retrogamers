@@ -6,7 +6,7 @@ import Image from "next/image"
 import type { Console } from "@prisma/client"
 import { getBestCachedMediaUrl } from '@/lib/media-url-cache'
 // Hooks régionaux retirés pour optimiser les performances sur pages avec multiples consoles
-import { useCurrentRegion } from '@/lib/hooks/use-persistent-region'
+import { useCurrentRegion } from '@/lib/hooks/use-regional-preferences'
 
 interface ConsoleCardWrapperProps {
   console: Console

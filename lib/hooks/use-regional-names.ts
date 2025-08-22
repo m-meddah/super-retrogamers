@@ -1,41 +1,61 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useEffectiveRegion } from '@/lib/hooks/use-regional-preferences'
 
 /**
  * Hook to get regional console name based on current region preference
  * Optimized for better UX: keeps previous name during loading
  */
+// Cache simple pour éviter les appels répétés
+const nameCache = new Map<string, string>()
+
 export function useRegionalConsoleName(consoleId: string): {
   name: string | null
   loading: boolean
   error: string | null
 } {
   const currentRegion = useEffectiveRegion()
+  
+  // Clé de cache unique par console et région
+  const cacheKey = useMemo(() => `${consoleId}-${currentRegion}`, [consoleId, currentRegion])
+  
   const [result, setResult] = useState<{
     name: string | null
     loading: boolean
     error: string | null
-  }>({
-    name: null,
-    loading: false, // Start with loading false for better UX
-    error: null
+  }>(() => {
+    // Initialiser avec le cache si disponible
+    const cachedName = nameCache.get(cacheKey)
+    return {
+      name: cachedName || null,
+      loading: !cachedName, // Seulement en loading si pas en cache
+      error: null
+    }
   })
 
-  // Track if we're changing regions to show minimal loading
-  const [isChangingRegion, setIsChangingRegion] = useState(false)
-
   useEffect(() => {
+    // Si déjà en cache, utiliser directement
+    const cachedName = nameCache.get(cacheKey)
+    if (cachedName) {
+      setResult({
+        name: cachedName,
+        loading: false,
+        error: null
+      })
+      return
+    }
+
     async function fetchConsoleName() {
       try {
-        // Only show loading for very short time when changing regions
-        setIsChangingRegion(true)
-        setTimeout(() => setIsChangingRegion(false), 100) // Very short loading state
+        setResult(prev => ({ ...prev, loading: true }))
         
         // Import the server action dynamically to avoid SSR issues
         const { getConsoleName } = await import('@/lib/regional-names')
         const name = await getConsoleName(consoleId, currentRegion)
+        
+        // Mettre en cache
+        nameCache.set(cacheKey, name)
         
         setResult({
           name,
@@ -55,12 +75,9 @@ export function useRegionalConsoleName(consoleId: string): {
     if (consoleId && currentRegion) {
       fetchConsoleName()
     }
-  }, [consoleId, currentRegion])
+  }, [cacheKey, consoleId, currentRegion])
 
-  return {
-    ...result,
-    loading: isChangingRegion // Use the short loading state
-  }
+  return result
 }
 
 /**

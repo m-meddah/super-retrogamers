@@ -8,7 +8,6 @@ import { ConsoleCollectionActions } from "@/components/console-collection-action
 import { EditorialArticle } from "@/components/editorial-article"
 import ConsoleImageRegional from "@/components/console-image-regional"
 import ConsoleNameRegional from "@/components/console-name-regional"
-import { getConsoleFaviconUrl, generateFaviconMetadata, getAbsoluteFaviconUrl } from "@/lib/favicon-utils"
 
 interface ConsolePageProps {
   params: Promise<{
@@ -27,30 +26,18 @@ export async function generateMetadata({ params }: ConsolePageProps): Promise<Me
     }
   }
 
-  // Récupérer le favicon de la console
-  const faviconUrl = await getConsoleFaviconUrl(console)
-  const absoluteFaviconUrl = faviconUrl ? getAbsoluteFaviconUrl(faviconUrl) : null
-
-  // Générer les métadonnées avec favicon personnalisé
-  const metadata = generateFaviconMetadata(
-    absoluteFaviconUrl,
-    `${console.name} - Console retro - Super Retrogamers`
-  )
-
   return {
-    ...metadata,
+    title: `${console.name} - Console retro - Super Retrogamers`,
     description: console.description || `Découvrez la ${console.name}, console mythique de ${console.manufacturer}. Explorez son histoire, ses spécifications techniques et sa ludothèque exceptionnelle.`,
     openGraph: {
       title: `${console.name} - Console retro`,
       description: console.description || `Console ${console.name} par ${console.manufacturer}`,
-      type: 'website',
-      ...(absoluteFaviconUrl && { images: [absoluteFaviconUrl] })
+      type: 'website'
     },
     twitter: {
       card: 'summary',
       title: `${console.name} - Console retro`,
-      description: console.description || `Console ${console.name} par ${console.manufacturer}`,
-      ...(absoluteFaviconUrl && { images: [absoluteFaviconUrl] })
+      description: console.description || `Console ${console.name} par ${console.manufacturer}`
     }
   }
 }
