@@ -46,10 +46,8 @@ function SearchContent() {
         topStaff: topStaff || undefined
       }
 
-      // Utiliser la recherche combinée (locale + Screenscraper) si on a une query
-      const searchResults = query && query.length >= 3
-        ? await searchGamesWithScreenscraperAction(searchFilters)
-        : await searchGamesAction(searchFilters)
+      // Utiliser uniquement la recherche locale (Screenscraper réservé aux admins)
+      const searchResults = await searchGamesAction(searchFilters)
       setResults(prev => ({ 
         ...searchResults, 
         consoles: prev.consoles, 
@@ -302,7 +300,7 @@ function SearchContent() {
             </p>
             {query && query.length >= 3 && !loading && (
               <p className="text-xs text-gray-500 dark:text-gray-500">
-                Recherche dans la base locale et sur Screenscraper
+                Recherche dans la base de données locale
               </p>
             )}
           </div>

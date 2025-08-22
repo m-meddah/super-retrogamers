@@ -4,6 +4,8 @@ import { getScreenscraperService } from '@/lib/screenscraper-client'
 import { prisma } from '@/lib/prisma'
 import { scrapeConsolesFromScreenscraper, scrapeRegionalNamesForExistingConsoles } from '@/lib/screenscraper-service'
 import { scrapeRegionalTitlesForExistingGames, scrapeGamesForConsole } from '@/lib/screenscraper-games'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 export interface ActionState {
   success?: boolean
@@ -581,6 +583,56 @@ export async function syncGenresAction(
     return {
       success: false,
       message: `Erreur lors de la synchronisation des genres: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+    }
+  }
+}
+
+/**
+ * Action pour scraper un jeu depuis la recherche Screenscraper admin
+ */
+export async function createGameFromScreenscraperAction(
+  gameId: number,
+  systemId: number
+): Promise<ActionState> {
+  try {
+    // Vérifier que l'utilisateur est admin
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user || session.user.role !== 'admin') {
+      return {
+        success: false,
+        error: 'Accès non autorisé'
+      }
+    }
+
+    if (!gameId || !systemId) {
+      return {
+        success: false,
+        error: 'ID jeu et système requis'
+      }
+    }
+
+    // Utiliser le service Screenscraper pour scraper le jeu
+    const screenscraper = getScreenscraperService()
+    const result = await screenscraper.syncSingleGame(gameId, systemId)
+
+    return {
+      success: true,
+      message: `Jeu "${result.name}" ajouté avec succès à la base de données`,
+      data: {
+        gameName: result.name,
+        mediaCount: result.mediaCount,
+        gameId: result.id
+      }
+    }
+
+  } catch (error) {
+    console.error('Erreur lors du scraping du jeu:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erreur inconnue lors du scraping'
     }
   }
 }

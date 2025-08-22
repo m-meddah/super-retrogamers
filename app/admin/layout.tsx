@@ -12,7 +12,8 @@ import {
   BarChart3,
   ArrowLeft,
   Database,
-  Upload
+  Upload,
+  Search
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -42,6 +43,11 @@ const navItems: NavItem[] = [
     title: "Scraping",
     href: "/admin/scraping",
     icon: Upload
+  },
+  {
+    title: "Recherche Screenscraper",
+    href: "/admin/screenscraper-search",
+    icon: Search
   },
   {
     title: "Statistiques",
