@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useActionState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Heart, Loader2, CheckCircle, AlertCircle } from "lucide-react"
-import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { 
   Dialog,
@@ -61,22 +60,21 @@ const ALL_REGIONS = [
   { value: 'ASI', label: 'Asie' },
 ]
 
-function SubmitButton({ children, variant = "default", ...props }: { 
+function SubmitButton({ children, variant = "default", isSubmitting = false, ...props }: { 
   children: React.ReactNode, 
   variant?: "default" | "outline",
+  isSubmitting?: boolean,
   [key: string]: any 
 }) {
-  const { pending } = useFormStatus()
-
   return (
     <Button 
       type="submit" 
       variant={variant}
-      disabled={pending} 
+      disabled={isSubmitting} 
       className="w-full"
       {...props}
     >
-      {pending ? (
+      {isSubmitting ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           {variant === "outline" ? "Ajout wishlist..." : "Ajout collection..."}
@@ -94,17 +92,44 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
   const [isCollectionOpen, setIsCollectionOpen] = useState(false)
   const [isWishlistOpen, setIsWishlistOpen] = useState(false)
   const [detectedRegions, setDetectedRegions] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // États pour les formulaires
-  const [collectionState, collectionAction, collectionPending] = useActionState(addGameToCollectionSimple, { 
-    success: false, 
-    message: '' 
-  })
+  // États pour les formulaires - utilisons directement les actions Server sans useActionState pour debug
+  const [collectionState, setCollectionState] = useState({ success: false, message: '' })
+  const [wishlistState, setWishlistState] = useState({ success: false, message: '' })
 
-  const [wishlistState, wishlistAction, wishlistPending] = useActionState(addGameToWishlistSimple, { 
-    success: false, 
-    message: '' 
-  })
+  // Handlers pour les formulaires
+  const handleCollectionSubmit = async (formData: FormData) => {
+    setIsSubmitting(true)
+    try {
+      const result = await addGameToCollectionSimple(collectionState, formData)
+      setCollectionState(result)
+      if (result.success) {
+        setIsCollectionOpen(false)
+        // Rafraîchir la page pour forcer le rechargement des données
+        router.refresh()
+      }
+    } catch (error) {
+      setCollectionState({ success: false, message: 'Erreur lors de l\'ajout' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleWishlistSubmit = async (formData: FormData) => {
+    setIsSubmitting(true)
+    try {
+      const result = await addGameToWishlistSimple(wishlistState, formData)
+      setWishlistState(result)
+      if (result.success) {
+        setIsWishlistOpen(false)
+      }
+    } catch (error) {
+      setWishlistState({ success: false, message: 'Erreur lors de l\'ajout' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   // Détecter les régions disponibles via les médias en cache
   useEffect(() => {
@@ -144,7 +169,10 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
     }
   }, [wishlistState.success])
 
-  if (!session) {
+  // Éviter l'erreur d'hydration en affichant le même contenu côté serveur et client
+  const isLoggedIn = !!session?.user
+
+  if (!isLoggedIn) {
     return (
       <div className="space-y-3">
         <Button 
@@ -177,7 +205,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
             </DialogDescription>
           </DialogHeader>
           
-          <form action={collectionAction} className="space-y-4">
+          <form action={handleCollectionSubmit} className="space-y-4">
             <input type="hidden" name="gameId" value={game.id} />
             
             <div>
@@ -230,7 +258,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
               </div>
             )}
 
-            <SubmitButton>
+            <SubmitButton isSubmitting={isSubmitting}>
               <Plus className="mr-2 h-4 w-4" />
               Ajouter à ma collection
             </SubmitButton>
@@ -254,7 +282,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
             </DialogDescription>
           </DialogHeader>
           
-          <form action={wishlistAction} className="space-y-4">
+          <form action={handleWishlistSubmit} className="space-y-4">
             <input type="hidden" name="gameId" value={game.id} />
             
             <div>
@@ -291,7 +319,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
               </div>
             )}
 
-            <SubmitButton variant="outline">
+            <SubmitButton variant="outline" isSubmitting={isSubmitting}>
               <Heart className="mr-2 h-4 w-4" />
               Ajouter à ma wishlist
             </SubmitButton>

@@ -324,6 +324,9 @@ export async function addConsoleToCollectionSimple(
       }
     })
 
+    // Update user collection stats after adding the console
+    await CollectionService.updateUserStats(session.user.id)
+
     revalidatePath("/collection")
     revalidatePath(`/consoles/${console.slug}`)
     return { success: true, message: "Console ajoutée à votre collection !" }
@@ -494,6 +497,9 @@ export async function addGameToCollectionSimple(
         condition: condition ? (condition as ItemCondition) : null
       }
     })
+
+    // Update user collection stats after adding the game
+    await CollectionService.updateUserStats(session.user.id)
 
     revalidatePath("/collection")
     revalidatePath(`/jeux/${game.slug}`)

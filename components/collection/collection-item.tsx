@@ -125,7 +125,7 @@ export default function CollectionItem({ item, type, onEdit, onDelete }: Collect
             game={(item as GameCollectionItem).game}
             variant={(item as GameCollectionItem).variant}
             alt={getDisplayName()}
-            className="object-cover"
+            className="object-contain p-2"
           />
         )}
         <div className="absolute top-2 left-2">
