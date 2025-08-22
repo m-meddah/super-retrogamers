@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { cacheMediaUrl, buildScreenscraperMediaUrl } from '@/lib/cache-media-utils'
 
 async function cacheConsoleMedia(consoleSlug: string) {
   console.log(`=== Cache Essential Media for ${consoleSlug} ===`)
@@ -54,29 +55,23 @@ async function cacheConsoleMedia(consoleSlug: string) {
         continue
       }
       
-      // Build the media URL using the real ssGameId
-      const mediaUrl = `https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=Fradz&devpassword=AGeJikPS7jZ&softname=super-retrogamers&ssid=&sspassword=&systemeid=105&jeuid=${game.ssGameId}&media=${mediaType}(jp)`
+      // Build the media URL using the standardized function
+      const mediaUrl = buildScreenscraperMediaUrl(105, game.ssGameId, mediaType, 'jp')
       
       console.log(`Creating cache entry for: ${mediaType}`)
       
-      // Create cache entry
-      try {
-        await prisma.mediaUrlCache.create({
-          data: {
-            entityType: 'game',
-            entityId: game.id,
-            mediaType: mediaType,
-            region: 'jp',
-            url: mediaUrl,
-            screenscrapeId: game.ssGameId,
-            isValid: true,
-            cachedAt: new Date(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
-          }
-        })
-        console.log(`✅ ${mediaType} cache entry created`)
-      } catch (error) {
-        console.error(`❌ Error creating ${mediaType} cache entry:`, error)
+      // Create cache entry using standardized function
+      const success = await cacheMediaUrl(
+        'game',
+        game.id,
+        mediaType,
+        'jp',
+        mediaUrl,
+        game.ssGameId
+      )
+      
+      if (!success) {
+        console.error(`❌ Failed to cache ${mediaType} URL`)
       }
       
       // Small delay to respect rate limits

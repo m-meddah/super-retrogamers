@@ -4,9 +4,10 @@ import { prisma } from '@/lib/prisma'
 import { Region } from '@prisma/client'
 
 /**
- * Récupère les jeux qui ont leur anniversaire aujourd'hui pour une région donnée
+ * Récupère les jeux qui ont leur anniversaire aujourd'hui (même jour et mois, peu importe l'année)
+ * Priorise la région préférée et évite les doublons par ssGameId
  * @param preferredRegion - Région préférée de l'utilisateur
- * @returns Liste des jeux avec leur date de sortie
+ * @returns Liste des jeux avec leur date de sortie et nombre d'années d'anniversaire
  */
 export async function getAnniversaryGames(preferredRegion: Region = 'FR') {
   const today = new Date()
@@ -49,21 +50,47 @@ export async function getAnniversaryGames(preferredRegion: Region = 'FR') {
       }
     })
 
-    // Filtrer et traiter les résultats côté application pour plus de contrôle
+    // Filtrer par jour et mois actuels, éviter les doublons par ssGameId
+    const seenGameIds = new Set<number>()
     const anniversaryGames = gamesWithAnniversary.filter(game => {
-      // Chercher la meilleure date de sortie selon la région préférée
-      const bestDate = getBestRegionalDate(game.regionalDates, preferredRegion)
+      // Éviter les doublons par ssGameId
+      if (!game.ssGameId || seenGameIds.has(game.ssGameId)) {
+        return false
+      }
       
-      if (!bestDate) return false
-
-      const releaseDate = new Date(bestDate.releaseDate!)
-      return (
-        releaseDate.getDate() === currentDay &&
-        releaseDate.getMonth() + 1 === currentMonth
-      )
+      // Trouver toutes les dates qui correspondent au jour/mois actuel
+      const matchingDates = game.regionalDates.filter(rd => {
+        if (!rd.releaseDate) return false
+        const releaseDate = new Date(rd.releaseDate)
+        return (
+          releaseDate.getDate() === currentDay &&
+          releaseDate.getMonth() + 1 === currentMonth
+        )
+      })
+      
+      if (matchingDates.length === 0) return false
+      
+      // Ajouter le ssGameId aux vus pour éviter les doublons
+      seenGameIds.add(game.ssGameId)
+      return true
     }).map(game => {
-      const bestDate = getBestRegionalDate(game.regionalDates, preferredRegion)
-      const releaseYear = bestDate ? new Date(bestDate.releaseDate!).getFullYear() : null
+      // Trouver la meilleure date pour l'anniversaire (prioriser région préférée pour les dates du jour)
+      const todayDates = game.regionalDates.filter(rd => {
+        if (!rd.releaseDate) return false
+        const releaseDate = new Date(rd.releaseDate)
+        return (
+          releaseDate.getDate() === currentDay &&
+          releaseDate.getMonth() + 1 === currentMonth
+        )
+      })
+      
+      // Prioriser la région préférée parmi les dates d'aujourd'hui
+      let bestTodayDate = todayDates.find(rd => rd.region === preferredRegion)
+      if (!bestTodayDate) {
+        bestTodayDate = todayDates[0] // Prendre la première si région préférée pas trouvée
+      }
+      
+      const releaseYear = bestTodayDate ? new Date(bestTodayDate.releaseDate!).getFullYear() : null
       const yearsAgo = releaseYear ? today.getFullYear() - releaseYear : null
 
       return {
@@ -71,12 +98,20 @@ export async function getAnniversaryGames(preferredRegion: Region = 'FR') {
         title: game.title,
         slug: game.slug,
         console: game.console,
-        releaseDate: bestDate?.releaseDate || null,
-        releaseRegion: bestDate?.region || null,
+        releaseDate: bestTodayDate?.releaseDate || null,
+        releaseRegion: bestTodayDate?.region || null,
         releaseYear,
         yearsAgo,
         anniversary: yearsAgo ? `${yearsAgo}e anniversaire` : 'Anniversaire'
       }
+    })
+
+    // Trier par anniversaires les plus significatifs (plus d'années) en premier
+    anniversaryGames.sort((a, b) => {
+      if (a.yearsAgo && b.yearsAgo) {
+        return b.yearsAgo - a.yearsAgo // Plus d'années en premier
+      }
+      return a.title.localeCompare(b.title) // Fallback alphabétique
     })
 
     return anniversaryGames

@@ -227,42 +227,42 @@ export async function getCachedMediaUrl(
       }
     }
 
-    // Sauvegarder en cache (même si null pour éviter les appels répétés)
-    const expiresAt = new Date(Date.now() + CACHE_DURATION_MS)
-    
-    await prisma.mediaUrlCache.upsert({
-      where: {
-        entityType_entityId_mediaType_region: {
+    // Ne sauvegarder en cache QUE si nous avons une URL valide
+    if (url && url.trim() !== '') {
+      const expiresAt = new Date(Date.now() + CACHE_DURATION_MS)
+      
+      await prisma.mediaUrlCache.upsert({
+        where: {
+          entityType_entityId_mediaType_region: {
+            entityType,
+            entityId,
+            mediaType,
+            region: normalizedRegion
+          }
+        },
+        create: {
           entityType,
           entityId,
           mediaType,
-          region: normalizedRegion
+          region: normalizedRegion,
+          url: url,
+          screenscrapeId,
+          cachedAt: new Date(),
+          expiresAt,
+          isValid: true
+        },
+        update: {
+          url: url,
+          screenscrapeId,
+          cachedAt: new Date(),
+          expiresAt,
+          isValid: true
         }
-      },
-      create: {
-        entityType,
-        entityId,
-        mediaType,
-        region: normalizedRegion,
-        url: url || '', // Stocker chaîne vide si pas trouvé
-        screenscrapeId,
-        cachedAt: new Date(),
-        expiresAt,
-        isValid: url !== null
-      },
-      update: {
-        url: url || '',
-        screenscrapeId,
-        cachedAt: new Date(),
-        expiresAt,
-        isValid: url !== null
-      }
-    })
-    
-    if (url) {
+      })
+      
       console.log(`💾 URL mise en cache jusqu'au ${expiresAt.toLocaleString('fr-FR')}`)
     } else {
-      console.log(`💾 Échec mis en cache (évite les appels futurs)`)
+      console.log(`❌ Aucune URL valide trouvée - pas de mise en cache`)
     }
     
     return url

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { cacheMediaUrl, buildScreenscraperMediaUrl } from '@/lib/cache-media-utils'
 
 async function cacheConsoleWheels(consoleSlug: string) {
   console.log(`=== Cache Wheel Logos for ${consoleSlug} ===`)
@@ -47,29 +48,23 @@ async function cacheConsoleWheels(consoleSlug: string) {
         continue
       }
       
-      // Build the wheel URL using the real ssGameId
-      const wheelUrl = `https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=Fradz&devpassword=AGeJikPS7jZ&softname=super-retrogamers&ssid=&sspassword=&systemeid=105&jeuid=${game.ssGameId}&media=${wheelType}(jp)`
+      // Build the wheel URL using the standardized function
+      const wheelUrl = buildScreenscraperMediaUrl(105, game.ssGameId, wheelType, 'jp')
       
       console.log(`Creating cache entry for: ${wheelType}`)
       
-      // Create cache entry
-      try {
-        await prisma.mediaUrlCache.create({
-          data: {
-            entityType: 'game',
-            entityId: game.id,
-            mediaType: wheelType,
-            region: 'jp',
-            url: wheelUrl,
-            screenscrapeId: game.ssGameId,
-            isValid: true,
-            cachedAt: new Date(),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
-          }
-        })
-        console.log(`✅ ${wheelType} cache entry created`)
-      } catch (error) {
-        console.error(`❌ Error creating ${wheelType} cache entry:`, error)
+      // Create cache entry using standardized function
+      const success = await cacheMediaUrl(
+        'game',
+        game.id,
+        wheelType,
+        'jp',
+        wheelUrl,
+        game.ssGameId
+      )
+      
+      if (!success) {
+        console.error(`❌ Failed to cache ${wheelType} URL`)
       }
       
       // Small delay to respect rate limits

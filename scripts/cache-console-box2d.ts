@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { cacheMediaUrl, buildScreenscraperMediaUrl } from '@/lib/cache-media-utils'
 
 async function cacheConsoleBox2D(consoleSlug: string) {
   console.log(`=== Cache Box-2D Images for ${consoleSlug} ===`)
@@ -43,29 +44,23 @@ async function cacheConsoleBox2D(consoleSlug: string) {
       continue
     }
     
-    // Build the box-2D URL using the real ssGameId
-    const box2DUrl = `https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=Fradz&devpassword=AGeJikPS7jZ&softname=super-retrogamers&ssid=&sspassword=&systemeid=105&jeuid=${game.ssGameId}&media=box-2D(jp)`
+    // Build the box-2D URL using the standardized function
+    const box2DUrl = buildScreenscraperMediaUrl(105, game.ssGameId, 'box-2D', 'jp')
     
     console.log(`Creating cache entry for: ${box2DUrl}`)
     
-    // Create cache entry
-    try {
-      await prisma.mediaUrlCache.create({
-        data: {
-          entityType: 'game',
-          entityId: game.id,
-          mediaType: 'box-2D',
-          region: 'jp',
-          url: box2DUrl,
-          screenscrapeId: game.ssGameId,
-          isValid: true,
-          cachedAt: new Date(),
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h from now
-        }
-      })
-      console.log('✅ Cache entry created')
-    } catch (error) {
-      console.error('❌ Error creating cache entry:', error)
+    // Create cache entry using standardized function
+    const success = await cacheMediaUrl(
+      'game',
+      game.id,
+      'box-2D',
+      'jp',
+      box2DUrl,
+      game.ssGameId
+    )
+    
+    if (!success) {
+      console.error('❌ Failed to cache media URL')
     }
     
     // Small delay to respect rate limits

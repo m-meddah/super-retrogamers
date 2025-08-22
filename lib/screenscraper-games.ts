@@ -907,7 +907,8 @@ export async function createGameFromScreenscraper(
     
     // Process media files
     if (gameDetails.medias) {
-      await processGameMedias(createdGame.id, gameDetails.medias)
+      const screenscrapeId = typeof gameDetails.id === 'number' ? gameDetails.id : parseInt(String(gameDetails.id))
+      await processGameMedias(createdGame.id, gameDetails.medias, screenscrapeId)
       
       // Images now handled dynamically through URL cache system
       console.log(`📸 Médias disponibles via le cache d'URLs pour ${createdGame.title}`)
@@ -926,7 +927,8 @@ export async function createGameFromScreenscraper(
  */
 async function processGameMedias(
   gameId: string, 
-  mediasData: ScreenscraperGameMedia
+  mediasData: ScreenscraperGameMedia,
+  screenscrapeId: number
 ) {
   try {
     if (!mediasData || !Array.isArray(mediasData) || mediasData.length === 0) {
@@ -987,11 +989,16 @@ async function processGameMedias(
         let downloadError: string | null = null
         
         try {
-          // Store URL in cache instead of downloading
-          const { setCachedMediaUrl } = await import('@/lib/media-url-cache')
-          await setCachedMediaUrl('game', gameId, mediaType, mediaRegion, media.url)
-          localPath = media.url // Store the URL directly
-          console.log(`   ✅ ${media.type} (${media.region}) - URL stockée dans le cache`)
+          // Store URL in cache using standardized function
+          const { cacheMediaUrl } = await import('@/lib/cache-media-utils')
+          const success = await cacheMediaUrl('game', gameId, mediaType, mediaRegion, media.url, screenscrapeId)
+          if (success) {
+            localPath = media.url // Store the URL directly
+            console.log(`   ✅ ${media.type} (${media.region}) - URL stockée dans le cache`)
+          } else {
+            downloadError = 'Échec de la mise en cache'
+            console.log(`   ❌ ${media.type} (${media.region}) échec cache: URL invalide ou screenscrapeId manquant`)
+          }
         } catch (error) {
           downloadError = error instanceof Error ? error.message : 'Erreur inconnue'
           console.log(`   ❌ ${media.type} (${media.region}) erreur cache: ${downloadError}`)
@@ -1358,7 +1365,8 @@ export async function rescrapGameMedias(gameId: string): Promise<{ success: bool
     console.log('Anciens URLs du cache supprimés')
     
     // Traiter les nouveaux médias
-    await processGameMedias(game.id, gameDetails.medias)
+    const screenscrapeId = typeof gameDetails.id === 'number' ? gameDetails.id : parseInt(String(gameDetails.id))
+    await processGameMedias(game.id, gameDetails.medias, screenscrapeId)
     
     // Compter les URLs en cache créées
     const mediaCount = await prisma.mediaUrlCache.count({
