@@ -141,7 +141,7 @@ export class ScreenscraperService {
     }
   }
 
-  async syncSingleGame(gameId: number, consoleId?: number): Promise<{ name: string, mediaCount: number }> {
+  async syncSingleGame(gameId: number, consoleId?: number | string): Promise<{ name: string, mediaCount: number }> {
     const devId = process.env.SCREENSCRAPER_DEV_ID
     const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
     
@@ -153,8 +153,11 @@ export class ScreenscraperService {
     
     // Si un consoleId est fourni, vérifier qu'elle existe dans notre base
     if (consoleId) {
+      // S'assurer que consoleId est bien un entier
+      const consoleIdInt = typeof consoleId === 'string' ? parseInt(consoleId) : consoleId
+      
       gameConsole = await prisma.console.findUnique({
-        where: { ssConsoleId: consoleId }
+        where: { ssConsoleId: consoleIdInt }
       })
       
       if (!gameConsole) {
@@ -164,7 +167,7 @@ export class ScreenscraperService {
     
     // Construire l'URL avec ou sans restriction de console
     const baseUrl = `https://api.screenscraper.fr/api2/jeuInfos.php?devid=${devId}&devpassword=${devPassword}&output=json&gameid=${gameId}`
-    const url = consoleId ? `${baseUrl}&systemeid=${consoleId}` : baseUrl
+    const url = consoleId ? `${baseUrl}&systemeid=${typeof consoleId === 'string' ? parseInt(consoleId) : consoleId}` : baseUrl
     
     console.log(`Scraping jeu ID: ${gameId}${consoleId ? ` pour console ID: ${consoleId}` : ' (toutes consoles)'}`)
     const response = await rateLimitedFetch(url)
