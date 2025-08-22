@@ -294,7 +294,7 @@ export async function getQuickSearchSuggestionsAction(query: string): Promise<st
  */
 interface ScreenscraperSearchResult {
   id: number
-  nom: string
+  nom?: string
   noms?: {
     nom_fr?: string
     nom_eu?: string
@@ -304,6 +304,7 @@ interface ScreenscraperSearchResult {
   systeme?: {
     id: number
     nom?: string
+    text?: string
   }
   editeur?: string | { text?: string }
   developpeur?: string | { text?: string }
@@ -392,9 +393,9 @@ async function searchScreenscraperAPI(query: string): Promise<ScreenscraperSearc
   const url = `https://api.screenscraper.fr/api2/jeuRecherche.php?devid=${devId}&devpassword=${devPassword}&softname=super-retrogamers&output=json&recherche=${encodeURIComponent(query)}`
   
   console.log(`🔍 Recherche Screenscraper: "${query}"`)
-  
-  // Rate limiting: attendre 1.2s
-  await new Promise(resolve => setTimeout(resolve, 1200))
+
+  // Attendre 15s
+  await new Promise(resolve => setTimeout(resolve, 15000))
   
   const response = await fetch(url)
   
@@ -421,7 +422,19 @@ async function searchScreenscraperAPI(query: string): Promise<ScreenscraperSearc
  * Extraire le titre d'un jeu Screenscraper
  */
 function getGameTitle(game: ScreenscraperSearchResult): string {
-  return game.noms?.nom_fr || game.noms?.nom_eu || game.noms?.nom_us || game.noms?.noms_commun || game.nom || `Jeu ${game.id}`
+  // Priorité de recherche des titres : FR > EU > US > commun > nom général
+  if (game.noms) {
+    if (game.noms.nom_fr && game.noms.nom_fr.trim()) return game.noms.nom_fr.trim()
+    if (game.noms.nom_eu && game.noms.nom_eu.trim()) return game.noms.nom_eu.trim()
+    if (game.noms.nom_us && game.noms.nom_us.trim()) return game.noms.nom_us.trim()
+    if (game.noms.noms_commun && game.noms.noms_commun.trim()) return game.noms.noms_commun.trim()
+  }
+  
+  // Fallback sur le nom général si disponible
+  if (game.nom && game.nom.trim()) return game.nom.trim()
+  
+  // Dernière tentative : utiliser l'ID comme nom d'affichage
+  return `Jeu inconnu (${game.id})`
 }
 
 /**
@@ -477,7 +490,7 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult): Se
     playerCount,
     topStaff: false, // Pas d'info TOP Staff dans l'API de recherche
     console: ssGame.systeme ? {
-      name: ssGame.systeme.nom || 'Console inconnue',
+      name: ssGame.systeme.nom || ssGame.systeme.text || 'Console inconnue',
       slug: `system-${ssGame.systeme.id}`
     } : null
   }
