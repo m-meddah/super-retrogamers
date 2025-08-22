@@ -10,8 +10,16 @@ interface GameWithConsole extends Game {
   console?: Console | null
 }
 
+// Interface pour les résultats de recherche Screenscraper
+interface ScreenscraperGameResult {
+  id: string
+  slug: string
+  title: string
+  screenscraper_image_url?: string
+}
+
 interface AdaptiveGameImageProps {
-  game: GameWithConsole
+  game: GameWithConsole | ScreenscraperGameResult
   className?: string
   alt?: string
   priority?: boolean
@@ -30,22 +38,34 @@ export default function AdaptiveGameImage({
   const [isLoading, setIsLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
   
+  // Détecter si c'est un résultat Screenscraper
+  const isScreenscraperResult = 'screenscraper_image_url' in gameData
+  
   useEffect(() => {
     async function loadImage() {
       setIsLoading(true)
       setImageError(false)
       try {
-        // Utilisation de la fonction optimisée pour les jeux
-        const mediaTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
-        const regionPriority = [currentRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
+        // Si c'est un résultat Screenscraper avec une URL d'image, l'utiliser directement
+        if (isScreenscraperResult && gameData.screenscraper_image_url) {
+          setImageUrl(gameData.screenscraper_image_url)
+          setIsLoading(false)
+          return
+        }
         
-        // Utiliser cache-only si demandé, sinon utiliser la fonction normale
-        const url = cacheOnly 
-          ? await getBestCachedMediaUrlOnly('game', gameData.id, mediaTypes, regionPriority)
-          : await getBestCachedMediaUrl('game', gameData.id, mediaTypes, regionPriority)
-        
-        if (url) {
-          setImageUrl(url)
+        // Sinon, utiliser la logique normale pour les jeux en base
+        if ('id' in gameData && gameData.id) {
+          const mediaTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
+          const regionPriority = [currentRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
+          
+          // Utiliser cache-only si demandé, sinon utiliser la fonction normale
+          const url = cacheOnly 
+            ? await getBestCachedMediaUrlOnly('game', gameData.id, mediaTypes, regionPriority)
+            : await getBestCachedMediaUrl('game', gameData.id, mediaTypes, regionPriority)
+          
+          if (url) {
+            setImageUrl(url)
+          }
         }
       } catch (error) {
         console.error(`Erreur chargement image jeu ${gameData.slug}:`, error)
@@ -56,7 +76,7 @@ export default function AdaptiveGameImage({
     }
     
     loadImage()
-  }, [gameData.id, gameData.slug, currentRegion, cacheOnly])
+  }, [gameData.id, gameData.slug, currentRegion, cacheOnly, isScreenscraperResult, gameData.screenscraper_image_url])
 
   const handleImageError = () => {
     setImageError(true)
@@ -76,7 +96,7 @@ export default function AdaptiveGameImage({
         src={imageUrl}
         alt={alt || gameData.title}
         fill
-        className={`object-contain ${isLoading ? 'opacity-50' : 'opacity-100'}`}
+        className={`object-contain p-2 ${isLoading ? 'opacity-50' : 'opacity-100'}`}
         onError={handleImageError}
         priority={priority}
       />

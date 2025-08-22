@@ -29,6 +29,8 @@ export interface SearchResult {
       name: string
       slug: string
     } | null
+    // Pour les résultats Screenscraper - URL directe de l'image
+    screenscraper_image_url?: string
   }>
   totalCount: number
   consoles: Array<{ name: string; slug: string }>
@@ -309,6 +311,17 @@ interface ScreenscraperSearchResult {
   synopsis?: Array<{ region: string; text: string }>
   dates?: Array<{ region: string; text: string }>
   genres?: Array<{ region: string; text: string }>
+  medias?: Array<{
+    type: string
+    parent?: string
+    url: string
+    region?: string
+    crc?: string
+    md5?: string
+    sha1?: string
+    size?: string
+    format?: string
+  }>
 }
 
 /**
@@ -453,6 +466,44 @@ function getRegionPriority(preferredRegion: string): string[] {
 }
 
 /**
+ * Extraire l'URL de l'image box-2D selon la région préférée
+ */
+function getGameImageUrl(game: ScreenscraperSearchResult, preferredRegion: string = 'fr'): string | undefined {
+  if (!game.medias || !Array.isArray(game.medias)) {
+    return undefined
+  }
+  
+  // Types d'images préférés dans l'ordre
+  const imageTypes = ['box-2D', 'box-3D', 'wheel', 'sstitle', 'ss']
+  const regionPriority = getRegionPriority(preferredRegion)
+  
+  // Chercher d'abord par type d'image préféré, puis par région
+  for (const imageType of imageTypes) {
+    for (const region of regionPriority) {
+      const mediaEntry = game.medias.find(m => 
+        m.type === imageType && 
+        m.region === region &&
+        m.url
+      )
+      if (mediaEntry?.url) {
+        return mediaEntry.url
+      }
+    }
+    
+    // Si aucune région spécifique trouvée pour ce type, chercher sans région
+    const mediaEntry = game.medias.find(m => 
+      m.type === imageType && 
+      m.url
+    )
+    if (mediaEntry?.url) {
+      return mediaEntry.url
+    }
+  }
+  
+  return undefined
+}
+
+/**
  * Convertir un résultat Screenscraper vers le format GameResult
  */
 function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult, preferredRegion: string = 'fr'): SearchResult['games'][0] {
@@ -513,6 +564,9 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult, pre
     }
   }
   
+  // Extraction de l'URL de l'image
+  const imageUrl = getGameImageUrl(ssGame, preferredRegion)
+
   return {
     id: `screenscraper-${ssGame.id}`,
     slug: `screenscraper-${ssGame.id}`, // Slug temporaire pour les résultats Screenscraper
@@ -525,6 +579,7 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult, pre
     console: ssGame.systeme ? {
       name: ssGame.systeme.nom || ssGame.systeme.text || 'Console inconnue',
       slug: `system-${ssGame.systeme.id}`
-    } : null
+    } : null,
+    screenscraper_image_url: imageUrl
   }
 }
