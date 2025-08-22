@@ -76,7 +76,7 @@ export default function AdaptiveGameImage({
     }
     
     loadImage()
-  }, [gameData.id, gameData.slug, currentRegion, cacheOnly, isScreenscraperResult, gameData.screenscraper_image_url])
+  }, [gameData.id, gameData.slug, currentRegion, cacheOnly, isScreenscraperResult, 'screenscraper_image_url' in gameData ? gameData.screenscraper_image_url : undefined])
 
   const handleImageError = () => {
     setImageError(true)

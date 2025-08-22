@@ -623,8 +623,7 @@ export async function createGameFromScreenscraperAction(
       message: `Jeu "${result.name}" ajouté avec succès à la base de données`,
       data: {
         gameName: result.name,
-        mediaCount: result.mediaCount,
-        gameId: result.id
+        mediaCount: result.mediaCount
       }
     }
 

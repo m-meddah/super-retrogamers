@@ -141,13 +141,16 @@ export class ScreenscraperService {
     }
   }
 
-  async syncSingleGame(gameId: number, consoleId?: number | string): Promise<{ name: string, mediaCount: number }> {
+  async syncSingleGame(gameId: number | string, consoleId?: number | string): Promise<{ name: string, mediaCount: number }> {
     const devId = process.env.SCREENSCRAPER_DEV_ID
     const devPassword = process.env.SCREENSCRAPER_DEV_PASSWORD
     
     if (!devId || !devPassword) {
       throw new Error('Identifiants Screenscraper manquants')
     }
+
+    // S'assurer que gameId est bien un entier
+    const gameIdInt = typeof gameId === 'string' ? parseInt(gameId) : gameId
     
     let gameConsole = null
     
@@ -161,15 +164,15 @@ export class ScreenscraperService {
       })
       
       if (!gameConsole) {
-        throw new Error(`Console avec ID ${consoleId} non trouvée dans la base`)
+        throw new Error(`Console avec ID ${consoleIdInt} non trouvée dans la base`)
       }
     }
     
     // Construire l'URL avec ou sans restriction de console
-    const baseUrl = `https://api.screenscraper.fr/api2/jeuInfos.php?devid=${devId}&devpassword=${devPassword}&output=json&gameid=${gameId}`
+    const baseUrl = `https://api.screenscraper.fr/api2/jeuInfos.php?devid=${devId}&devpassword=${devPassword}&output=json&gameid=${gameIdInt}`
     const url = consoleId ? `${baseUrl}&systemeid=${typeof consoleId === 'string' ? parseInt(consoleId) : consoleId}` : baseUrl
     
-    console.log(`Scraping jeu ID: ${gameId}${consoleId ? ` pour console ID: ${consoleId}` : ' (toutes consoles)'}`)
+    console.log(`Scraping jeu ID: ${gameIdInt}${consoleId ? ` pour console ID: ${consoleId}` : ' (toutes consoles)'}`)
     const response = await rateLimitedFetch(url)
     
     if (!response.ok) {
@@ -180,7 +183,7 @@ export class ScreenscraperService {
     const game = data.response?.jeu
     
     if (!game) {
-      throw new Error(`Jeu avec ID ${gameId} non trouvé`)
+      throw new Error(`Jeu avec ID ${gameIdInt} non trouvé`)
     }
     
     // Si aucune console spécifiée, essayer de trouver/créer la console du jeu
@@ -202,7 +205,7 @@ export class ScreenscraperService {
     // Vérifier si le jeu existe déjà pour cette console
     const existingGame = await prisma.game.findFirst({
       where: { 
-        ssGameId: gameId,
+        ssGameId: gameIdInt,
         consoleId: gameConsole.id
       }
     })
@@ -220,7 +223,7 @@ export class ScreenscraperService {
     
     if (!createdGame) {
       // Si le jeu n'est pas créé (notgame = true, ou autre raison), on l'indique clairement
-      const gameName = game.noms?.nom_eu || game.noms?.nom_us || game.noms?.nom_ss || `Jeu ID ${gameId}`
+      const gameName = game.noms?.nom_eu || game.noms?.nom_us || game.noms?.nom_ss || `Jeu ID ${gameIdInt}`
       throw new Error(`Le jeu "${gameName}" n'a pas pu être créé (probablement marqué comme "not game" par Screenscraper)`)
     }
     
