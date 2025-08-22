@@ -5,6 +5,8 @@ import RegionalLink from "@/components/regional-link"
 import Image from "next/image"
 import AdaptiveGameImage from "@/components/adaptive-game-image"
 import GameWheelLogo from "@/components/game-wheel-logo"
+import GameCollectionActions from "@/components/game-collection-actions"
+import { getAvailableRegionsForGame } from "@/lib/actions/collection-actions"
 import { Calendar, Star, Gamepad2, Building, Users, Award } from "lucide-react"
 import { getGameBySlug } from "@/lib/data-prisma"
 import { getGameFaviconUrl, generateFaviconMetadata, getAbsoluteFaviconUrl } from "@/lib/favicon-utils"
@@ -61,6 +63,9 @@ export default async function GamePage({ params }: GamePageProps) {
   if (!game) {
     notFound()
   }
+
+  // Récupérer les régions disponibles pour ce jeu
+  const availableRegions = await getAvailableRegionsForGame(game.id)
 
   return (
     <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
@@ -250,6 +255,12 @@ export default async function GamePage({ params }: GamePageProps) {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Actions de collection */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
+              <h3 className="mb-3 font-semibold text-gray-900 dark:text-white">Collection</h3>
+              <GameCollectionActions game={game} availableRegions={availableRegions} />
             </div>
 
             {/* Console Link */}

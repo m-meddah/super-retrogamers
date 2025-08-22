@@ -415,3 +415,212 @@ export async function addToWishlistSimple(
     return { success: false, error: "Erreur lors de l'ajout à la wishlist" }
   }
 }
+
+// === Actions pour les jeux ===
+
+interface SimpleActionState {
+  success: boolean
+  message: string
+}
+
+export async function addGameToCollectionSimple(
+  prevState: SimpleActionState,
+  formData: FormData
+): Promise<SimpleActionState> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Vous devez être connecté pour ajouter des jeux à votre collection" }
+    }
+
+    const gameId = formData.get('gameId') as string
+    const region = formData.get('region') as string
+    const condition = formData.get('condition') as string
+
+    if (!gameId || !region) {
+      return { success: false, message: "Jeu et région requis" }
+    }
+
+    // Récupérer le jeu pour validation
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, title: true, slug: true }
+    })
+
+    if (!game) {
+      return { success: false, message: "Jeu non trouvé" }
+    }
+
+    // Trouver ou créer le variant pour la région spécifiée
+    let variant = await prisma.gameVariant.findFirst({
+      where: {
+        gameId: game.id,
+        region: region as Region
+      }
+    })
+
+    if (!variant) {
+      // Créer le variant manquant
+      variant = await prisma.gameVariant.create({
+        data: {
+          gameId: game.id,
+          name: `${game.title} (${region})`,
+          region: region as Region
+        }
+      })
+    }
+
+    // Check if item already in collection for this specific variant
+    const existingItem = await prisma.userGameCollection.findFirst({
+      where: {
+        userId: session.user.id,
+        gameVariantId: variant.id
+      }
+    })
+
+    if (existingItem) {
+      return { success: false, message: 'Jeu déjà présent dans votre collection pour cette région' }
+    }
+
+    // Add to collection using variant
+    await prisma.userGameCollection.create({
+      data: {
+        userId: session.user.id,
+        gameId: game.id,
+        gameVariantId: variant.id,
+        condition: condition ? (condition as ItemCondition) : null
+      }
+    })
+
+    revalidatePath("/collection")
+    revalidatePath(`/jeux/${game.slug}`)
+    return { success: true, message: "Ajouté à votre collection !" }
+
+  } catch (error) {
+    console.error("Error adding game to collection:", error)
+    return { success: false, message: "Erreur lors de l'ajout à la collection" }
+  }
+}
+
+export async function addGameToWishlistSimple(
+  prevState: SimpleActionState,
+  formData: FormData
+): Promise<SimpleActionState> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user?.id) {
+      return { success: false, message: "Vous devez être connecté pour ajouter des jeux à votre wishlist" }
+    }
+
+    const gameId = formData.get('gameId') as string
+    const region = formData.get('region') as string
+
+    if (!gameId || !region) {
+      return { success: false, message: "Jeu et région requis" }
+    }
+
+    // Récupérer le jeu pour validation
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, title: true, slug: true }
+    })
+
+    if (!game) {
+      return { success: false, message: "Jeu non trouvé" }
+    }
+
+    // Trouver ou créer le variant pour la région spécifiée
+    let variant = await prisma.gameVariant.findFirst({
+      where: {
+        gameId: game.id,
+        region: region as Region
+      }
+    })
+
+    if (!variant) {
+      // Créer le variant manquant
+      variant = await prisma.gameVariant.create({
+        data: {
+          gameId: game.id,
+          name: `${game.title} (${region})`,
+          region: region as Region
+        }
+      })
+    }
+
+    // Check if item already in wishlist for this specific variant
+    const existingItem = await prisma.userWishlist.findFirst({
+      where: {
+        userId: session.user.id,
+        gameVariantId: variant.id
+      }
+    })
+
+    if (existingItem) {
+      return { success: false, message: 'Jeu déjà présent dans votre wishlist pour cette région' }
+    }
+
+    // Add to wishlist using variant
+    await prisma.userWishlist.create({
+      data: {
+        userId: session.user.id,
+        gameId: game.id,
+        gameVariantId: variant.id
+      }
+    })
+
+    revalidatePath("/collection")
+    revalidatePath(`/jeux/${game.slug}`)
+    return { success: true, message: "Ajouté à votre wishlist !" }
+
+  } catch (error) {
+    console.error("Error adding game to wishlist:", error)
+    return { success: false, message: "Erreur lors de l'ajout à la wishlist" }
+  }
+}
+
+// === Récupération des régions disponibles ===
+
+export async function getAvailableRegionsForGame(gameId: string): Promise<string[]> {
+  try {
+    // Récupérer les régions disponibles basées sur les médias box-2D en cache
+    const cachedMedias = await prisma.mediaUrlCache.findMany({
+      where: {
+        entityType: 'game',
+        entityId: gameId,
+        mediaType: 'box-2D',
+        isValid: true,
+        url: {
+          not: ''
+        }
+      },
+      select: {
+        region: true
+      },
+      distinct: ['region']
+    })
+
+    // Convertir en format approprié et normaliser les régions
+    const availableRegions = cachedMedias
+      .map(media => media.region.toUpperCase())
+      .filter(region => ['FR', 'EU', 'WOR', 'JP', 'US', 'ASI'].includes(region))
+
+    // Si aucune région spécifique trouvée, retourner toutes les régions par défaut
+    if (availableRegions.length === 0) {
+      return ['FR', 'EU', 'WOR', 'JP', 'US', 'ASI']
+    }
+
+    return availableRegions
+
+  } catch (error) {
+    console.error('Erreur récupération régions disponibles:', error)
+    // En cas d'erreur, retourner toutes les régions
+    return ['FR', 'EU', 'WOR', 'JP', 'US', 'ASI']
+  }
+}

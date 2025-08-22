@@ -118,7 +118,7 @@ export default function CollectionItem({ item, type, onEdit, onDelete }: Collect
             console={(item as ConsoleCollectionItem).console}
             variant={(item as ConsoleCollectionItem).variant}
             alt={getDisplayName()}
-            className="object-cover"
+            className="object-contain p-2"
           />
         ) : (
           <GameImageByRegion

@@ -24,7 +24,7 @@ export default function ConsoleImageByRegion({
 }: ConsoleImageByRegionProps) {
   // Utiliser le variant si disponible, sinon la console directe
   const targetConsole = variant?.console || consoleData
-  const targetRegion = variant?.region || 'FR' // Region du variant ou défaut
+  const targetRegion = variant?.region?.toLowerCase() || 'fr' // Region du variant ou défaut
   const [imageUrl, setImageUrl] = useState<string>("/placeholder.svg")
   const [isLoading, setIsLoading] = useState(true)
   
@@ -39,7 +39,7 @@ export default function ConsoleImageByRegion({
       try {
         // Utilisation de la fonction optimisée
         const mediaTypes = ['wheel', 'logo-svg', 'photo', 'illustration']
-        const regionPriority = [targetRegion, 'WOR', 'EU', 'US', 'JP', 'FR', 'ASI']
+        const regionPriority = [targetRegion, 'wor', 'eu', 'us', 'jp', 'fr', 'asi']
         
         const url = await getBestCachedMediaUrl('console', targetConsole.id, mediaTypes, regionPriority)
         if (url) {
