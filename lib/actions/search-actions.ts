@@ -290,17 +290,13 @@ export async function getQuickSearchSuggestionsAction(query: string): Promise<st
 }
 
 /**
- * Interface pour les résultats de recherche Screenscraper
+ * Interface pour les résultats de recherche Screenscraper (vraie structure API)
  */
 interface ScreenscraperSearchResult {
   id: number
   nom?: string
-  noms?: {
-    nom_fr?: string
-    nom_eu?: string
-    nom_us?: string
-    noms_commun?: string
-  }
+  // Structure réelle de l'API : array d'objets {region, text}
+  noms?: Array<{ region: string; text: string }>
   systeme?: {
     id: number
     nom?: string
@@ -310,23 +306,9 @@ interface ScreenscraperSearchResult {
   developpeur?: string | { text?: string }
   note?: number | string | { text?: string }
   joueurs?: string | { text?: string }
-  synopsis?: {
-    synopsis_fr?: string
-    synopsis_eu?: string
-    synopsis_us?: string
-  }
-  dates?: {
-    date_eu?: string
-    date_fr?: string
-    date_us?: string
-    date_jp?: string
-    date_wor?: string
-  }
-  genres?: {
-    genres_fr?: string[]
-    genres_eu?: string[]
-    genres_us?: string[]
-  }
+  synopsis?: Array<{ region: string; text: string }>
+  dates?: Array<{ region: string; text: string }>
+  genres?: Array<{ region: string; text: string }>
 }
 
 /**
@@ -347,10 +329,11 @@ export async function searchGamesWithScreenscraperAction(filters: SearchFilters)
         const localTitles = new Set(localResults.games.map(g => g.title.toLowerCase()))
         
         // Ajouter les jeux Screenscraper qui ne sont pas déjà localement
+        const preferredRegion = 'fr' // TODO: récupérer depuis les préférences utilisateur
         screencraperResults.forEach(ssGame => {
-          const title = getGameTitle(ssGame).toLowerCase()
+          const title = getGameTitle(ssGame, preferredRegion).toLowerCase()
           if (!localTitles.has(title)) {
-            allGames.push(convertScreenscraperToGameResult(ssGame))
+            allGames.push(convertScreenscraperToGameResult(ssGame, preferredRegion))
           }
         })
         
@@ -419,15 +402,29 @@ async function searchScreenscraperAPI(query: string): Promise<ScreenscraperSearc
 }
 
 /**
- * Extraire le titre d'un jeu Screenscraper
+ * Extraire le titre d'un jeu Screenscraper selon la région préférée
  */
-function getGameTitle(game: ScreenscraperSearchResult): string {
-  // Priorité de recherche des titres : FR > EU > US > commun > nom général
-  if (game.noms) {
-    if (game.noms.nom_fr && game.noms.nom_fr.trim()) return game.noms.nom_fr.trim()
-    if (game.noms.nom_eu && game.noms.nom_eu.trim()) return game.noms.nom_eu.trim()
-    if (game.noms.nom_us && game.noms.nom_us.trim()) return game.noms.nom_us.trim()
-    if (game.noms.noms_commun && game.noms.noms_commun.trim()) return game.noms.noms_commun.trim()
+function getGameTitle(game: ScreenscraperSearchResult, preferredRegion: string = 'fr'): string {
+  if (!game.noms || !Array.isArray(game.noms)) {
+    // Fallback sur le nom général si disponible
+    if (game.nom && game.nom.trim()) return game.nom.trim()
+    return `Jeu inconnu (${game.id})`
+  }
+  
+  // Ordre de priorité des régions basé sur la région préférée
+  const regionPriority = getRegionPriority(preferredRegion)
+  
+  // Chercher le titre dans l'ordre de priorité
+  for (const region of regionPriority) {
+    const nomEntry = game.noms.find(n => n.region === region)
+    if (nomEntry?.text && nomEntry.text.trim()) {
+      return nomEntry.text.trim()
+    }
+  }
+  
+  // Si aucune région préférée trouvée, prendre le premier disponible
+  if (game.noms.length > 0 && game.noms[0].text) {
+    return game.noms[0].text.trim()
   }
   
   // Fallback sur le nom général si disponible
@@ -438,10 +435,28 @@ function getGameTitle(game: ScreenscraperSearchResult): string {
 }
 
 /**
+ * Définir l'ordre de priorité des régions selon la région préférée
+ */
+function getRegionPriority(preferredRegion: string): string[] {
+  // Mapping des régions vers les codes Screenscraper
+  const regionMappings: Record<string, string[]> = {
+    'FR': ['fr', 'eu', 'wor', 'ss', 'us', 'jp'],
+    'EU': ['eu', 'fr', 'wor', 'ss', 'us', 'jp'],
+    'US': ['us', 'wor', 'ss', 'eu', 'fr', 'jp'],
+    'JP': ['jp', 'wor', 'ss', 'us', 'eu', 'fr'],
+    'WOR': ['wor', 'ss', 'eu', 'fr', 'us', 'jp'],
+    'ASI': ['jp', 'wor', 'ss', 'us', 'eu', 'fr']
+  }
+  
+  const upperRegion = preferredRegion.toUpperCase()
+  return regionMappings[upperRegion] || regionMappings['FR']
+}
+
+/**
  * Convertir un résultat Screenscraper vers le format GameResult
  */
-function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult): SearchResult['games'][0] {
-  const title = getGameTitle(ssGame)
+function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult, preferredRegion: string = 'fr'): SearchResult['games'][0] {
+  const title = getGameTitle(ssGame, preferredRegion)
   
   // Extraction du rating
   let rating: number | null = null
@@ -457,18 +472,36 @@ function convertScreenscraperToGameResult(ssGame: ScreenscraperSearchResult): Se
     }
   }
   
-  // Extraction de l'année
+  // Extraction de l'année selon la région préférée
   let releaseYear: number | null = null
-  if (ssGame.dates) {
-    const dateStr = ssGame.dates.date_eu || ssGame.dates.date_fr || ssGame.dates.date_us || ssGame.dates.date_wor || ssGame.dates.date_jp
-    if (dateStr) {
-      const year = parseInt(dateStr.split('-')[0])
-      releaseYear = (year > 1970 && year < 2030) ? year : null
+  if (ssGame.dates && Array.isArray(ssGame.dates)) {
+    const regionPriority = getRegionPriority(preferredRegion)
+    
+    for (const region of regionPriority) {
+      const dateEntry = ssGame.dates.find(d => d.region === region)
+      if (dateEntry?.text) {
+        const year = parseInt(dateEntry.text.split('-')[0])
+        if (year > 1970 && year < 2030) {
+          releaseYear = year
+          break
+        }
+      }
     }
   }
   
-  // Extraction du genre
-  const genre = ssGame.genres?.genres_fr?.[0] || ssGame.genres?.genres_eu?.[0] || ssGame.genres?.genres_us?.[0] || null
+  // Extraction du genre selon la région préférée
+  let genre: string | null = null
+  if (ssGame.genres && Array.isArray(ssGame.genres)) {
+    const regionPriority = getRegionPriority(preferredRegion)
+    
+    for (const region of regionPriority) {
+      const genreEntry = ssGame.genres.find(g => g.region === region)
+      if (genreEntry?.text && genreEntry.text.trim()) {
+        genre = genreEntry.text.trim()
+        break
+      }
+    }
+  }
   
   // Extraction du nombre de joueurs
   let playerCount: string | null = null
