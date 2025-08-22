@@ -19,6 +19,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { useSession } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
+import { useCollection } from "@/lib/hooks/use-collection"
 import { RegionFlag } from "@/components/ui/region-flag"
 import { addGameToCollectionSimple, addGameToWishlistSimple, getAvailableRegionsForGame } from "@/lib/actions/collection-actions"
 
@@ -89,6 +90,7 @@ function SubmitButton({ children, variant = "default", isSubmitting = false, ...
 export default function GameCollectionActions({ game, availableRegions }: GameCollectionActionsProps) {
   const { data: session } = useSession()
   const router = useRouter()
+  const { loadCollectionData } = useCollection(session)
   const [isCollectionOpen, setIsCollectionOpen] = useState(false)
   const [isWishlistOpen, setIsWishlistOpen] = useState(false)
   const [detectedRegions, setDetectedRegions] = useState<string[]>([])
@@ -106,7 +108,8 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
       setCollectionState(result)
       if (result.success) {
         setIsCollectionOpen(false)
-        // Rafraîchir la page pour forcer le rechargement des données
+        // Recharger les données de collection pour mettre à jour les stats
+        await loadCollectionData()
         router.refresh()
       }
     } catch (error) {

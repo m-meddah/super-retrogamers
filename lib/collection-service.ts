@@ -238,30 +238,9 @@ export class CollectionService {
       where: { userId, isCompleted: true }
     })
 
-    // Calculate rare items (you'll need to implement rarity logic)
-    const rareConsoles = await prisma.userConsoleCollection.count({
-      where: {
-        userId,
-        status: 'OWNED',
-        variant: {
-          rarity: {
-            in: ['Rare', 'Very Rare', 'Ultra Rare']
-          }
-        }
-      }
-    })
-
-    const rareGames = await prisma.userGameCollection.count({
-      where: {
-        userId,
-        status: 'OWNED',
-        variant: {
-          rarity: {
-            in: ['Rare', 'Very Rare', 'Ultra Rare']
-          }
-        }
-      }
-    })
+    // Simplified: no rarity logic for now
+    const rareConsoles = 0
+    const rareGames = 0
 
     const totalConsoles = consoleStats._count.id || 0
     const totalGames = gameStats._count.id || 0
