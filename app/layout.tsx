@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 import RegionInitializer from "@/components/region-initializer"
 import NotificationSystem from "@/components/notification-system"
+import PageViewTracker from "@/components/page-view-tracker"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -59,6 +60,7 @@ export default function RootLayout({
                 <Header />
               </Suspense>
               <main>{children}</main>
+              <PageViewTracker />
               <NotificationSystem />
               <Toaster />
             </AuthProvider>

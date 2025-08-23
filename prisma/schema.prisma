@@ -24,6 +24,7 @@ model User {
   consoleCollection UserConsoleCollection[]
   gameCollection    UserGameCollection[]
   wishlist          UserWishlist[]
+  pageViews         PageView[]
 
   @@map("users")
 }
@@ -601,4 +602,24 @@ model MediaUrlCache {
   @@index([entityType, entityId])
   @@index([isValid, expiresAt])
   @@map("media_url_cache")
+}
+
+// Analytics et vues des pages
+model PageView {
+  id        String   @id @default(cuid())
+  path      String   // Chemin de la page (ex: /jeux/mario-bros, /consoles/nes)
+  ipAddress String   // Adresse IP de l'utilisateur (hashée)
+  userAgent String?  // User Agent pour détecter les bots
+  userId    String?  // ID utilisateur si connecté
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+  
+  // Index pour les requêtes rapides
+  @@index([path, createdAt])
+  @@index([ipAddress, path])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("page_views")
 }

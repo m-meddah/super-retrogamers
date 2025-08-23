@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { getGlobalAnalytics, getMostViewedPages } from '@/lib/analytics-service'
 
 export interface AnalyticsData {
   totalGames: number
@@ -50,32 +51,38 @@ export async function getAnalyticsDataAction(): Promise<AnalyticsData> {
       gameCount: console._count.games
     }))
 
-    // Jeux populaires - on va simuler les vues pour l'instant
-    // En attendant d'implémenter un système de tracking des vues
-    const recentGames = await prisma.game.findMany({
-      select: {
-        title: true,
-        console: {
+    // Récupérer les vraies analytics
+    const globalAnalytics = await getGlobalAnalytics()
+    const mostViewedPages = await getMostViewedPages(5)
+    
+    // Extraire les jeux populaires des pages vues
+    const gamePages = mostViewedPages.filter(page => page.path.startsWith('/jeux/'))
+    
+    // Récupérer les détails des jeux les plus vus
+    const popularGames = await Promise.all(
+      gamePages.slice(0, 5).map(async (page) => {
+        const gameSlug = page.path.replace('/jeux/', '')
+        const game = await prisma.game.findFirst({
+          where: { slug: gameSlug },
           select: {
-            name: true
+            title: true,
+            console: {
+              select: {
+                name: true
+              }
+            }
           }
+        })
+        
+        return {
+          title: game?.title || `Jeu (${gameSlug})`,
+          viewCount: page.viewCount,
+          consoleName: game?.console?.name
         }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 5
-    })
+      })
+    )
 
-    // Simuler des vues basées sur l'ordre de création (plus récent = plus de vues)
-    const popularGames = recentGames.map((game, index) => ({
-      title: game.title,
-      viewCount: Math.max(1500 - (index * 200) + Math.floor(Math.random() * 300), 100),
-      consoleName: game.console?.name
-    }))
-
-    // Pour les vues récentes, on simule aussi pour l'instant
-    const recentViews = Math.floor(totalGames * 2.3) + Math.floor(Math.random() * 500)
+    const recentViews = globalAnalytics.recentViews
 
     return {
       totalGames,
