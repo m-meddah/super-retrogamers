@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Search, Download, Loader2, Package, Calendar, Star, Users, Building, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -210,10 +211,11 @@ export default function ScreenscraperSearchPage() {
                   {/* Image */}
                   <div className="aspect-[3/4] relative bg-gray-100 dark:bg-gray-800">
                     {game.imageUrl ? (
-                      <img
+                      <Image
                         src={game.imageUrl}
                         alt={game.title}
-                        className="h-full w-full object-contain p-2"
+                        fill
+                        className="object-contain p-2"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
                         }}

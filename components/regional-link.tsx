@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 
 interface RegionalLinkProps {
   href: string
@@ -11,7 +11,7 @@ interface RegionalLinkProps {
   [key: string]: unknown // Pour les autres props Link
 }
 
-export default function RegionalLink({ 
+function RegionalLinkComponent({ 
   href, 
   children, 
   className, 
@@ -35,5 +35,13 @@ export default function RegionalLink({
     <Link href={buildHref()} className={className} {...props}>
       {children}
     </Link>
+  )
+}
+
+export default function RegionalLink(props: RegionalLinkProps) {
+  return (
+    <Suspense fallback={<Link href={props.href} className={props.className}>{props.children}</Link>}>
+      <RegionalLinkComponent {...props} />
+    </Suspense>
   )
 }

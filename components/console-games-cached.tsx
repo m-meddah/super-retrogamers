@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Region } from '@prisma/client'
 import { getServerPreferredRegion } from '@/lib/server-region-detection'
 import { prisma } from '@/lib/prisma'
@@ -82,10 +83,11 @@ export default async function ConsoleGamesCached({
             {/* Image complète sans coupure */}
             <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-800">
               {game.imageUrl ? (
-                <img
+                <Image
                   src={game.imageUrl}
                   alt={game.title}
-                  className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
+                  fill
+                  className="object-contain transition-transform duration-200 group-hover:scale-105"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-gray-400 dark:text-gray-600">
