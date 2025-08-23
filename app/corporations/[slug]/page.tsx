@@ -1,103 +1,89 @@
 import { notFound } from "next/navigation"
-import { getCorporationById } from "@/lib/data-prisma"
+import { getCorporationBySlug } from "@/lib/data-prisma"
 import RegionalLink from "@/components/regional-link"
-import { ArrowLeft, Calendar, Building2Icon, MapPin, Users, Globe } from "lucide-react"
+import { ArrowLeft, Calendar, Building2Icon, MapPin } from "lucide-react"
 import GameCardWrapper from "@/components/game-card-wrapper"
 
 interface CorporationPageProps {
   params: Promise<{
-    id: string
+    slug: string
   }>
 }
 
 export default async function CorporationPage({ params }: CorporationPageProps) {
-  const { id } = await params
-  const corporation = await getCorporationById(id)
+  const { slug } = await params
+  const corporation = await getCorporationBySlug(slug)
 
   if (!corporation) {
     notFound()
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         {/* Breadcrumb */}
-        <div className="mb-6">
+        <div className="mb-8">
           <RegionalLink
             href="/corporations"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Retour aux corporations
           </RegionalLink>
         </div>
 
-        {/* Header */}
-        <div className="mb-8 rounded-lg bg-white p-6 shadow dark:bg-gray-800">
-          <div className="flex items-start gap-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900">
-              <Building2Icon className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {corporation.name}
-              </h1>
-              
-              {/* Informations de base */}
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {corporation.foundedDate && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      {corporation.foundedDate.getFullYear()}
-                      {corporation.defunctDate && ` - ${corporation.defunctDate.getFullYear()}`}
+        {/* Corporation Details */}
+        <div className="mb-12 grid gap-8 lg:grid-cols-2">
+          {/* Left Column - Info */}
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+                    {corporation.name}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    {corporation.foundedDate && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {corporation.foundedDate.getFullYear()}
+                          {corporation.defunctDate && ` - ${corporation.defunctDate.getFullYear()}`}
+                        </span>
+                      </div>
+                    )}
+                    {corporation.headquarters && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>{corporation.headquarters}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                    <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                      <Building2Icon className="h-4 w-4" />
+                      {corporation.developedGames?.length || 0} développés
+                    </span>
+                    <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                      <Building2Icon className="h-4 w-4" />
+                      {corporation.publishedGames?.length || 0} publiés
                     </span>
                   </div>
-                )}
-                {corporation.headquarters && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <MapPin className="h-4 w-4" />
-                    <span>{corporation.headquarters}</span>
-                  </div>
-                )}
-                {corporation.employees && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <Users className="h-4 w-4" />
-                    <span>{corporation.employees.toLocaleString()} employés</span>
-                  </div>
-                )}
-                {corporation.website && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <Globe className="h-4 w-4" />
-                    <a 
-                      href={corporation.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-emerald-600 dark:hover:text-emerald-400"
-                    >
-                      Site web
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Statistiques */}
-              <div className="mt-6 flex items-center gap-6 text-sm">
-                <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                  <Building2Icon className="h-4 w-4" />
-                  {corporation.developedGames?.length || 0} jeux développés
-                </span>
-                <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                  <Building2Icon className="h-4 w-4" />
-                  {corporation.publishedGames?.length || 0} jeux publiés
-                </span>
+                </div>
                 {corporation.ssCorporationId && (
-                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 dark:bg-green-900 dark:text-green-300">
-                    Screenscraper ID: {corporation.ssCorporationId}
+                  <span className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
+                    Screenscraper
                   </span>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Right Column - Visual */}
+          <div className="flex items-center justify-center">
+            <div className="flex h-32 w-32 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 shadow-lg dark:from-emerald-900/30 dark:to-teal-900/30">
+              <Building2Icon className="h-16 w-16 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
         </div>

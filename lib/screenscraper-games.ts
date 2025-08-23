@@ -50,9 +50,21 @@ async function createOrGetCorporation(
     
     // If still not found, create new corporation
     if (!corporation) {
+      const slug = generateSlug(corporationName)
+      
+      // Ensure slug uniqueness
+      let finalSlug = slug
+      let counter = 2
+      
+      while (await prisma.corporation.findFirst({ where: { slug: finalSlug } })) {
+        finalSlug = `${slug}-${counter}`
+        counter++
+      }
+      
       corporation = await prisma.corporation.create({
         data: {
           name: corporationName,
+          slug: finalSlug,
           ssCorporationId,
           roles: {
             create: {
@@ -61,6 +73,7 @@ async function createOrGetCorporation(
           }
         }
       })
+      console.log(`✅ Corporation créée: ${corporationName} (${finalSlug})`)
     } else {
       // Update role if corporation exists but doesn't have this role
       const existingRole = await prisma.corporationRole.findFirst({
@@ -83,6 +96,88 @@ async function createOrGetCorporation(
     return corporation.id
   } catch (error) {
     console.error(`Error creating/getting corporation "${corporationName}":`, error)
+    return null
+  }
+}
+
+// Function to create or get family from Screenscraper data
+async function createOrGetFamily(
+  familyData: unknown
+): Promise<string | null> {
+  if (!familyData) return null
+  
+  let familyName: string | null = null
+  let ssFamilyId: number | null = null
+  
+  // Extract name and ID from Screenscraper family object
+  if (typeof familyData === 'object') {
+    const famObj = familyData as Record<string, unknown>
+    
+    // Extract Screenscraper family ID
+    if (famObj.id && typeof famObj.id === 'string') {
+      ssFamilyId = parseInt(famObj.id, 10)
+    } else if (famObj.id && typeof famObj.id === 'number') {
+      ssFamilyId = famObj.id
+    }
+    
+    // Extract name from noms array (similar to games)
+    if (famObj.noms && Array.isArray(famObj.noms)) {
+      const preferredLanguages = ['fr', 'en', 'de', 'es', 'it']
+      for (const lang of preferredLanguages) {
+        const nameEntry = famObj.noms.find((n: Record<string, unknown>) => n.langue === lang)
+        if (nameEntry && typeof nameEntry.text === 'string') {
+          familyName = nameEntry.text
+          break
+        }
+      }
+      // If no preferred language found, take the first available name
+      if (!familyName && famObj.noms.length > 0 && famObj.noms[0] && typeof famObj.noms[0].text === 'string') {
+        familyName = famObj.noms[0].text
+      }
+    }
+  }
+  
+  if (!familyName || !ssFamilyId) return null
+  
+  try {
+    // First, try to find by Screenscraper ID
+    let family = await prisma.family.findUnique({
+      where: { ssFamilyId }
+    })
+    
+    // If not found by ID, try by name
+    if (!family) {
+      family = await prisma.family.findUnique({
+        where: { name: familyName }
+      })
+    }
+    
+    // If still not found, create new family
+    if (!family) {
+      const slug = generateSlug(familyName)
+      
+      // Ensure slug uniqueness
+      let finalSlug = slug
+      let counter = 2
+      
+      while (await prisma.family.findFirst({ where: { slug: finalSlug } })) {
+        finalSlug = `${slug}-${counter}`
+        counter++
+      }
+      
+      family = await prisma.family.create({
+        data: {
+          name: familyName,
+          slug: finalSlug,
+          ssFamilyId
+        }
+      })
+      console.log(`✅ Famille créée: ${familyName} (${finalSlug}) (ID Screenscraper: ${ssFamilyId})`)
+    }
+    
+    return family.id
+  } catch (error) {
+    console.error(`Error creating/getting family "${familyName}":`, error)
     return null
   }
 }
@@ -184,6 +279,15 @@ interface ScreenscraperGame {
     nomcourt?: string
     principale?: string
     parentid?: number
+    noms?: Array<{ langue: string; text: string }>
+  }>
+  
+  // Families - structure API réelle
+  familles?: Array<{
+    id: string
+    nomcourt?: string
+    principale?: string
+    parentid?: string
     noms?: Array<{ langue: string; text: string }>
   }>
   
@@ -419,10 +523,10 @@ export async function saveGameIdsToFile(gameIdsMap: Map<number, number[]>): Prom
 }
 
 /**
- * Génère un slug pour un jeu basé sur le titre du jeu uniquement
+ * Génère un slug pour un nom (jeu, famille, corporation)
  */
-function generateGameSlug(gameTitle: string): string {
-  const gameSlug = gameTitle
+function generateSlug(name: string): string {
+  return name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
@@ -430,9 +534,14 @@ function generateGameSlug(gameTitle: string): string {
     .trim()
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Remove duplicate hyphens
-    
-  // Return only the game slug, not prefixed with console slug
-  return gameSlug
+}
+
+/**
+ * Génère un slug pour un jeu basé sur le titre du jeu uniquement
+ */
+function generateGameSlug(gameTitle: string): string {
+  // Use the generic slug function for games too
+  return generateSlug(gameTitle)
 }
 
 /**
@@ -809,6 +918,14 @@ export async function createGameFromScreenscraper(
     const corporationDevId = await createOrGetCorporation(gameDetails.developpeur, 'developer')
     const corporationPubId = await createOrGetCorporation(gameDetails.editeur, 'publisher')
     
+    // Handle family relations - typically there's only one main family
+    let familyId: string | null = null
+    if (gameDetails.familles && Array.isArray(gameDetails.familles) && gameDetails.familles.length > 0) {
+      // Take the first family or the main one (principale: "1")
+      const mainFamily = gameDetails.familles.find(f => f.principale === "1") || gameDetails.familles[0]
+      familyId = await createOrGetFamily(mainFamily)
+    }
+    
     // Handle player count
     let playerCount: string | null = null
     if (gameDetails.joueurs) {
@@ -837,6 +954,9 @@ export async function createGameFromScreenscraper(
       // Corporation relations  
       corporationDevId,
       corporationPubId,
+      
+      // Family relation
+      familyId,
       
       // Enhanced data
       rating,

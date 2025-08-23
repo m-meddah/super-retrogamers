@@ -464,6 +464,7 @@ model Genre {
 model Corporation {
   id               String   @id @default(cuid())
   name             String   @unique
+  slug             String   @unique  // "nintendo", "sony", etc.
   ssCorporationId  Int?     @unique  // ID Screenscraper pour sync
   foundedDate      DateTime?
   defunctDate      DateTime?
@@ -563,6 +564,7 @@ model Video {
 model Family {
   id             String   @id @default(cuid())
   name           String   @unique  // "Super Mario", "Final Fantasy", etc.
+  slug           String   @unique  // "super-mario", "final-fantasy", etc.
   nameEn         String?  // Nom en anglais
   ssFamilyId     Int?     @unique  // ID Screenscraper pour sync
   description    String?  // Description de la série

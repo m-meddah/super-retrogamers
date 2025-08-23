@@ -1138,6 +1138,31 @@ export async function getCorporationById(id: string) {
   })
 }
 
+export async function getCorporationBySlug(slug: string) {
+  return await prisma.corporation.findUnique({
+    where: { slug },
+    include: {
+      developedGames: {
+        include: {
+          console: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      },
+      publishedGames: {
+        include: {
+          console: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      },
+      roles: true
+    }
+  })
+}
+
 export async function getCorporationByName(name: string) {
   return await prisma.corporation.findUnique({
     where: { name },
@@ -1211,6 +1236,22 @@ export async function getAllFamilies() {
 export async function getFamilyById(id: string) {
   return await prisma.family.findUnique({
     where: { id },
+    include: {
+      games: {
+        include: {
+          console: true
+        },
+        orderBy: {
+          title: 'asc'
+        }
+      }
+    }
+  })
+}
+
+export async function getFamilyBySlug(slug: string) {
+  return await prisma.family.findUnique({
+    where: { slug },
     include: {
       games: {
         include: {

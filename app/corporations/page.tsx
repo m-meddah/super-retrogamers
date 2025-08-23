@@ -6,14 +6,14 @@ export default async function CorporationsPage() {
   const corporations = await getAllCorporations()
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <div className="mb-8 text-center">
+          <h1 className="mb-4 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
             Corporations
           </h1>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-300">
+          <p className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-300">
             Découvrez les entreprises qui ont marqué l&apos;histoire du jeu vidéo
           </p>
         </div>
@@ -49,7 +49,7 @@ export default async function CorporationsPage() {
             {corporations.map((corporation) => (
               <RegionalLink
                 key={corporation.id}
-                href={`/corporations/${corporation.id}`}
+                href={`/corporations/${corporation.slug}`}
                 className="group relative overflow-hidden rounded-lg bg-white p-6 shadow transition-all hover:shadow-lg dark:bg-gray-800 dark:hover:bg-gray-750"
               >
                 <div className="flex items-center justify-between">
