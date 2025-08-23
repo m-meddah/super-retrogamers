@@ -29,7 +29,7 @@ export default async function AnniversaryGamesServer({
             <CardTitle>Anniversaires du jour</CardTitle>
           </div>
           <CardDescription>
-            Aucun jeu ne fête son anniversaire aujourd'hui
+            Aucun jeu ne fête son anniversaire aujourd&apos;hui
           </CardDescription>
         </CardHeader>
         <CardContent>

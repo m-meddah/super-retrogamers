@@ -1,6 +1,5 @@
 import { Region } from '@prisma/client'
 import { getServerPreferredRegion } from '@/lib/server-region-detection'
-import SimpleGameCard from '@/components/simple-game-card'
 import { prisma } from '@/lib/prisma'
 
 interface GameWithConsole {

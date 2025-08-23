@@ -1,6 +1,5 @@
 'use client'
 
-import { Suspense } from 'react'
 import ConsoleCardHomepage from '@/components/console-card-homepage'
 import type { Console } from "@prisma/client"
 

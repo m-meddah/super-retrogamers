@@ -21,6 +21,7 @@ import { useSession } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 import { useCollection } from "@/lib/hooks/use-collection"
 import { RegionFlag } from "@/components/ui/region-flag"
+import { Region } from "@prisma/client"
 import { addGameToCollectionSimple, addGameToWishlistSimple, getAvailableRegionsForGame } from "@/lib/actions/collection-actions"
 
 interface Game {
@@ -65,7 +66,7 @@ function SubmitButton({ children, variant = "default", isSubmitting = false, ...
   children: React.ReactNode, 
   variant?: "default" | "outline",
   isSubmitting?: boolean,
-  [key: string]: any 
+  [key: string]: unknown 
 }) {
   return (
     <Button 
@@ -112,7 +113,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
         await loadCollectionData()
         router.refresh()
       }
-    } catch (error) {
+    } catch {
       setCollectionState({ success: false, message: 'Erreur lors de l\'ajout' })
     } finally {
       setIsSubmitting(false)
@@ -127,7 +128,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
       if (result.success) {
         setIsWishlistOpen(false)
       }
-    } catch (error) {
+    } catch {
       setWishlistState({ success: false, message: 'Erreur lors de l\'ajout' })
     } finally {
       setIsSubmitting(false)
@@ -221,7 +222,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
                   {regions.map(region => (
                     <SelectItem key={region.value} value={region.value}>
                       <div className="flex items-center gap-2">
-                        <RegionFlag region={region.value as any} />
+                        <RegionFlag region={region.value as Region} />
                         {region.label}
                       </div>
                     </SelectItem>
@@ -298,7 +299,7 @@ export default function GameCollectionActions({ game, availableRegions }: GameCo
                   {regions.map(region => (
                     <SelectItem key={region.value} value={region.value}>
                       <div className="flex items-center gap-2">
-                        <RegionFlag region={region.value as any} />
+                        <RegionFlag region={region.value as Region} />
                         {region.label}
                       </div>
                     </SelectItem>

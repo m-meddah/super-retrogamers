@@ -122,36 +122,6 @@ export async function getAnniversaryGames(preferredRegion: Region = 'FR') {
   }
 }
 
-/**
- * Trouve la meilleure date régionale selon les priorités
- */
-function getBestRegionalDate(
-  regionalDates: Array<{ region: Region; releaseDate: Date | null }>,
-  preferredRegion: Region
-) {
-  if (regionalDates.length === 0) return null
-
-  // 1. Chercher la région préférée
-  const preferredDate = regionalDates.find(
-    rd => rd.region === preferredRegion && rd.releaseDate
-  )
-  if (preferredDate) return preferredDate
-
-  // 2. Ordre de priorité des régions si la préférée n'existe pas
-  const fallbackOrder: Region[] = ['WOR', 'EU', 'US', 'JP', 'ASI', 'FR']
-  
-  for (const region of fallbackOrder) {
-    if (region === preferredRegion) continue // Déjà testé
-    
-    const fallbackDate = regionalDates.find(
-      rd => rd.region === region && rd.releaseDate
-    )
-    if (fallbackDate) return fallbackDate
-  }
-
-  // 3. Prendre n'importe quelle date disponible
-  return regionalDates.find(rd => rd.releaseDate) || null
-}
 
 
 /**

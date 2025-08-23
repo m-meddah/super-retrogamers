@@ -60,7 +60,7 @@ export default function AnniversaryGames() {
             <CardTitle>Anniversaires du jour</CardTitle>
           </div>
           <CardDescription>
-            Jeux qui fêtent leur anniversaire aujourd'hui
+            Jeux qui fêtent leur anniversaire aujourd&apos;hui
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,7 +99,7 @@ export default function AnniversaryGames() {
             <CardTitle>Anniversaires du jour</CardTitle>
           </div>
           <CardDescription>
-            Aucun jeu ne fête son anniversaire aujourd'hui
+            Aucun jeu ne fête son anniversaire aujourd&apos;hui
           </CardDescription>
         </CardHeader>
         <CardContent>

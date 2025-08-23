@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import Link from "next/link"
 import { ArrowLeft, Filter, X, Search, Loader2 } from "lucide-react"
 import { Console } from "@prisma/client"
 import { GameWithConsole } from "@/lib/data-prisma"
-import { ConsoleGamesFilters, loadConsoleGamesStream, countConsoleGamesStream } from "@/lib/actions/console-games-streaming-actions"
+import { loadConsoleGamesStream, countConsoleGamesStream } from "@/lib/actions/console-games-streaming-actions"
 import { InfiniteConsoleGamesList, useConsoleGamesFilters, ConsoleGamesStats } from "@/components/console-games/infinite-console-games-list"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,31 +31,6 @@ export default function ConsoleGamesClient({ console: gameConsole, initialGames,
     [filters]
   )
 
-  // Refresh games when filters change
-  const refreshGames = useCallback(async (newFilters: Omit<ConsoleGamesFilters, 'consoleSlug'>) => {
-    setLoading(true)
-    try {
-      const [newGames, newTotalCount] = await Promise.all([
-        loadConsoleGamesStream(0, 20, {
-          consoleSlug: gameConsole.slug,
-          ...newFilters
-        }),
-        countConsoleGamesStream({
-          consoleSlug: gameConsole.slug,
-          ...newFilters
-        })
-      ])
-      
-      setCurrentGames(newGames)
-      setTotalCount(newTotalCount)
-    } catch (err) {
-      console.error('Error refreshing games:', err)
-      setCurrentGames([])
-      setTotalCount(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [gameConsole])
 
   // Handle filter changes with debouncing for search only
   useEffect(() => {
