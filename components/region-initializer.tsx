@@ -1,10 +1,10 @@
 'use client'
 
-import { usePersistentRegion } from '@/lib/hooks/use-persistent-region'
+import { useRegionalPreferences } from '@/lib/hooks/use-regional-preferences'
 
 export default function RegionInitializer() {
-  // Initialise le système de région persistante
-  usePersistentRegion()
+  // Initialise le système de région simple sans persistance DB
+  useRegionalPreferences()
   
   return null
 }

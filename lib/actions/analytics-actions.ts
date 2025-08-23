@@ -62,17 +62,48 @@ export async function getAnalyticsDataAction(): Promise<AnalyticsData> {
     const popularGames = await Promise.all(
       gamePages.slice(0, 5).map(async (page) => {
         const gameSlug = page.path.replace('/jeux/', '')
-        const game = await prisma.game.findFirst({
-          where: { slug: gameSlug },
-          select: {
-            title: true,
-            console: {
+        
+        let game = null
+        
+        // Support des slugs composés comme dans getGameBySlug
+        if (gameSlug.includes('-console-')) {
+          // Nouveau format: [game-slug]-console-[console-slug]
+          const parts = gameSlug.split('-console-')
+          if (parts.length === 2) {
+            const simpleGameSlug = parts[0]
+            const consoleSlug = parts[1]
+            
+            game = await prisma.game.findFirst({
+              where: {
+                slug: simpleGameSlug,
+                console: {
+                  slug: consoleSlug
+                }
+              },
               select: {
-                name: true
+                title: true,
+                console: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            })
+          }
+        } else {
+          // Format simple - prendre le premier jeu trouvé
+          game = await prisma.game.findFirst({
+            where: { slug: gameSlug },
+            select: {
+              title: true,
+              console: {
+                select: {
+                  name: true
+                }
               }
             }
-          }
-        })
+          })
+        }
         
         return {
           title: game?.title || `Jeu (${gameSlug})`,
