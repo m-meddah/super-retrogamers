@@ -33,9 +33,6 @@ export default function CollectionPage() {
   }, [isAuthenticated, authLoading])
 
   const handleDeleteItem = async (item: { id: string }, type: 'console' | 'game' | 'wishlist') => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément de votre collection ?')) {
-      return
-    }
 
     try {
       switch (type) {

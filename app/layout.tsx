@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { NuqsAdapter } from "nuqs/adapters/next/app"
 import RegionInitializer from "@/components/region-initializer"
+import NotificationSystem from "@/components/notification-system"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -58,6 +59,7 @@ export default function RootLayout({
                 <Header />
               </Suspense>
               <main>{children}</main>
+              <NotificationSystem />
               <Toaster />
             </AuthProvider>
           </NuqsAdapter>
