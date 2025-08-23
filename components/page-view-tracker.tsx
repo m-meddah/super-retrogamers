@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
+import { trackPageViewAction } from '@/lib/actions/analytics-actions'
 
 interface PageViewTrackerProps {
   // Pour forcer le tracking d'un chemin spécifique
@@ -10,7 +11,7 @@ interface PageViewTrackerProps {
 
 /**
  * Composant pour tracker les vues de page côté client
- * Se base sur l'API route pour enregistrer la vue
+ * Utilise une Server Action pour enregistrer la vue
  */
 export default function PageViewTracker({ trackPath }: PageViewTrackerProps = {}) {
   const pathname = usePathname()
@@ -25,15 +26,7 @@ export default function PageViewTracker({ trackPath }: PageViewTrackerProps = {}
       // Éviter de tracker immédiatement, attendre un peu pour s'assurer que c'est une vraie visite
       const timer = setTimeout(async () => {
         try {
-          await fetch('/api/analytics/track', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              path: pathToTrack
-            })
-          })
+          await trackPageViewAction(pathToTrack)
         } catch (error) {
           // Silencer les erreurs de tracking
           console.debug('Erreur tracking:', error)

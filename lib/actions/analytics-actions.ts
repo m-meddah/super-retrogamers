@@ -241,6 +241,29 @@ export async function getDetailedStatsAction() {
   }
 }
 
+export async function trackPageViewAction(path: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Validation du path
+    if (!path || typeof path !== 'string') {
+      return { success: false, error: 'Path is required' }
+    }
+    
+    // Valider que le path est légitime (éviter les injections)
+    if (!path.match(/^\/[a-zA-Z0-9\/_-]*$/)) {
+      return { success: false, error: 'Invalid path format' }
+    }
+    
+    // Enregistrer la vue via le service analytics
+    const { recordPageView } = await import('@/lib/analytics-service')
+    await recordPageView(path)
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Erreur lors du tracking de la page view:', error)
+    return { success: false, error: 'Internal server error' }
+  }
+}
+
 export async function getUserStatsAction() {
   try {
     // Statistiques utilisateurs (pour usage futur si besoin)
