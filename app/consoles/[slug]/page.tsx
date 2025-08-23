@@ -15,7 +15,7 @@ interface ConsolePageProps {
   }>
 }
 
-// Génération des métadonnées dynamiques avec favicon personnalisé
+// Génération des métadonnées dynamiques
 export async function generateMetadata({ params }: ConsolePageProps): Promise<Metadata> {
   const { slug } = await params
   const console = await getConsoleBySlug(slug)

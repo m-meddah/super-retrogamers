@@ -56,7 +56,6 @@ Une application Next.js 15 moderne dédiée aux consoles de jeux rétro et leurs
 - **shadcn/ui** : Composants élégants dans le style "New York"
 - **Tailwind CSS v4** : Variables CSS modernes et classe utilitaires
 - **Inter Font** : Typographie optimisée de Google Fonts
-- **Favicon dynamiques** : Favicons personnalisés par console/jeu
 
 ## 🛠️ Stack Technique
 
