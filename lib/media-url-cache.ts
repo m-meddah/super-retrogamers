@@ -2,6 +2,35 @@
 
 import { prisma } from '@/lib/prisma'
 
+// Types pour les réponses Screenscraper API
+interface ScreenscraperSystemMedia {
+  type: string
+  url: string
+  region?: string
+}
+
+interface ScreenscraperSystem {
+  id: number
+  medias?: ScreenscraperSystemMedia[]
+}
+
+interface ScreenscraperJeuMedia {
+  type: string
+  url: string
+  region?: string
+}
+
+interface ScreenscraperJeu {
+  medias?: ScreenscraperJeuMedia[]
+}
+
+interface ScreenscraperResponse {
+  response: {
+    systemes?: ScreenscraperSystem[]
+    jeu?: ScreenscraperJeu
+  }
+}
+
 /**
  * Cache intelligent des URLs de médias Screenscraper
  * - Cache les URLs pendant 24h pour éviter le rate limiting
@@ -365,7 +394,7 @@ async function fetchMediaFromScreenscraper(
         return null
       }
       
-      const data = await response.json()
+      const data = await response.json() as ScreenscraperResponse
       
       if (!data.response?.systemes) {
         console.log(`❌ Réponse API invalide`)
@@ -373,7 +402,7 @@ async function fetchMediaFromScreenscraper(
       }
       
       // Trouver le système correspondant
-      const system = data.response.systemes.find((s: any) => s.id === gameConsole.ssConsoleId)
+      const system = data.response.systemes.find((s) => s.id === gameConsole.ssConsoleId)
       
       if (!system || !system.medias) {
         console.log(`❌ Système ${gameConsole.ssConsoleId} non trouvé ou sans médias`)
@@ -386,7 +415,7 @@ async function fetchMediaFromScreenscraper(
       
       // Pour les médias sans région (minicon, icon, video, etc.), chercher sans région
       if (REGIONLESS_MEDIA_TYPES.includes(mediaType)) {
-        media = system.medias.find((m: any) => 
+        media = system.medias.find((m) => 
           m.type === mediaType && !m.region
         )
         
@@ -394,7 +423,7 @@ async function fetchMediaFromScreenscraper(
         if (!media) {
           const fallbackRegions = ['wor', 'eu', 'us', 'jp', 'asi', 'br']
           for (const fallbackRegion of fallbackRegions) {
-            media = system.medias.find((m: any) => 
+            media = system.medias.find((m) => 
               m.type === mediaType && m.region === fallbackRegion
             )
             if (media) break
@@ -404,7 +433,7 @@ async function fetchMediaFromScreenscraper(
         // Pour les médias avec région, logique normale
         
         // 1. Chercher correspondance exacte type + région
-        media = system.medias.find((m: any) => 
+        media = system.medias.find((m) => 
           m.type === mediaType && m.region === normalizedRegion
         )
         
@@ -412,7 +441,7 @@ async function fetchMediaFromScreenscraper(
         if (!media) {
           const fallbackRegions = ['wor', 'eu', 'us', 'jp', 'asi', 'br']
           for (const fallbackRegion of fallbackRegions) {
-            media = system.medias.find((m: any) => 
+            media = system.medias.find((m) => 
               m.type === mediaType && m.region === fallbackRegion
             )
             if (media) break

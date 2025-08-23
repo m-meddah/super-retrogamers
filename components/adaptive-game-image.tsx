@@ -40,6 +40,7 @@ export default function AdaptiveGameImage({
   
   // Détecter si c'est un résultat Screenscraper
   const isScreenscraperResult = 'screenscraper_image_url' in gameData
+  const screenscrapeImageUrl = isScreenscraperResult ? gameData.screenscraper_image_url : undefined
   
   useEffect(() => {
     async function loadImage() {
@@ -47,8 +48,8 @@ export default function AdaptiveGameImage({
       setImageError(false)
       try {
         // Si c'est un résultat Screenscraper avec une URL d'image, l'utiliser directement
-        if (isScreenscraperResult && gameData.screenscraper_image_url) {
-          setImageUrl(gameData.screenscraper_image_url)
+        if (isScreenscraperResult && screenscrapeImageUrl) {
+          setImageUrl(screenscrapeImageUrl)
           setIsLoading(false)
           return
         }
@@ -76,7 +77,7 @@ export default function AdaptiveGameImage({
     }
     
     loadImage()
-  }, [gameData.id, gameData.slug, currentRegion, cacheOnly, isScreenscraperResult, 'screenscraper_image_url' in gameData ? gameData.screenscraper_image_url : undefined])
+  }, [gameData, currentRegion, cacheOnly, isScreenscraperResult, screenscrapeImageUrl])
 
   const handleImageError = () => {
     setImageError(true)
