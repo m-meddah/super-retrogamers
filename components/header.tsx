@@ -21,7 +21,7 @@ export default function Header() {
   const navigation = [
     { name: "Accueil", href: "/", useRegional: true },
     { name: "Consoles", href: "/consoles", useRegional: true },
-    { name: "Recherche", href: "/recherche", useRegional: true },
+    { name: "Recherche", href: "/search", useRegional: true },
     { name: "Collection", href: "/collection", useRegional: true },
     ...(isAdmin ? [{ name: "Admin", href: "/admin", useRegional: true }] : []),
   ]

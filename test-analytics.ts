@@ -29,7 +29,7 @@ async function addTestViews() {
       const fakeHashedIP = `test-ip-${game.slug}-${i}-${Date.now()}`
       
       // Format du path selon le système existant
-      const path = `/jeux/${game.slug}`
+      const path = `/games/${game.slug}`
       
       await prisma.pageView.create({
         data: {

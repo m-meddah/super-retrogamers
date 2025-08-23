@@ -65,7 +65,7 @@ export default async function DashboardPage() {
           </Link>
 
           <Link
-            href="/recherche"
+            href="/search"
             className="group rounded-lg border border-gray-200 bg-white p-4 text-center transition-all hover:border-green-300 hover:shadow-lg dark:border-gray-800 dark:bg-gray-950 dark:hover:border-green-600"
           >
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 group-hover:bg-green-200 dark:bg-green-950/50">

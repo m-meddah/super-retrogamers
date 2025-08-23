@@ -58,7 +58,7 @@ export async function scrapeGamesAction(
     await scrapeGamesForConsole(consoleId, systemId, maxGames)
 
     // Revalidate pages that might show game data
-    revalidatePath('/jeux')
+    revalidatePath('/games')
     revalidatePath('/consoles')
 
     // Retourner des stats approximatives
@@ -170,7 +170,7 @@ export async function scrapeFullAction(
 
     // Revalidate all relevant pages
     revalidatePath('/consoles')
-    revalidatePath('/jeux')
+    revalidatePath('/games')
     revalidatePath('/')
 
     return {
@@ -268,8 +268,8 @@ export async function rescrapGameMediasAction(
     }
     
     // Revalidate pages
-    revalidatePath('/jeux')
-    revalidatePath(`/jeux`)
+    revalidatePath('/games')
+    revalidatePath(`/games`)
     
     return {
       success: true,

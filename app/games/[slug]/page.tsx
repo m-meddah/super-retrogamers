@@ -74,7 +74,7 @@ export default async function GamePage({ params }: GamePageProps) {
           </RegionalLink>
           <span className="text-gray-400">/</span>
           <RegionalLink
-            href={`/consoles/${game.console?.slug}/jeux`}
+            href={`/consoles/${game.console?.slug}/games`}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             Jeux
@@ -265,7 +265,7 @@ export default async function GamePage({ params }: GamePageProps) {
             <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
               <h3 className="mb-3 font-semibold text-gray-900 dark:text-white">Plus de jeux</h3>
               <RegionalLink
-                href={`/consoles/${game.console?.slug}/jeux`}
+                href={`/consoles/${game.console?.slug}/games`}
                 className="inline-flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Autres jeux {game.console?.name}

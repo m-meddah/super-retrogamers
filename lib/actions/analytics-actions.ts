@@ -56,12 +56,12 @@ export async function getAnalyticsDataAction(): Promise<AnalyticsData> {
     const mostViewedPages = await getMostViewedPages(5)
     
     // Extraire les jeux populaires des pages vues
-    const gamePages = mostViewedPages.filter(page => page.path.startsWith('/jeux/'))
+    const gamePages = mostViewedPages.filter(page => page.path.startsWith('/games/'))
     
     // Récupérer les détails des jeux les plus vus
     const popularGames = await Promise.all(
       gamePages.slice(0, 5).map(async (page) => {
-        const gameSlug = page.path.replace('/jeux/', '')
+        const gameSlug = page.path.replace('/games/', '')
         
         let game = null
         

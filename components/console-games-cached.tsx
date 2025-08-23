@@ -103,7 +103,7 @@ export default async function ConsoleGamesCached({
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h3 className="text-base font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
                   <a 
-                    href={`/jeux/${game.console?.slug ? `${game.slug}-console-${game.console.slug}` : game.slug}?region=${region}`}
+                    href={`/games/${game.console?.slug ? `${game.slug}-console-${game.console.slug}` : game.slug}?region=${region}`}
                     className="hover:text-blue-600 dark:hover:text-blue-400"
                   >
                     {game.title}

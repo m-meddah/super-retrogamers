@@ -502,7 +502,7 @@ export async function addGameToCollectionSimple(
     await CollectionService.updateUserStats(session.user.id)
 
     revalidatePath("/collection")
-    revalidatePath(`/jeux/${game.slug}`)
+    revalidatePath(`/games/${game.slug}`)
     return { success: true, message: "Ajouté à votre collection !" }
 
   } catch (error) {
@@ -582,7 +582,7 @@ export async function addGameToWishlistSimple(
     })
 
     revalidatePath("/collection")
-    revalidatePath(`/jeux/${game.slug}`)
+    revalidatePath(`/games/${game.slug}`)
     return { success: true, message: "Ajouté à votre wishlist !" }
 
   } catch (error) {

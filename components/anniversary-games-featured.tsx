@@ -116,7 +116,7 @@ export default async function AnniversaryGamesFeatured({
                 
                 {/* Game Card simple sans appels API */}
                 <RegionalLink 
-                  href={`/jeux/${gameSlug}`} 
+                  href={`/games/${gameSlug}`} 
                   className="group block"
                 >
                   <article className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700">
@@ -165,7 +165,7 @@ export default async function AnniversaryGamesFeatured({
         {gamesWithImages.length > 8 && (
           <div className="text-center">
             <Link
-              href={`/recherche?anniversaire=today`}
+              href={`/search?anniversaire=today`}
               className="group inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-3 text-base font-medium text-white transition-all hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200"
             >
               Voir les {gamesWithImages.length - 8} autres anniversaires

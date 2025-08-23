@@ -35,7 +35,7 @@ function SimpleGameCardClient({ game, region, showConsole = false }: GameCardPro
           <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="text-base font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
               <a 
-                href={`/jeux/${gameSlug}?region=${region}`}
+                href={`/games/${gameSlug}?region=${region}`}
                 className="hover:text-blue-600 dark:hover:text-blue-400"
               >
                 {game.title}

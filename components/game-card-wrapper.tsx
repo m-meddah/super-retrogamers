@@ -164,7 +164,7 @@ export default function GameCardWrapper({ game, showConsole = true }: GameCardWr
           {cardContent}
         </div>
       ) : (
-        <RegionalLink href={`/jeux/${gameSlug}`} className="group block">
+        <RegionalLink href={`/games/${gameSlug}`} className="group block">
           {cardContent}
         </RegionalLink>
       )}

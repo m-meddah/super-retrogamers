@@ -91,7 +91,7 @@ export default async function AnniversaryGamesServer({
                   )}
                 </div>
               </div>
-              <Link href={`/jeux/${game.slug}`}>
+              <Link href={`/games/${game.slug}`}>
                 <Button variant="outline" size="sm">
                   Voir détails
                 </Button>
@@ -101,7 +101,7 @@ export default async function AnniversaryGamesServer({
           
           {games.length > 5 && (
             <div className="text-center pt-4">
-              <Link href="/recherche?anniversaire=today">
+              <Link href="/search?anniversaire=today">
                 <Button variant="ghost" size="sm">
                   Voir les {games.length - 5} autres anniversaires
                 </Button>

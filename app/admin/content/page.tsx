@@ -272,7 +272,7 @@ async function ContentManagementContent() {
                               Éditer article
                             </Button>
                           </Link>
-                          <Link href={`/consoles/${console.slug}/jeux`}>
+                          <Link href={`/consoles/${console.slug}/games`}>
                             <Button variant="outline" size="sm">
                               Voir jeux
                             </Button>
@@ -370,13 +370,13 @@ async function ContentManagementContent() {
                       
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Link href={`/admin/content/jeux/${generateGameCompositeSlug(game)}/edit`}>
+                          <Link href={`/admin/content/games/${generateGameCompositeSlug(game)}/edit`}>
                             <Button variant="outline" size="sm" className="gap-1">
                               <Edit3 className="h-3 w-3" />
                               Modifier
                             </Button>
                           </Link>
-                          <Link href={`/jeux/${generateGameCompositeSlug(game)}`}>
+                          <Link href={`/games/${generateGameCompositeSlug(game)}`}>
                             <Button variant="outline" size="sm">
                               Voir détails
                             </Button>

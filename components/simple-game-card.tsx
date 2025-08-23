@@ -72,7 +72,7 @@ export default async function SimpleGameCard({
     game.slug
 
   return (
-    <RegionalLink href={`/jeux/${gameSlug}`} className="group block">
+    <RegionalLink href={`/games/${gameSlug}`} className="group block">
       <article className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 hover:border-gray-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700">
         {/* Image complète sans coupure */}
         <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-gray-800">

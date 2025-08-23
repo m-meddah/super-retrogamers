@@ -609,7 +609,7 @@ model MediaUrlCache {
 // Analytics et vues des pages
 model PageView {
   id        String   @id @default(cuid())
-  path      String   // Chemin de la page (ex: /jeux/mario-bros, /consoles/nes)
+  path      String   // Chemin de la page (ex: /games/mario-bros, /consoles/nes)
   ipAddress String   // Adresse IP de l'utilisateur (hashée)
   userAgent String?  // User Agent pour détecter les bots
   userId    String?  // ID utilisateur si connecté

@@ -19,7 +19,7 @@ export default function PageViewTracker({ trackPath }: PageViewTrackerProps = {}
 
   useEffect(() => {
     // Ne tracker que les pages importantes (jeux, consoles)
-    if (pathToTrack.startsWith('/jeux/') || 
+    if (pathToTrack.startsWith('/games/') || 
         pathToTrack.startsWith('/consoles/') ||
         pathToTrack === '/') {
       

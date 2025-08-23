@@ -161,7 +161,7 @@ export default function AnniversaryGames() {
                   )}
                 </div>
               </div>
-              <Link href={`/jeux/${game.slug}`}>
+              <Link href={`/games/${game.slug}`}>
                 <Button variant="outline" size="sm">
                   Voir détails
                 </Button>

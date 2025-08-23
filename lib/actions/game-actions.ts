@@ -105,9 +105,9 @@ export async function updateGameAction(
     })
 
     // Revalidation des pages concernées
-    revalidatePath(`/jeux/${existingGame.slug}`)
+    revalidatePath(`/games/${existingGame.slug}`)
     revalidatePath(`/admin/content`)
-    revalidatePath(`/admin/content/jeux/${existingGame.slug}/edit`)
+    revalidatePath(`/admin/content/games/${existingGame.slug}/edit`)
 
     return {
       success: true,
@@ -264,9 +264,9 @@ export async function updateGameEnhancedAction(
     })
 
     // Revalidation des pages concernées
-    revalidatePath(`/jeux/${existingGame.slug}`)
+    revalidatePath(`/games/${existingGame.slug}`)
     revalidatePath(`/admin/content`)
-    revalidatePath(`/admin/content/jeux/${existingGame.slug}/edit`)
+    revalidatePath(`/admin/content/games/${existingGame.slug}/edit`)
 
     return {
       success: true,
