@@ -177,8 +177,13 @@ class DeploymentManager {
         await this.scrapePriorityData('games')
       })
 
-      // Étape 6: Générer les statistiques finales
-      await this.executeStep('6_generateStats', async () => {
+      // Étape 6: Mettre à jour les logos des corporations
+      await this.executeStep('6_updateCorporationLogos', async () => {
+        await this.updateCorporationLogos()
+      })
+
+      // Étape 7: Générer les statistiques finales
+      await this.executeStep('7_generateStats', async () => {
         await this.generateFinalStats()
       })
 
@@ -325,6 +330,26 @@ class DeploymentManager {
       // Ne pas faire échouer le déploiement si seul le scraping échoue
       this.log(`⚠️ Scraping des ${label} partiellement échoué: ${error}`, 'warning')
       this.state.warnings.push(`Scraping ${label} partiellement échoué`)
+    }
+  }
+
+  private async updateCorporationLogos(): Promise<void> {
+    this.log('🏢 Mise à jour des logos des corporations...')
+
+    try {
+      // Utiliser le script de mise à jour des logos
+      this.log('🔧 Exécution du script update-corporation-logos...')
+      execSync('npx tsx scripts/update-corporation-logos.ts update', {
+        cwd: process.cwd(),
+        stdio: this.config.logging.enableDetailedLogs ? 'inherit' : 'pipe'
+      })
+      
+      this.log('✅ Mise à jour des logos terminée')
+
+    } catch (error) {
+      // Ne pas faire échouer le déploiement si seule la mise à jour des logos échoue
+      this.log(`⚠️ Mise à jour des logos partiellement échouée: ${error}`, 'warning')
+      this.state.warnings.push('Mise à jour des logos partiellement échouée')
     }
   }
 

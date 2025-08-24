@@ -202,6 +202,19 @@ Chaque entrée suit ce format :
   - `scripts/README-DEPLOYMENT.md` (guide complet de déploiement)
 - **Notes** : Site pré-peuplé au lancement, traitement par priorités, retry automatique, logs détaillés, validation IDs réels requis
 
+### [Feature] Système de récupération des logos des corporations
+- **Date** : 2025-08-24
+- **Statut** : ✅ Succès
+- **Description** : Intégration API mediaCompagnie.php de Screenscraper pour récupérer automatiquement les logos wheel des corporations, avec gestion d'erreurs HTML et intégration dans le scraping
+- **Fichiers modifiés** : 
+  - `lib/screenscraper-corporations.ts` (service de récupération des logos)
+  - `scripts/update-corporation-logos.ts` (script de mise à jour des logos)
+  - `scripts/test-corporation-api.ts` (tests de l'API)
+  - `lib/screenscraper-games.ts` (intégration automatique lors du scraping)
+  - `scripts/deploy-production.ts` (étape logos dans le déploiement)
+  - `scripts/config/deployment.json` (configuration étape logos)
+- **Notes** : API mediaCompagnie.php avec gestion réponses HTML, parsing erreurs, credentials dev+user optionnels, throttling 1.2s, logos automatiques lors création corporations
+
 ---
 
 ## Instructions d'utilisation

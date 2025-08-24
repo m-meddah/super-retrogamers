@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { updateCorporationLogo } from '@/lib/screenscraper-corporations'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -74,6 +75,20 @@ async function createOrGetCorporation(
         }
       })
       console.log(`✅ Corporation créée: ${corporationName} (${finalSlug})`)
+      
+      // Tentative de récupération du logo si ID Screenscraper disponible
+      if (ssCorporationId) {
+        try {
+          const logoResult = await updateCorporationLogo(corporation.id, ssCorporationId)
+          if (logoResult.success) {
+            console.log(`🏷️ Logo récupéré: ${logoResult.logoUrl}`)
+          } else {
+            console.log(`⚠️ Logo non disponible: ${logoResult.error}`)
+          }
+        } catch (logoError) {
+          console.log(`⚠️ Erreur lors de la récupération du logo: ${logoError}`)
+        }
+      }
     } else {
       // Update role if corporation exists but doesn't have this role
       const existingRole = await prisma.corporationRole.findFirst({

@@ -44,7 +44,11 @@
       "enabled": true,
       "description": "Scraper les jeux prioritaires selon priority-games.json"
     },
-    "6_generateStats": {
+    "6_updateCorporationLogos": {
+      "enabled": true,
+      "description": "Mettre à jour les logos des corporations via l'API Screenscraper"
+    },
+    "7_generateStats": {
       "enabled": true,
       "description": "Générer les statistiques finales et rapport"
     }
