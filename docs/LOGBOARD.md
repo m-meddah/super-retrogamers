@@ -85,7 +85,7 @@ Chaque entrée suit ce format :
 - **Notes** : Suppression colonnes images des tables Console/Game pour optimisation
 
 ### [Feature] Recherche hybride avancée
-- **Date** : 2025-08-15
+- **Date** : 2025-08-22
 - **Statut** : ✅ Succès
 - **Description** : Système de recherche combinant base locale et API Screenscraper, filtres complexes (notes, années, joueurs)
 - **Fichiers modifiés** : 
@@ -126,7 +126,7 @@ Chaque entrée suit ce format :
 - **Notes** : Gestion manuelle des liens, checksums pour validation
 
 ### [Database] Normalisation colonnes Screenscraper
-- **Date** : 2025-01-24
+- **Date** : 2025-08-19
 - **Statut** : ✅ Succès
 - **Description** : Renommage colonnes screenscrapeId vers noms spécifiques (ssConsoleId, ssGameId, etc.) pour éviter conflits
 - **Fichiers modifiés** : 
@@ -136,7 +136,7 @@ Chaque entrée suit ce format :
 - **Notes** : SQL direct choisi pour éviter perte de données vs migrations Prisma
 
 ### [Enhancement] Préférences utilisateur persistantes
-- **Date** : 2025-01-25
+- **Date** : 2025-08-13
 - **Statut** : ✅ Succès
 - **Description** : Système de préférences régionales avec persistence base + URL, synchronisation session
 - **Fichiers modifiés** : 
@@ -146,7 +146,7 @@ Chaque entrée suit ce format :
 - **Notes** : Double persistence pour UX optimal et cohérence
 
 ### [Migration] Standardisation routes anglaises
-- **Date** : 2025-01-26
+- **Date** : 2025-08-24
 - **Statut** : ✅ Succès
 - **Description** : Migration routes françaises (/jeux, /recherche) vers anglais (/games, /search), slug-based routing pour familles/corporations
 - **Fichiers modifiés** : 
