@@ -50,8 +50,22 @@ export async function getCorporationLogoFromScreenscraper(
 
     console.log(`🔄 Récupération du logo pour corporation ID: ${ssCorporationId}`)
 
-    // Faire la requête API
-    const response = await fetch(apiUrl)
+    // Faire la requête API avec headers de navigateur
+    const response = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1'
+      }
+    })
     
     if (!response.ok) {
       return {
@@ -60,97 +74,100 @@ export async function getCorporationLogoFromScreenscraper(
       }
     }
 
-    // L'API peut retourner du JSON, HTML ou directement l'URL de l'image
+    // L'API peut retourner du JSON, HTML ou directement l'image
     const contentType = response.headers.get('content-type')
     
-    if (contentType?.includes('application/json')) {
-      // Réponse JSON (probablement une erreur)
-      try {
-        const jsonData = await response.json()
-        return {
-          success: false,
-          error: `Erreur API: ${JSON.stringify(jsonData)}`
-        }
-      } catch (e) {
-        return {
-          success: false,
-          error: 'Réponse JSON invalide'
-        }
-      }
-    } else if (contentType?.includes('image/')) {
-      // Réponse directe d'image - l'URL de la requête est l'URL de l'image
+    // Si l'API retourne directement une image, l'URL de la requête est l'URL du logo
+    if (contentType?.includes('image/')) {
+      console.log(`   ✅ Logo trouvé (${contentType})`)
       return {
         success: true,
         logoUrl: apiUrl
       }
-    } else if (contentType?.includes('text/html')) {
-      // Réponse HTML - peut contenir des informations d'erreur
-      try {
-        const htmlContent = await response.text()
-        
-        // Rechercher des patterns d'erreur courants
-        if (htmlContent.includes('API fermé')) {
-          return {
-            success: false,
-            error: 'API Screenscraper fermée ou inaccessible'
-          }
-        }
-        
-        if (htmlContent.includes('identification')) {
-          return {
-            success: false,
-            error: 'Erreur d\'identification - vérifiez vos credentials'
-          }
-        }
-        
-        if (htmlContent.includes('quota')) {
-          return {
-            success: false,
-            error: 'Quota API dépassé'
-          }
-        }
-
-        if (htmlContent.includes('not found') || htmlContent.includes('introuvable')) {
-          return {
-            success: false,
-            error: `Corporation ${ssCorporationId} introuvable ou sans logo`
-          }
-        }
-        
-        // Essayer d'extraire une URL d'image du HTML si présente
-        const imgMatch = htmlContent.match(/src=["']([^"']*\.(jpg|jpeg|png|gif|webp))['"]/i)
-        if (imgMatch && imgMatch[1]) {
-          const imageUrl = imgMatch[1].startsWith('http') ? imgMatch[1] : `https://screenscraper.fr${imgMatch[1]}`
-          return {
-            success: true,
-            logoUrl: imageUrl
-          }
-        }
-        
-        return {
-          success: false,
-          error: `Réponse HTML inattendue (${htmlContent.substring(0, 100)}...)`
-        }
-      } catch (e) {
-        return {
-          success: false,
-          error: 'Erreur lors du parsing HTML'
-        }
+    }
+    
+    // Vérifier si c'est une redirection vers une image
+    const finalUrl = response.url
+    if (finalUrl !== apiUrl && finalUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      console.log(`   ✅ Logo trouvé via redirection`)
+      return {
+        success: true,
+        logoUrl: finalUrl
       }
-    } else {
-      // Vérifier si c'est une redirection vers une image
-      const finalUrl = response.url
-      if (finalUrl !== apiUrl && finalUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    }
+    
+    // Vérifier si l'URL répond avec une image même si le content-type n'est pas correct
+    if (response.status === 200) {
+      // Lire les premiers octets pour détecter une signature d'image
+      const buffer = await response.arrayBuffer()
+      const firstBytes = new Uint8Array(buffer.slice(0, 12))
+      
+      // Signatures d'images communes
+      const isJPEG = firstBytes[0] === 0xFF && firstBytes[1] === 0xD8
+      const isPNG = firstBytes[0] === 0x89 && firstBytes[1] === 0x50 && firstBytes[2] === 0x4E && firstBytes[3] === 0x47
+      const isGIF = firstBytes[0] === 0x47 && firstBytes[1] === 0x49 && firstBytes[2] === 0x46
+      const isWebP = firstBytes[0] === 0x52 && firstBytes[1] === 0x49 && firstBytes[2] === 0x46 && firstBytes[3] === 0x46 && 
+                    firstBytes[8] === 0x57 && firstBytes[9] === 0x45 && firstBytes[10] === 0x42 && firstBytes[11] === 0x50
+      
+      if (isJPEG || isPNG || isGIF || isWebP) {
+        console.log(`   ✅ Logo trouvé par signature (${isJPEG ? 'JPEG' : isPNG ? 'PNG' : isGIF ? 'GIF' : 'WebP'})`)
         return {
           success: true,
-          logoUrl: finalUrl
+          logoUrl: apiUrl
+        }
+      }
+      
+      // Si ce n'est pas une image, convertir en texte pour analyser
+      const textContent = new TextDecoder().decode(buffer)
+      
+      // Rechercher des patterns d'erreur dans le contenu
+      if (textContent.includes('API fermé')) {
+        return {
+          success: false,
+          error: 'API Screenscraper fermée ou inaccessible'
+        }
+      }
+      
+      if (textContent.includes('identification') || textContent.includes('Erreur de login')) {
+        return {
+          success: false,
+          error: 'Erreur d\'identification - vérifiez vos credentials'
+        }
+      }
+      
+      if (textContent.includes('quota')) {
+        return {
+          success: false,
+          error: 'Quota API dépassé'
+        }
+      }
+
+      if (textContent.includes('not found') || textContent.includes('introuvable')) {
+        return {
+          success: false,
+          error: `Corporation ${ssCorporationId} introuvable ou sans logo`
+        }
+      }
+      
+      // Essayer d'extraire une URL d'image du contenu HTML si présente
+      const imgMatch = textContent.match(/src=["']([^"']*\.(jpg|jpeg|png|gif|webp))['"]/i)
+      if (imgMatch && imgMatch[1]) {
+        const imageUrl = imgMatch[1].startsWith('http') ? imgMatch[1] : `https://screenscraper.fr${imgMatch[1]}`
+        return {
+          success: true,
+          logoUrl: imageUrl
         }
       }
       
       return {
         success: false,
-        error: `Type de contenu inattendu: ${contentType}`
+        error: `Contenu inattendu (${textContent.substring(0, 100)}...)`
       }
+    }
+    
+    return {
+      success: false,
+      error: `Erreur inattendue: response.status = ${response.status}`
     }
 
   } catch (error) {
