@@ -527,9 +527,7 @@ model Manual {
   region      Region?
   language    String?   // "FR", "EN", "JP", etc.
   title       String?   // Titre du manuel
-  content     String?   // Contenu du manuel (markdown/html)
   pdfUrl      String?   // URL vers le PDF du manuel
-  pages       Int?      // Nombre de pages
   fileSize    Int?      // Taille du fichier en octets
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

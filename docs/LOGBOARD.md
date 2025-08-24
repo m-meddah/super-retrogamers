@@ -176,6 +176,19 @@ Chaque entrée suit ce format :
   - `CLAUDE.md` (instructions logboard)
 - **Notes** : Documentation technique centralisée, bonnes pratiques établies
 
+### [Enhancement] Système de re-scraping complet
+- **Date** : 2025-08-24
+- **Statut** : ✅ Succès
+- **Description** : Scripts de re-scraping complet des données Screenscraper avec synchronisation genres, générations et toutes tables relationnelles
+- **Fichiers modifiés** : 
+  - `scripts/rescrape-all-data.ts` (script principal de re-scraping)
+  - `scripts/prepare-rescraping.ts` (préparation avec genres obligatoires)
+  - `scripts/populate-generations.ts` (9 générations de consoles historiques)
+  - `scripts/test-rescraping.ts` (test sur échantillon)
+  - `scripts/README-RESCRAPING.md` (documentation complète)
+  - `prisma/schema.prisma` (suppression colonnes content/pages de Manual)
+- **Notes** : Traitement par lots, respect limites API 1.2s, mise à jour toutes tables relationnelles, genres synchronisés en priorité
+
 ---
 
 ## Instructions d'utilisation
