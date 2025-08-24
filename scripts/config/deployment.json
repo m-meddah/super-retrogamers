@@ -1,0 +1,97 @@
+{
+  "description": "Configuration générale du déploiement automatique en production",
+  "version": "1.0.0",
+  "lastUpdated": "2025-08-24",
+  
+  "deployment": {
+    "name": "Super Retrogamers Production Deployment",
+    "environment": "production",
+    "autoCreateAdmin": true,
+    "adminEmail": "admin@super-retrogamers.com",
+    "adminName": "Super Admin",
+    "skipExistingData": true
+  },
+
+  "scraping": {
+    "enablePriorityConsoles": true,
+    "enablePriorityGames": true,
+    "downloadMedia": true,
+    "updateExistingData": false,
+    "respectRateLimits": true,
+    "throttleDelayMs": 1200,
+    "batchSize": 5,
+    "pauseBetweenBatchesMs": 3000
+  },
+
+  "steps": {
+    "1_checkPrerequisites": {
+      "enabled": true,
+      "description": "Vérifier les prérequis (DB, credentials, etc.)"
+    },
+    "2_createAdmin": {
+      "enabled": true, 
+      "description": "Créer le compte administrateur principal"
+    },
+    "3_prepareRescraping": {
+      "enabled": true,
+      "description": "Synchroniser genres et générations (obligatoire)"
+    },
+    "4_scrapePriorityConsoles": {
+      "enabled": true,
+      "description": "Scraper les consoles prioritaires selon priority-consoles.json"
+    },
+    "5_scrapePriorityGames": {
+      "enabled": true,
+      "description": "Scraper les jeux prioritaires selon priority-games.json"
+    },
+    "6_generateStats": {
+      "enabled": true,
+      "description": "Générer les statistiques finales et rapport"
+    }
+  },
+
+  "logging": {
+    "enableDetailedLogs": true,
+    "logToFile": true,
+    "logFilePath": "deployment-logs.txt",
+    "showProgress": true,
+    "showTimestamps": true
+  },
+
+  "errorHandling": {
+    "continueOnError": true,
+    "maxRetries": 3,
+    "retryDelayMs": 5000,
+    "failOnCriticalError": true,
+    "criticalSteps": ["1_checkPrerequisites", "3_prepareRescraping"]
+  },
+
+  "notifications": {
+    "enableConsoleOutput": true,
+    "showSuccessEmojis": true,
+    "showProgressBars": false,
+    "summarizeAtEnd": true
+  },
+
+  "performance": {
+    "estimatedDurationMinutes": 30,
+    "maxMemoryUsageMB": 512,
+    "enableGarbageCollection": true,
+    "cleanupTempFiles": true
+  },
+
+  "instructions": {
+    "usage": "npx tsx scripts/deploy-production.ts",
+    "prerequisites": [
+      "Variables d'environnement Screenscraper configurées",
+      "Base de données PostgreSQL accessible",
+      "Fichiers priority-consoles.json et priority-games.json à jour"
+    ],
+    "customization": [
+      "Modifier priority-consoles.json pour ajouter/supprimer des consoles",
+      "Modifier priority-games.json pour ajouter/supprimer des jeux", 
+      "Ajuster les paramètres de scraping selon les besoins",
+      "Activer/désactiver des étapes selon l'environnement"
+    ]
+  }
+}

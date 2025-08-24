@@ -1,0 +1,34 @@
+{
+  "description": "Configuration des jeux prioritaires à scraper lors du déploiement",
+  "lastUpdated": "2025-08-24",
+  "games": [
+    {
+      "ssGameId": "REMPLACER_PAR_ID_REEL",
+      "ssConsoleId": "REMPLACER_PAR_ID_CONSOLE_PARENT",
+      "title": "EXEMPLE: Super Mario Bros.",
+      "console": "EXEMPLE: NES",
+      "priority": 1,
+      "note": "⚠️ REMPLACEZ par les vrais IDs Screenscraper de vos jeux prioritaires"
+    },
+    {
+      "ssGameId": "REMPLACER_PAR_ID_REEL",
+      "ssConsoleId": "REMPLACER_PAR_ID_CONSOLE_PARENT",
+      "title": "EXEMPLE: The Legend of Zelda",
+      "console": "EXEMPLE: NES",
+      "priority": 1,
+      "note": "⚠️ Trouvez l'ID réel sur screenscraper.fr ou l'interface admin"
+    }
+  ],
+  "priorities": {
+    "1": "Priorité maximale - jeux légendaires incontournables",
+    "2": "Priorité haute - jeux très populaires et reconnus",
+    "3": "Priorité normale - jeux importants du catalogue"
+  },
+  "instructions": {
+    "howToAdd": "Ajouter un nouvel objet dans le tableau 'games' avec ssGameId, ssConsoleId, title, console, priority, note",
+    "findGameId": "Rechercher l'ID sur screenscraper.fr ou dans l'interface admin",
+    "consoleIdMatch": "Le ssConsoleId doit correspondre à une console existante",
+    "priorityRange": "1 (max) à 5 (min)",
+    "sortingLogic": "Les jeux sont traités par priorité croissante (1 en premier)"
+  }
+}

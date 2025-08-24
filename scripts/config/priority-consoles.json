@@ -1,0 +1,28 @@
+{
+  "description": "Configuration des consoles prioritaires à scraper lors du déploiement",
+  "lastUpdated": "2025-08-24",
+  "consoles": [
+    {
+      "ssConsoleId": "REMPLACER_PAR_ID_REEL",
+      "name": "EXEMPLE: Nintendo Entertainment System (NES)",
+      "priority": 1,
+      "note": "⚠️ REMPLACEZ par les vrais IDs Screenscraper de vos consoles prioritaires"
+    },
+    {
+      "ssConsoleId": "REMPLACER_PAR_ID_REEL",
+      "name": "EXEMPLE: Super Nintendo Entertainment System (SNES)",
+      "priority": 1,
+      "note": "⚠️ Trouvez l'ID réel sur screenscraper.fr ou l'interface admin"
+    }
+  ],
+  "priorities": {
+    "1": "Priorité maximale - consoles incontournables",
+    "2": "Priorité haute - consoles très populaires", 
+    "3": "Priorité normale - consoles importantes"
+  },
+  "instructions": {
+    "howToAdd": "Ajouter un nouvel objet dans le tableau 'consoles' avec ssConsoleId, name, priority, note",
+    "findConsoleId": "Rechercher l'ID sur screenscraper.fr ou dans l'interface admin",
+    "priorityRange": "1 (max) à 5 (min)"
+  }
+}

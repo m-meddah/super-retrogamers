@@ -189,6 +189,19 @@ Chaque entrée suit ce format :
   - `prisma/schema.prisma` (suppression colonnes content/pages de Manual)
 - **Notes** : Traitement par lots, respect limites API 1.2s, mise à jour toutes tables relationnelles, genres synchronisés en priorité
 
+### [Feature] Système de déploiement automatique en production
+- **Date** : 2025-08-24
+- **Statut** : ✅ Succès
+- **Description** : Déploiement automatique one-click avec scraping prioritaire des consoles/jeux essentiels, configuration JSON flexible, gestion d'erreurs avancée
+- **Fichiers modifiés** : 
+  - `scripts/deploy-production.ts` (orchestrateur principal du déploiement)
+  - `scripts/scrape-priority-data.ts` (scraping des données prioritaires configurables)
+  - `scripts/config/deployment.json` (configuration générale du déploiement)
+  - `scripts/config/priority-consoles.json` (consoles prioritaires avec placeholders)
+  - `scripts/config/priority-games.json` (jeux prioritaires avec placeholders)
+  - `scripts/README-DEPLOYMENT.md` (guide complet de déploiement)
+- **Notes** : Site pré-peuplé au lancement, traitement par priorités, retry automatique, logs détaillés, validation IDs réels requis
+
 ---
 
 ## Instructions d'utilisation
