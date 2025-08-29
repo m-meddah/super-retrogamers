@@ -35,6 +35,15 @@ Chaque entrée suit ce format :
   - `docs/LOGBOARD.md` (documentation)
 - **Notes** : Architecture refactorisée server/client, BETTER_AUTH_SECRET critique pour validation tokens, rechargement complet nécessaire pour sync sessions
 
+### [Fix] Correction accès page collection avec authentification serveur
+- **Date** : 2025-08-29
+- **Statut** : ✅ Succès
+- **Description** : Fix accès page collection qui redirigeait vers login malgré connexion admin - conversion useSession() client vers getServerSession() serveur
+- **Fichiers modifiés** : 
+  - `app/collection/page.tsx` (conversion en server component)
+  - `components/collection/collection-client.tsx` (nouveau - interface client avec session props)
+- **Notes** : Même problème que header - pages utilisant useSession() client ne fonctionnent pas, migration vers getServerSession() serveur obligatoire
+
 ### [Architecture] Système d'authentification Better-auth
 - **Date** : 2025-08-03
 - **Statut** : ✅ Succès
