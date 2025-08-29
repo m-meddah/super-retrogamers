@@ -3,7 +3,7 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import { ArrowLeft, Cpu, HardDrive, Monitor, ArrowRight, Gamepad2, Calendar, Factory } from "lucide-react"
 import { getConsoleBySlug, getGamesByConsoleWithConsoleInfo, getPopularGamesByConsoleSlug } from "@/lib/data-prisma"
-import GameCardRegionalWrapper from "@/components/game-card-regional-wrapper"
+import ConsoleGamesSimpleGrid from "@/components/console-games-simple-grid"
 import { ConsoleCollectionActions } from "@/components/console-collection-actions"
 import { EditorialArticle } from "@/components/editorial-article"
 import ConsoleImageRegional from "@/components/console-image-regional"
@@ -194,11 +194,7 @@ export default async function ConsolePage({ params }: ConsolePageProps) {
           </div>
 
           {popularGames.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {popularGames.map((game) => (
-                <GameCardRegionalWrapper key={game.id} game={game} showConsole={false} />
-              ))}
-            </div>
+            <ConsoleGamesSimpleGrid games={popularGames} region="FR" showConsole={false} />
           ) : (
             <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-12 text-center shadow-sm dark:border-gray-800 dark:from-gray-900 dark:to-gray-800">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
