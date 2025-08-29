@@ -22,13 +22,9 @@ export default function LoginPage() {
     setError("")
 
     try {
-      console.log("🔐 Tentative de connexion avec:", { email, password: "***" })
-      
       const result = await signIn.email({
         email,
         password})
-      
-      console.log("✅ Résultat de connexion:", result)
       
       addNotification({
         type: 'success',
@@ -36,11 +32,10 @@ export default function LoginPage() {
         message: `Bienvenue !`
       })
       
-      // Attendre un peu avant la redirection
+      // Rechargement complet de la page pour forcer la session
       await new Promise(resolve => setTimeout(resolve, 500))
-      router.push("/")
+      window.location.href = "/"
     } catch (error) {
-      console.error("❌ Erreur de connexion:", error)
       setError(error instanceof Error ? error.message : "Une erreur est survenue lors de la connexion")
     } finally {
       setIsLoading(false)

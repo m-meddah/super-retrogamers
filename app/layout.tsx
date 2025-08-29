@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { Suspense } from "react"
 import "./globals.css"
-import Header from "@/components/header"
+import HeaderServer from "@/components/header-server"
 import AuthProvider from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
@@ -57,7 +57,7 @@ export default function RootLayout({
             <AuthProvider>
               <RegionInitializer />
               <Suspense fallback={<div className="h-14 bg-white dark:bg-gray-950" />}>
-                <Header />
+                <HeaderServer />
               </Suspense>
               <main>{children}</main>
               <PageViewTracker />
